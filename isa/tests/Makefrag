@@ -1,0 +1,9 @@
+rv64uv_sc_tests = \
+    2649208 
+
+
+rv64uv_p_tests = $(addprefix rv64uv-p-, $(rv64uv_sc_tests))
+rv64uv_v_tests = $(addprefix rv64uv-v-, $(rv64uv_sc_tests))
+
+# Ensure the main variable matches the folder name used in the 'eval' call
+rv64uv_tests = $(rv64uv_p_tests) $(rv64uv_v_tests)

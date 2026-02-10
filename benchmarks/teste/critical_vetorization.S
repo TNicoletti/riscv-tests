@@ -1,0 +1,45 @@
+.section .text
+.global vetorized
+.global non_vetorized
+
+vetorized:
+     # Allocate stack space for vector storage (16 bytes for 4x32-bit elements)
+    addi    sp, sp, -16
+    # Load 99 so that 99 + 1 = 100
+    li      t0, 99
+    # Configure Vector: 4 elements, 32-bit width, LMUL=1
+    vsetvli zero, t1, 0x52
+    # Broadcast 99 to all elements in v8
+    vmv.v.x v8, t0
+    # Add 1 to all elements (99 + 1 = 100)
+    vadd.vi v8, v8, 1
+    # Store results (100, 100, 100, 100) back to memory
+    vse32.v v8, (sp)
+    # Cleanup stack
+    addi    sp, sp, 16
+    # Return to _start to hit the infinite loop
+    ret
+
+# Função para ler o CSR 'instret'
+non_vetorized:
+    addi    sp, sp, -16
+    # loads values (99, 99, 99, 99)
+    li t0, 99
+    li t1, 99
+    li t2, 99
+    li t3, 99
+
+    # Does the sum (99 + 1, 99 + 1, 99 + 1, 99 + 1)
+    addi t0, t0, 1
+    addi t1, t1, 1
+    addi t2, t2, 1
+    addi t3, t3, 1
+    # Stores the return in the stack pointer
+    sw t0, (sp)
+    sw t1, 4(sp)
+    sw t2, 8(sp)
+    sw t3, 12(sp)
+    # Cleanup stack
+    addi sp, sp, 16
+    ret
+

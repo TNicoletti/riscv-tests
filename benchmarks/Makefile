@@ -45,6 +45,18 @@ vec_bmarks = \
 	vec-daxpy \
 	vec-sgemm \
 	vec-strcmp \
+	teste \
+	test_vlen \
+	test_data_hazards \
+	test_vector_compare \
+	test_lmul \
+	test_tail_agnostic \
+	test_mask_agnostic \
+	test_interruption \
+	test_lanes \
+	
+	random_test \
+	random_test_lmul \
 
 bmarks = $(base_bmarks) $(vec_bmarks)
 
