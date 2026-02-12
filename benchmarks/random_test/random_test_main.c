@@ -106,8 +106,11 @@ void random_test(int seed) {
 
         int chksum_scalar = checksum(&OUT_SCALAR[blk], EL_PER_BLOCK);
         if (chksum_vector != chksum_scalar) {
-        printf("Mismatch at block %d: vector checksum = %08x, scalar checksum = %08x\n",
-                blk/EL_PER_BLOCK, chksum_vector, chksum_scalar);
+            char* helper[9] = {"VADD.VV", "VSUB.V", "VDIV.VV", "VMUL.VV", "VADD.VX", "VSUB.VX",
+                 "VDIV.VX", "VMUL.VX", "VADD.VI"};
+            printf("Mismatch at block at position: %d;\n vector checksum = %08x, scalar checksum = %08x;\n",
+            blk/EL_PER_BLOCK, chksum_vector, chksum_scalar);
+            printf("Operation %s, Operator2: %d\n", helper[opt], op2);
         return;
         }
 
