@@ -57,6 +57,7 @@ vec_bmarks = \
 	\
 	random_test \
 	random_test_lmul \
+	random_neural_network \
 
 bmarks = $(base_bmarks) $(vec_bmarks)
 
