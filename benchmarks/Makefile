@@ -54,6 +54,7 @@ vec_bmarks = \
 	test_mask_agnostic \
 	test_interruption \
 	test_lanes \
+	easy_tester \
 	\
 	random_test \
 	random_test_lmul \

@@ -12,7 +12,7 @@
 #define EL_PER_BLOCK VLEN / SEW
 #define REGISTERS_PER_BLOCK 3
 
-#define PRINTS 1
+#define PRINTS 3
 
 int32_t ADDRESS_VECTOR[20];
 
@@ -132,34 +132,34 @@ int generate_RIS(int index){
         switch (ops[i]){
             case 0:
                 for(int j = 0; j < EL_PER_BLOCK; j++){
-                    if(PRINTS) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + [%d]%d;\n", rx[0 + i * 3], j, rx[1 + i * 3], scalar_res[rx[1 + i * 3]][j], rx[2 + i * 3], scalar_res[rx[2 + i * 3]][j]);
+                    if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + [%d]%d;\n", rx[0 + i * 3], j, rx[1 + i * 3], scalar_res[rx[1 + i * 3]][j], rx[2 + i * 3], scalar_res[rx[2 + i * 3]][j]);
                     scalar_res[rx[0 + i * 3]][j] = (int32_t)(scalar_res[rx[1 + i * 3]][j] + scalar_res[rx[2 + i * 3]][j]);
                 }
-                if(PRINTS) printf("\n");
+                if(PRINTS >= 2) printf("\n");
                 instr = VADD_VV_INSTR;
                 break;
             case 1:
                 for(int j = 0; j < EL_PER_BLOCK; j++){
-                    if(PRINTS) printf("SCALAR_RESULT:[%d][%d] = [%d]%d - [%d]%d;\n", rx[0 + i * 3], j, rx[1 + i * 3], scalar_res[rx[1 + i * 3]][j], rx[2 + i * 3], scalar_res[rx[2 + i * 3]][j]);
+                    if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d - [%d]%d;\n", rx[0 + i * 3], j, rx[1 + i * 3], scalar_res[rx[1 + i * 3]][j], rx[2 + i * 3], scalar_res[rx[2 + i * 3]][j]);
                     scalar_res[rx[0 + i * 3]][j] = (int32_t)(scalar_res[rx[1 + i * 3]][j] - scalar_res[rx[2 + i * 3]][j]);
                 }
-                if(PRINTS) printf("\n");
+                if(PRINTS >= 2) printf("\n");
                 instr = VSUB_VV_INSTR;
                 break;
             case 2:
                 for(int j = 0; j < EL_PER_BLOCK; j++){
-                    if(PRINTS) printf("SCALAR_RESULT:[%d][%d] = [%d]%d / [%d]%d;\n", rx[0 + i * 3], j, rx[1 + i * 3], scalar_res[rx[1 + i * 3]][j], rx[2 + i * 3], scalar_res[rx[2 + i * 3]][j]);
+                    if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d / [%d]%d;\n", rx[0 + i * 3], j, rx[1 + i * 3], scalar_res[rx[1 + i * 3]][j], rx[2 + i * 3], scalar_res[rx[2 + i * 3]][j]);
                     scalar_res[rx[0 + i * 3]][j] = (int32_t)(scalar_res[rx[1 + i * 3]][j] / scalar_res[rx[2 + i * 3]][j]);
                 }
-                if(PRINTS) printf("\n");
+                if(PRINTS >= 2) printf("\n");
                 instr = VDIV_VV_INSTR;
                 break;
             case 3:
                 for(int j = 0; j < EL_PER_BLOCK; j++){
-                    if(PRINTS) printf("SCALAR_RESULT:[%d][%d] = [%d]%d * [%d]%d;\n", rx[0 + i * 3], j, rx[1 + i * 3], scalar_res[rx[1 + i * 3]][j], rx[2 + i * 3], scalar_res[rx[2 + i * 3]][j]);
+                    if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d * [%d]%d;\n", rx[0 + i * 3], j, rx[1 + i * 3], scalar_res[rx[1 + i * 3]][j], rx[2 + i * 3], scalar_res[rx[2 + i * 3]][j]);
                     scalar_res[rx[0 + i * 3]][j] = (int32_t)(scalar_res[rx[1 + i * 3]][j] * scalar_res[rx[2 + i * 3]][j]);
                 }
-                if(PRINTS) printf("\n");
+                if(PRINTS >= 2) printf("\n");
                 instr = VMUL_VV_INSTR;
                 break;
             default:
@@ -232,6 +232,12 @@ void random_test(int seed) {
     for(int z = 0; z + inc < N; z+= inc){
         printf("Begginning test %d\n", z / inc);
 
+        if(PRINTS >= 3){
+            printf("OUT before modifications:\n");
+            for(int i = z; i < z + inc; i++)
+                printf("v[%d] = %d;", i, OUT[i]);
+            printf("\n");
+        }
 
         int checksum_escalar = generate_RIS(z);
     
