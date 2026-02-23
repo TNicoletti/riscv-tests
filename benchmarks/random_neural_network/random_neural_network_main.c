@@ -4,7 +4,7 @@
 #include "asm_functions.h"
 #define RET_INSTR 0x00008067
 
-#define N 1024
+#define N 512
 #define SEED 0x12345678
 #define SEW 32
 #define VLEN 128
@@ -12,7 +12,7 @@
 #define EL_PER_BLOCK VLEN / SEW
 #define REGISTERS_PER_BLOCK 3
 
-#define PRINTS 0
+#define PRINTS 1
 
 int32_t ADDRESS_VECTOR[20];
 
@@ -76,7 +76,7 @@ r3 = OUT[index + 2 * EL_PER_BLOCK]
 int generate_RIS(int index){
     
     shuffle_registers();
-    if(PRINTS) printf("r 1 2 3: %d %d %d\n", r[0], r[1], r[2]);
+    if(PRINTS) printf("r[0]= %d; r[1]= %d; r[2]= %d;\n", r[0], r[1], r[2]);
 
     int ops[4];
 
@@ -132,7 +132,7 @@ int generate_RIS(int index){
         switch (ops[i]){
             case 0:
                 for(int j = 0; j < EL_PER_BLOCK; j++){
-                    if(PRINTS) printf("scalar_res[%d][%d] = %d + %d;\n", rx[0 + i * 3], j, scalar_res[rx[1 + i * 3]][j], scalar_res[rx[2 + i * 3]][j]);
+                    if(PRINTS) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + [%d]%d;\n", rx[0 + i * 3], j, rx[1 + i * 3], scalar_res[rx[1 + i * 3]][j], rx[2 + i * 3], scalar_res[rx[2 + i * 3]][j]);
                     scalar_res[rx[0 + i * 3]][j] = (int32_t)(scalar_res[rx[1 + i * 3]][j] + scalar_res[rx[2 + i * 3]][j]);
                 }
                 if(PRINTS) printf("\n");
@@ -140,7 +140,7 @@ int generate_RIS(int index){
                 break;
             case 1:
                 for(int j = 0; j < EL_PER_BLOCK; j++){
-                    if(PRINTS) printf("scalar_res[%d][%d] = %d - %d;\n", rx[0 + i * 3], j, scalar_res[rx[1 + i * 3]][j], scalar_res[rx[2 + i * 3]][j]);
+                    if(PRINTS) printf("SCALAR_RESULT:[%d][%d] = [%d]%d - [%d]%d;\n", rx[0 + i * 3], j, rx[1 + i * 3], scalar_res[rx[1 + i * 3]][j], rx[2 + i * 3], scalar_res[rx[2 + i * 3]][j]);
                     scalar_res[rx[0 + i * 3]][j] = (int32_t)(scalar_res[rx[1 + i * 3]][j] - scalar_res[rx[2 + i * 3]][j]);
                 }
                 if(PRINTS) printf("\n");
@@ -148,7 +148,7 @@ int generate_RIS(int index){
                 break;
             case 2:
                 for(int j = 0; j < EL_PER_BLOCK; j++){
-                    if(PRINTS) printf("scalar_res[%d][%d] = %d / %d;\n", rx[0 + i * 3], j, scalar_res[rx[1 + i * 3]][j], scalar_res[rx[2 + i * 3]][j]);
+                    if(PRINTS) printf("SCALAR_RESULT:[%d][%d] = [%d]%d / [%d]%d;\n", rx[0 + i * 3], j, rx[1 + i * 3], scalar_res[rx[1 + i * 3]][j], rx[2 + i * 3], scalar_res[rx[2 + i * 3]][j]);
                     scalar_res[rx[0 + i * 3]][j] = (int32_t)(scalar_res[rx[1 + i * 3]][j] / scalar_res[rx[2 + i * 3]][j]);
                 }
                 if(PRINTS) printf("\n");
@@ -156,7 +156,7 @@ int generate_RIS(int index){
                 break;
             case 3:
                 for(int j = 0; j < EL_PER_BLOCK; j++){
-                    if(PRINTS) printf("scalar_res[%d][%d] = %d * %d;\n", rx[0 + i * 3], j, scalar_res[rx[1 + i * 3]][j], scalar_res[rx[2 + i * 3]][j]);
+                    if(PRINTS) printf("SCALAR_RESULT:[%d][%d] = [%d]%d * [%d]%d;\n", rx[0 + i * 3], j, rx[1 + i * 3], scalar_res[rx[1 + i * 3]][j], rx[2 + i * 3], scalar_res[rx[2 + i * 3]][j]);
                     scalar_res[rx[0 + i * 3]][j] = (int32_t)(scalar_res[rx[1 + i * 3]][j] * scalar_res[rx[2 + i * 3]][j]);
                 }
                 if(PRINTS) printf("\n");
@@ -173,7 +173,10 @@ int generate_RIS(int index){
     
     ADDRESS_VECTOR[4] = RET_INSTR;
 
-    if(PRINTS) print_matrix(scalar_res, 3, 4);
+    if(PRINTS){    
+        printf("SCALAR MATRIX:\n");
+        print_matrix(scalar_res, 3, 4);
+    }
     return checksum_matrix(scalar_res, 3, 4);
     
     /* LOAD INSTRUCTIONS */
@@ -221,18 +224,31 @@ void random_test(int seed) {
 
     msrand(seed);
     generate_initial_values();
+    printf("Done init values\n");
     
+    //msrand(seed);
+
     int inc = 4 * 3;
     for(int z = 0; z + inc < N; z+= inc){
-        
+        printf("Begginning test %d\n", z / inc);
+
+
         int checksum_escalar = generate_RIS(z);
     
         int checksum = execute_RIS(z);
-    
+
+        if(PRINTS){    
+            printf("OUTPUT from vector:\n");
+            for(int i = z; i < z + inc; i++){
+                printf("v[%d][%d] = %d;", (i - z) / 4, (i - z) % 4, OUT[i]);
+                if(i % 4 == 3)
+                    printf("\n");
+            }
+        }
         if(checksum == checksum_escalar){
-            printf("Convergence %d\n\n", z);
+            printf("Convergence %d-%d\n\n", z, z + inc);
         }else{
-            printf("Divergence %d\n\n", z);
+            printf("Divergence %d-%d\n\n", z, z + inc);
             exit(0);
         }
     }
