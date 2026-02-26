@@ -2,7 +2,7 @@
 #include "mysrand.h"
 #include "myutil.h"
 
-#define N    1024 * 1024
+#define N_VECTOR    1024 * 1024
 #define SEED 0x12345678
 #define SEW  32
 #define VLEN 128
@@ -29,10 +29,10 @@ extern void vet_vi_sum(int* vet1, int* vetd);
 
 /* NORMALS */
 
-volatile int A[N];
-volatile int B[N];
-volatile int OUT[N];
-volatile int OUT_SCALAR[N];
+volatile int A[N_VECTOR];
+volatile int B[N_VECTOR];
+volatile int OUT[N_VECTOR];
+volatile int OUT_SCALAR[N_VECTOR];
 
 int checksum(int *vec, int n) {
   int chk = 0;
@@ -44,14 +44,14 @@ int checksum(int *vec, int n) {
 
 void random_test(int seed) {
     msrand(seed);
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < N_VECTOR; i++) {
         A[i] = mrand();
         B[i] = mrand();
         OUT[i] = mrand();
     }
     printf("DONE INIT VALUES, BEGINNING EXECUTION \n");
     
-    for(int blk = 0; blk < N;blk += ELEMENTS_PER_BLOCK) {
+    for(int blk = 0; blk < N_VECTOR;blk += ELEMENTS_PER_BLOCK) {
         int el_this_block = 0;
         int setting = abs(mrand() % 4);
         //printf("setting: %d \n", setting);

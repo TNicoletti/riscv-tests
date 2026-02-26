@@ -4,7 +4,7 @@ jump_to_vet:
     sd ra, 0(sp)
     
     fence.i
-    jal ADDRESS_VECTOR
+    jalr ra, a0, 0
 
     ld ra, 0(sp)
     addi sp, sp, 16

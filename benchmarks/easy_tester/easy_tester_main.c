@@ -1,6 +1,9 @@
 #include <util.h>
 
-#define N 512
+#define true 1
+#define false 0
+
+#define N_VECTOR 512
 #define SEED 0x12345678
 #define SEW 32
 #define VLEN 128
@@ -19,18 +22,47 @@ extern int set_vet_Xx64(int X);
 
 extern int test(int *vet);
 
+int equals(int *vet1, int*vet2){
+    for(int i = 0; i < 12; i++)
+        if(vet1[i] != vet2[i])
+            return false;
+    return true;
+}
+
 int main(){
     printf("Single test \n");
     
-    int v[12] = {1088, 890, 1737, 1249, 
-        56, 1623, 355, 1692,
-        1625, 335, 1915, 835};
+    int v[12] = {1085, 1355, 1235, 176, 
+        1753, 1661, 1309, 1890,
+        1523, 1818, 898, 595};
+
+    int resp[12] = {1, 1, 1, 1,
+        1753, 1661, 1309, 1890,
+        1753, 1661, 1309, 1890};
         
     set_vet_Xx32(4);
     test(v);
 
+    if(equals(v, resp)){
+        printf("Convergence\n");
+        exit(0);
+    }
+
+    printf("RESULTS:\n");
     for(int i = 0; i < 12; i++){
         printf("v[%d] = %d; ", i, v[i]);
         if(i % 4 == 3)printf("\n");
     }
+
+    printf("RESP:\n");
+    for(int i = 0; i < 12; i++){
+        printf("v[%d] = %d; ", i, resp[i]);
+        if(i % 4 == 3)printf("\n");
+    }
+
+
+
+    //int res = 
+
+    exit(0);
 }
