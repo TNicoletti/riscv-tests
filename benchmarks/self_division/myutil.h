@@ -20,34 +20,34 @@ extern int set_vet_m8_Xx64(int X);
 void set_vet_settings(){
     #if SEW == 16
       #if LMUL == 1
-        set_vet_m1_Xx16(EL_PER_BLOCK);
+        set_vet_m1_Xx16(VLEN / SEW);
       #elif LMUL == 2
-        set_vet_m2_Xx16(EL_PER_BLOCK);
+        set_vet_m2_Xx16(VLEN / SEW);
       #elif LMUL == 4
-        set_vet_m4_Xx16(EL_PER_BLOCK);
+        set_vet_m4_Xx16(VLEN / SEW);
       #elif LMUL == 8
-        set_vet_m8_Xx16(EL_PER_BLOCK);
+        set_vet_m8_Xx16(VLEN / SEW);
       #endif
 
     #elif SEW == 32
       #if LMUL == 1
-        set_vet_m1_Xx32(EL_PER_BLOCK);
+        set_vet_m1_Xx32(VLEN / SEW);
       #elif LMUL == 2
-        set_vet_m2_Xx32(EL_PER_BLOCK);
+        set_vet_m2_Xx32(VLEN / SEW);
       #elif LMUL == 4
-        set_vet_m4_Xx32(EL_PER_BLOCK);
+        set_vet_m4_Xx32(VLEN / SEW);
       #elif LMUL == 8
-        set_vet_m8_Xx32(EL_PER_BLOCK);
+        set_vet_m8_Xx32(VLEN / SEW);
       #endif
     #elif SEW == 64
       #if LMUL == 1
-        set_vet_m1_Xx64(EL_PER_BLOCK);
+        set_vet_m1_Xx64(VLEN / SEW);
       #elif LMUL == 2
-        set_vet_m2_Xx64(EL_PER_BLOCK);
+        set_vet_m2_Xx64(VLEN / SEW);
       #elif LMUL == 4
-        set_vet_m4_Xx64(EL_PER_BLOCK);
+        set_vet_m4_Xx64(VLEN / SEW);
       #elif LMUL == 8
-        set_vet_m8_Xx64(EL_PER_BLOCK);
+        set_vet_m8_Xx64(VLEN / SEW);
       #endif
     #else
         #error "Valor de SEW não suportado!"
@@ -65,8 +65,8 @@ void print_vector(int* vet, int LENGTH, int breakline){
     printf("\n");
 }
 
-void print_matrix(int* vet, int N, int M){
-    for(int i = 0; i < N; i++){
+void print_matrix(int* vet, int N_VECTOR, int M){
+    for(int i = 0; i < N_VECTOR; i++){
       for(int j = 0; j < M; j++){
         printf("v[%d][%d] = %d;", i, j, vet[i * M + j]);
       }  
@@ -98,18 +98,18 @@ int is_divergent(int *vec, int *vec2, int n){
   return checksum(vec, n) == checksum(vec2, n);
 }
 
-int checksum_matrix(int32_t* vec, int n, int m){
+int checksum_matrix(int vec[5][4], int n, int m){
   int chk = 0;
   int chk2 = 0;
 
   for(int i = 0;i < n; i++)
     for(int j = 0; j < m; j++){
-      chk ^= vec[i * m + j];
-      chk2 += vec[i * m + j];
+      chk ^= vec[i][j];
+      chk2 += vec[i][j];
     }
   return chk ^ chk2;
 }
-int is_divergent_matrix(int32_t* vec, int32_t* vec2, int n, int m){
+int is_divergent_matrix(volatile int32_t vec[5][4], volatile int32_t vec2[5][4], int n, int m){
   int c1 = checksum_matrix(vec, n, m), c2 = checksum_matrix(vec2, n, m);
   
   return c1 == c2;

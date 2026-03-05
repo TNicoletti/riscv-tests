@@ -45,6 +45,7 @@ vec_bmarks = \
 	vec-daxpy \
 	vec-sgemm \
 	vec-strcmp \
+	\
 	teste \
 	test_vlen \
 	test_data_hazards \
@@ -55,10 +56,13 @@ vec_bmarks = \
 	test_interruption \
 	test_lanes \
 	easy_tester \
+	self_division \
 	\
 	random_test \
 	random_test_lmul \
 	random_neural_network \
+	random_neural_network_LMUL \
+	
 
 bmarks = $(base_bmarks) $(vec_bmarks)
 
