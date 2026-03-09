@@ -1,8 +1,9 @@
-#define SEED 0x12345678
+#define SEED 0x1123456
 #define SEW 32
 #define VLEN 128
 #define LMUL 1
 #define EL_PER_BLOCK (VLEN / SEW) * LMUL
-#define REGISTERS_PER_BLOCK 3
+#define NUM_REGISTERS 3
+#define SUPORTED_INSTRUCTIONS 4
 
-#define PRINTS 3
+#define PRINTS 4

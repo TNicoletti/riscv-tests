@@ -100,19 +100,26 @@ int is_divergent(int *vec, int *vec2, int n){
 
 int checksum_matrix(int32_t* vec, int n, int m){
   int chk = 0;
-  int chk2 = 0;
 
   for(int i = 0;i < n; i++)
     for(int j = 0; j < m; j++){
       chk ^= vec[i * m + j];
-      chk2 += vec[i * m + j];
     }
-  return chk ^ chk2;
+  return chk;
 }
 int is_divergent_matrix(int32_t* vec, int32_t* vec2, int n, int m){
-  int c1 = checksum_matrix(vec, n, m), c2 = checksum_matrix(vec2, n, m);
-  
-  return c1 == c2;
+  int c1 = checksum_matrix(vec, n, m);
+  int c2 = checksum_matrix(vec2, n, m);
+  return c1 != c2;
+}
+
+int manual_convergence(int32_t* vec, int32_t* vec2, int n, int m){
+  for(int i = 0;i < n; i++)
+    for(int j = 0; j < m; j++){
+      if(vec[i * m + j] != vec2[i * m + j])
+        return false;
+    }
+  return true;
 }
 
 /* BIT FLIP JIT CHANGERS HELPERS */

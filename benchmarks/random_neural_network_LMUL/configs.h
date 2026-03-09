@@ -3,6 +3,6 @@
 #define VLEN 128
 #define LMUL 1
 #define EL_PER_BLOCK (VLEN / SEW) * LMUL
-#define REGISTERS_PER_BLOCK 3
+#define NUM_REGISTERS 3
 
 #define PRINTS 3
