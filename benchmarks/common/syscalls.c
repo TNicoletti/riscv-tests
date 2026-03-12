@@ -8,6 +8,16 @@
 #include <sys/signal.h>
 #include "util.h"
 
+#define RESPN 0x1000000
+#define PRINT_ON_DUMPER 0
+#define PRINT_ON_TERMINAL 1
+#define PRINTF_OPT PRINT_ON_TERMINAL
+
+__attribute__((section(".RETURN_SECTION")))
+char RESP[RESPN];
+
+int n_pos = 0;
+
 #define SYS_write 64
 
 #undef strcmp
@@ -123,6 +133,7 @@ void _init(int cid, int nc)
 }
 
 #undef putchar
+#if PRINTF_OPT == PRINT_ON_TERMINAL
 int putchar(int ch)
 {
   static __thread char buf[64] __attribute__((aligned(64)));
@@ -138,6 +149,13 @@ int putchar(int ch)
 
   return 0;
 }
+#else
+int putchar(int ch) {
+    if (n_pos < RESPN) { // Stay within RESP bounds
+        RESP[n_pos++] = (char)ch;
+    }
+}
+#endif
 
 void printhex(uint64_t x)
 {

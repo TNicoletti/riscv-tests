@@ -12,3 +12,5 @@
 /config.status
 /build
 benchmarks/CasioGemm/sgemm_rvv.c
+
+mem.*.bin

@@ -6,4 +6,4 @@
 #define NUM_REGISTERS 3
 #define SUPORTED_INSTRUCTIONS 4
 
-#define PRINTS 4
+#define PRINTS 1

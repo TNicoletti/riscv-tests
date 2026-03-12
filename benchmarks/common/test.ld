@@ -62,5 +62,8 @@ SECTIONS
 
   /* End of uninitalized data segement */
   _end = .;
+
+  . = 0x82000000;
+    .RETURN_SECTION : { *(.RETURN_SECTION) }
 }
 

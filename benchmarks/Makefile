@@ -62,6 +62,8 @@ vec_bmarks = \
 	random_test_lmul \
 	random_neural_network \
 	random_neural_network_LMUL \
+	\
+	test_print \
 	
 
 bmarks = $(base_bmarks) $(vec_bmarks)

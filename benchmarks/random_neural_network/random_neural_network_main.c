@@ -5,9 +5,9 @@
 #include "asm_functions.h"
 #include "permute.h"
 
-#define N 256
+#define N 1024
 #define NUM_RANDOM_OPS 4
-#define QTD_HEURISTICS 6
+#define QTD_HEURISTICS 7
 
 int32_t ADDRESS_VECTOR[255];
 
@@ -201,31 +201,36 @@ store_vet_values(int r[NUM_REGISTERS]){
 }
 
 /*===== RANDOM TEST FUNCTIONS =====*/
-
+int wrong_op = -1;
 void analyze_results(int passed[QTD_HEURISTICS], int qtd_tests[QTD_HEURISTICS]){
-    for(int i = 0; i < 6; i++)
+    int all_passed = 0;
+    for(int i = 0; i < QTD_HEURISTICS; i++){
+        all_passed += passed[i] / qtd_tests[i];
         printf("RESULTS %d: %d out of %d tests converged\n\n", i, passed[i], qtd_tests[i]);
+    }
 
     if(passed[0] == 0){
         printf("ERROR IS COMPULSORY\n");
     }
     else
-        printf("ERROR IS NOT COMPULSORY => could be cold start or random error\n");
-
+        printf("ERROR IS NOT COMPULSORY\n");
+    
+    if(all_passed >= QTD_HEURISTICS){
+        printf(" => could be cold start or random error\n");
+        printf("No further conclusions to be made as it passed all tests(including simply repeating the test)\n");
+        return;
+    }
+    
     if (passed[1] == 1)
         printf("Problem is probably related to data hazards, put nops between instructions solves the issue\n");
     
     if (passed[4] == 1)
-        printf("Problem is probably related to registers, as changing them solves the problem");
+        printf("Problem is probably related to registers, as changing them solves the problem\n");
 
-    if(passed[2] == NUM_RANDOM_OPS - 1)
+    if(passed[2] == NUM_RANDOM_OPS - 1){
         printf("Problem is probably related to a single instruction\n");
-
-    /*if(passed[5] > 0){
-        printf("Problem happens ")
-    }*/
-
-    //if(passed[3] == );
+        printf("Probable problematic instruction: %s\n", get_OP(wrong_op));
+    }
 }
 
 /*
@@ -257,11 +262,16 @@ void analyze_results(int passed[QTD_HEURISTICS], int qtd_tests[QTD_HEURISTICS]){
     If one converge the problem is related to specific operation sequences
     If all diverge the problem might be related to specific instructions
 
-    6 - Do the same operations with different configurations
+    6 - Do the operations one by one with the same signature multiple times in a row
+    Seeks to identify eventually faulty single instructions
+
+    6.1 - Do the operations one by one with differente "signatures"
+    Seeks to identify eventually faulty single instructions
+    
 */
 void error_discoverer(int index){
-    int qtd_tests[QTD_HEURISTICS] = {0, 0, 0, 0, 0, 0};
-    int passed[QTD_HEURISTICS]    = {0, 0, 0, 0, 0, 0};
+    int qtd_tests[QTD_HEURISTICS] = {0, 0, 0, 0, 0, 0, 0};
+    int passed[QTD_HEURISTICS]    = {0, 0, 0, 0, 0, 0, 0};
     printf("\n===== Heuristic 0 ===== \n");
     for(int i = 0; i < 5; i++){
         qtd_tests[0]++;
@@ -317,8 +327,6 @@ void error_discoverer(int index){
         ADDRESS_VECTOR[0] = add_instruction(ops[i], rx[i], r);
         ADDRESS_VECTOR[1] = RET_INSTR;
         execute_RIS(&OUT[index], r);
-        print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
-        print_matrix(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
         if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
             printf("Convergence\n");
             passed[2]++;
@@ -416,6 +424,32 @@ void error_discoverer(int index){
         else printf("Divergence\n\n");
     }
 
+    printf("\n===== Heuristic 6 ===== \n");
+    for(int i = 0; i < NUM_RANDOM_OPS; i++){
+        qtd_tests[6]++;
+        int s[3];
+        int op = ops[i];
+        get_reg_signature(rx[i][0], rx[i][1], rx[i][2], s);
+        //printf("signature:%d %d %d; op = %s\n", s[0], s[1], s[2], get_OP(op));
+
+        load_init_values_scalar(&OUT[index]);
+        for(int j = 0; j < 30; j++){
+            ADDRESS_VECTOR[j] = add_instruction(op, s, other_r);
+        }
+        ADDRESS_VECTOR[30] = RET_INSTR;
+        execute_RIS(&OUT[index], other_r);
+        if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
+            printf("Convergence\n");
+            passed[6]++;
+        }
+        else{
+          printf("Divergence\n");
+          printf("PROBLEMATIC OP: %s\n", get_OP(op));
+          wrong_op = op;  
+        } 
+    }
+    printf("\n");
+
     analyze_results(passed, qtd_tests);
     
 }
@@ -461,13 +495,13 @@ void random_test(int seed) {
     msrand(seed); // Length of the values should not alter significantly the operations
 
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
-    for(int z = 0; z + inc < N; z+= inc){
+    for(int z = 0; z + inc <= N; z+= inc){
         printf("==== Begginning test  %d ======\n\n", z / inc);
 
         generate_RIS(z);
         execute_RIS(&OUT[z], r);
 
-        if(!is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
+        if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
             printf("Convergence %d-%d\n", z, z + inc);
         }else{
             printf("Divergence %d-%d\n", z, z + inc);
@@ -498,4 +532,5 @@ void random_test(int seed) {
 int main(){
     printf("Doing random batch tests with registers v0-v7 with seed %d\n", SEED);
     random_test(SEED);
+    exit(0);
 }
