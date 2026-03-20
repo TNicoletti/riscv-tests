@@ -4,10 +4,15 @@
 #include "myutil.h"
 #include "asm_functions.h"
 #include "permute.h"
+#include "parameters.h"
 
-#define N 1024
+#define MAX_N 1024 * 16
+
 #define NUM_RANDOM_OPS 4
 #define QTD_HEURISTICS 7
+
+int N = 4096;
+int SEED = 0x1123456;
 
 int32_t ADDRESS_VECTOR[255];
 
@@ -23,9 +28,9 @@ extern int* load_OUT_t0_vet(int* address);
 
 /* ===== NORMALS ===== */
 
-volatile int A[N];
-volatile int B[N];
-volatile int32_t OUT[N];
+volatile int A[MAX_N];
+volatile int B[MAX_N];
+volatile int32_t OUT[MAX_N];
 volatile int32_t scalar_res[NUM_REGISTERS][EL_PER_BLOCK];
 volatile int32_t vet_res[NUM_REGISTERS][EL_PER_BLOCK];
 
@@ -426,27 +431,36 @@ void error_discoverer(int index){
 
     printf("\n===== Heuristic 6 ===== \n");
     for(int i = 0; i < NUM_RANDOM_OPS; i++){
-        qtd_tests[6]++;
-        int s[3];
-        int op = ops[i];
-        get_reg_signature(rx[i][0], rx[i][1], rx[i][2], s);
-        //printf("signature:%d %d %d; op = %s\n", s[0], s[1], s[2], get_OP(op));
+        int signatures[5][3] = {
+            {0, 0, 0},
+            {0, 0, 1},
+            {0, 1, 0},
+            {0, 1, 1},
+            {0, 1, 2}
+        };
+        for(int z = 0; z < 5; z++){
+            qtd_tests[6]++;
+            int* s = &signatures[z][0];
+            int op = ops[i];
+            //get_reg_signature(rx[i][0], rx[i][1], rx[i][2], s);
+            //printf("signature:%d %d %d; op = %s\n", s[0], s[1], s[2], get_OP(op));
 
-        load_init_values_scalar(&OUT[index]);
-        for(int j = 0; j < 30; j++){
-            ADDRESS_VECTOR[j] = add_instruction(op, s, other_r);
+            load_init_values_scalar(&OUT[index]);
+            for(int j = 0; j < 30; j++){
+                ADDRESS_VECTOR[j] = add_instruction(op, s, other_r);
+            }
+            ADDRESS_VECTOR[30] = RET_INSTR;
+            execute_RIS(&OUT[index], other_r);
+            if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
+                printf("Convergence\n");
+                passed[6]++;
+            }
+            else{
+            printf("Divergence\n");
+            printf("PROBLEMATIC OP: %s\n", get_OP(op));
+            wrong_op = op;  
+            } 
         }
-        ADDRESS_VECTOR[30] = RET_INSTR;
-        execute_RIS(&OUT[index], other_r);
-        if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
-            printf("Convergence\n");
-            passed[6]++;
-        }
-        else{
-          printf("Divergence\n");
-          printf("PROBLEMATIC OP: %s\n", get_OP(op));
-          wrong_op = op;  
-        } 
     }
     printf("\n");
 
@@ -493,7 +507,6 @@ void random_test(int seed) {
     printf("Done init values\n");
     
     msrand(seed); // Length of the values should not alter significantly the operations
-
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
     for(int z = 0; z + inc <= N; z+= inc){
         printf("==== Begginning test  %d ======\n\n", z / inc);
@@ -530,6 +543,19 @@ void random_test(int seed) {
 }
 
 int main(){
+    if (parameter.argc != 0)
+    {
+        printf("argc: %d\n", parameter.argc);
+        for(int i = 0; i < parameter.argc; i++){
+            printf("argv[%d] = %d;", i, parameter.argv[i]);
+        }
+        printf("\n");
+        
+        SEED = parameter.argv[0];
+        if(parameter.argc > 1)
+            N = parameter.argv[1];
+    }
+
     printf("Doing random batch tests with registers v0-v7 with seed %d\n", SEED);
     random_test(SEED);
     exit(0);

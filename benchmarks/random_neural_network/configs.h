@@ -1,4 +1,3 @@
-#define SEED 0x1123456
 #define SEW 32
 #define VLEN 128
 #define LMUL 1
