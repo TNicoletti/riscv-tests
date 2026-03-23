@@ -57,6 +57,7 @@ vec_bmarks = \
 	test_lanes \
 	easy_tester \
 	self_division \
+	test_all_instructions \
 	\
 	random_test \
 	random_test_lmul \

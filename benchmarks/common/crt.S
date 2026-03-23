@@ -136,6 +136,7 @@ _start:
   j _init
 
   .align 2
+.globl trap_entry
 trap_entry:
   addi sp, sp, -272
 

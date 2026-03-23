@@ -16,5 +16,6 @@ int32_t mrand_signed(){
 }
 
 int32_t mrand(){
-    return abs(mrand_signed());
+    int32_t ret = mrand_signed();
+    return ret>0?ret:-ret;
 }
