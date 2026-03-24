@@ -152,7 +152,9 @@ enum INSTR_TYPES{
     VV = 0,
     VI = 1,
     VX = 2,
-    VF = 3
+    VF = 3,
+    V  = 4,
+    VM = 5
 };
 
 char* get_OP(int op){
@@ -484,14 +486,16 @@ int add_instruction(int op, int rx[3], int r[3]){
             instr_type = VF;
             break;
 
-        /*case VFSQRT_V:
+        case VFSQRT_V:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = sqrt([%d]%d);\n", rx[0], j, rx[1], scalar_res[rx[1]][j]);
                 // Note que sqrt() precisa da math.h
                 scalar_res[rx[0]][j] = float_to_bits(sqrtf(bits_to_float(scalar_res[rx[1]][j])));
             }
-            instr = VFSQRT_V_INSTR;*/
-        //VFMACC_VV
+            instr = VFSQRT_V_INSTR;
+            instr_type = V;
+            break;
+        //TODO: ADD VFMACC_VV
         case NOP:
             return ADDI_ZZZ_INSTR;
         default:
@@ -522,6 +526,10 @@ int add_instruction(int op, int rx[3], int r[3]){
         
         instr = change_vet_rs2(instr, 0); 
         load_value_ft0(f_vf);
+    }
+    if(instr_type == V){
+        instr = change_vet_rd(instr, r[rx[0]]);
+        instr = change_vet_rs1(instr, r[rx[1]]);
     }
     return instr;
 }
