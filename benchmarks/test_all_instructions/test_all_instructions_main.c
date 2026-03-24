@@ -4,6 +4,7 @@
 #include "asm_functions.h"
 #include "parameters.h"
 #include "mysrand.h"
+#include "float_operator.h"
 
 #define MAX_N 1024 * 16
 
@@ -23,6 +24,7 @@ extern void STALL(int cycles);
 extern void jump_to_vet(int* vet);
 
 extern int* load_OUT_t0_vet(int* address);
+extern void load_value_ft0(float f);
 
 #define t0_VALUE 16
 
@@ -42,9 +44,9 @@ volatile int32_t vet_res[NUM_REGISTERS][EL_PER_BLOCK];
 void generate_initial_values(){
     msrand(11234);
     for (int i = 0; i < N; i++) {
-        A[i] = mrand() % 32;
-        B[i] = mrand() % 32;
-        OUT[i] = mrand() % 32;
+        A[i] = mrand() % 2147000000;
+        B[i] = mrand() % 2147000000;
+        OUT[i] = mrand() % 2147000000;
     }
 }
 
@@ -109,37 +111,48 @@ void store_to_vet(int* vet, int reg){
 }
 
 enum VEC_INSTRUCTIONS{
-    VADD_VV = 0,
-    VSUB_VV = 1,
-    VDIV_VV = 2,
-    VMUL_VV = 3,
-    VSLL_VV = 4,
-    VSRL_VV = 5,
-    VAND_VV = 6,
-    VOR_VV  = 7,
-    VXOR_VV = 8,
-    VADD_VI = 9,
-    VSLL_VI = 10,
-    VSRL_VI = 11,
-    VAND_VI = 12,
-    VOR_VI  = 13,
-    VXOR_VI = 14,
-    VADD_VX = 15,
-    VSUB_VX = 16,
-    VDIV_VX = 17,
-    VMUL_VX = 18,
-    VSLL_VX = 19,
-    VSRL_VX = 20,
-    VAND_VX = 21,
-    VOR_VX  = 22,
-    VXOR_VX = 23,
+    VADD_VV   = 0,
+    VSUB_VV   = 1,
+    VDIV_VV   = 2,
+    VMUL_VV   = 3,
+    VSLL_VV   = 4,
+    VSRL_VV   = 5,
+    VAND_VV   = 6,
+    VOR_VV    = 7,
+    VXOR_VV   = 8,
+    VADD_VI   = 9,
+    VSLL_VI   = 10,
+    VSRL_VI   = 11,
+    VAND_VI   = 12,
+    VOR_VI    = 13,
+    VXOR_VI   = 14,
+    VADD_VX   = 15,
+    VSUB_VX   = 16,
+    VDIV_VX   = 17,
+    VMUL_VX   = 18,
+    VSLL_VX   = 19,
+    VSRL_VX   = 20,
+    VAND_VX   = 21,
+    VOR_VX    = 22,
+    VXOR_VX   = 23,
+    VFADD_VV  = 24,
+    VFADD_VF  = 25,
+    VFSUB_VV  = 26,
+    VFSUB_VF  = 27,
+    VFMUL_VV  = 28,
+    VFMUL_VF  = 29,
+    VFDIV_VV  = 30,
+    VFDIV_VF  = 31,
+    VFSQRT_V  = 32,
+    VFMACC_VV = 33,
     NOP = 555
 };
 
 enum INSTR_TYPES{
     VV = 0,
     VI = 1,
-    VX = 2
+    VX = 2,
+    VF = 3
 };
 
 char* get_OP(int op){
@@ -167,7 +180,17 @@ char* get_OP(int op){
         case 20: return "VSRL_VX";
         case 21: return "VAND_VX";
         case 22: return "VOR_VX";
-        case 23: return "VXOR_VX";       
+        case 23: return "VXOR_VX";
+        case 24: return "VFADD_VV";
+        case 25: return "VFADD_VF";
+        case 26: return "VFSUB_VV";
+        case 27: return "VFSUB_VF";
+        case 28: return "VFMUL_VV";
+        case 29: return "VFMUL_VF";
+        case 30: return "VFDIV_VV";
+        case 31: return "VFDIV_VF";
+        case 32: return "VFSQRT_V";
+        case 33: return "VFMACC_VV";
     }
     return "ERROR";    
 }
@@ -185,6 +208,7 @@ int add_instruction(int op, int rx[3], int r[3]){
     int instr = 0;
     int instr_type = VV;
     int imm = 7;
+    float f_vf = 0.15;
     switch (op){
         case VADD_VV:
             for(int j = 0; j < EL_PER_BLOCK; j++){
@@ -393,6 +417,81 @@ int add_instruction(int op, int rx[3], int r[3]){
             instr = VXOR_VX_INSTR;
             instr_type = VX;
             break;
+        case VFADD_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
+                scalar_res[rx[0]][j] = float_to_bits(bits_to_float(scalar_res[rx[1]][j]) + bits_to_float(scalar_res[rx[2]][j]));
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VFADD_VV_INSTR;
+            break;
+        case VFADD_VF:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + 0.15;\n", rx[0], j, rx[1], scalar_res[rx[1]][j]);
+                scalar_res[rx[0]][j] = float_to_bits(bits_to_float(scalar_res[rx[1]][j]) + f_vf);
+            }
+            instr = VFADD_VF_INSTR;
+            instr_type = VF;
+            break;
+        case VFSUB_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d - [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
+                scalar_res[rx[0]][j] = float_to_bits(bits_to_float(scalar_res[rx[1]][j]) - bits_to_float(scalar_res[rx[2]][j]));
+            }
+            instr = VFSUB_VV_INSTR;
+            break;
+
+        case VFSUB_VF:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d - 0.15;\n", rx[0], j, rx[2], scalar_res[rx[2]][j]);
+                scalar_res[rx[0]][j] = float_to_bits(bits_to_float(scalar_res[rx[1]][j]) - f_vf);
+            }
+            instr = VFSUB_VF_INSTR;
+            instr_type = VF;
+            break;
+
+        case VFMUL_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d * [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
+                scalar_res[rx[0]][j] = float_to_bits(bits_to_float(scalar_res[rx[1]][j]) * bits_to_float(scalar_res[rx[2]][j]));
+            }
+            instr = VFMUL_VV_INSTR;
+            break;
+
+        case VFMUL_VF:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d * 0.15;\n", rx[0], j, rx[2], scalar_res[rx[2]][j]);
+                scalar_res[rx[0]][j] = float_to_bits(bits_to_float(scalar_res[rx[1]][j]) * f_vf);
+            }
+            instr = VFMUL_VF_INSTR;
+            instr_type = VF;
+            break;
+
+        case VFDIV_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d / [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
+                scalar_res[rx[0]][j] = float_to_bits(bits_to_float(scalar_res[rx[1]][j]) / bits_to_float(scalar_res[rx[2]][j]));
+            }
+            instr = VFDIV_VV_INSTR;
+            break;
+
+        case VFDIV_VF:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d / 0.15;\n", rx[0], j, rx[2], scalar_res[rx[2]][j]);
+                scalar_res[rx[0]][j] = float_to_bits(bits_to_float(scalar_res[rx[1]][j]) / (double)f_vf);
+            }
+            instr = VFDIV_VF_INSTR;
+            instr_type = VF;
+            break;
+
+        /*case VFSQRT_V:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = sqrt([%d]%d);\n", rx[0], j, rx[1], scalar_res[rx[1]][j]);
+                // Note que sqrt() precisa da math.h
+                scalar_res[rx[0]][j] = float_to_bits(sqrtf(bits_to_float(scalar_res[rx[1]][j])));
+            }
+            instr = VFSQRT_V_INSTR;*/
+        //VFMACC_VV
         case NOP:
             return ADDI_ZZZ_INSTR;
         default:
@@ -415,6 +514,14 @@ int add_instruction(int op, int rx[3], int r[3]){
         instr = change_vet_rs1(instr, r[rx[1]]);
         
         instr = change_vet_rs2(instr, imm);
+    }
+    if(instr_type == VF){
+        instr = change_vet_rd(instr, r[rx[0]]);
+        
+        instr = change_vet_rs1(instr, r[rx[1]]);
+        
+        instr = change_vet_rs2(instr, 0); 
+        load_value_ft0(f_vf);
     }
     return instr;
 }
@@ -491,11 +598,36 @@ char* get_err(int err){
         default: return "UNK";  // Unknown / Reserved
     }
 }
+
+void help_errors(){
+    printf("Error reference:\n");
+    printf("'X'  : correct answer\n\n");
+    printf("'WA' : wrong answer (no hardware errors)\n");
+    printf("Hardware errors\n");
+    printf("'IAM': Instruction Address Misaligned\n");
+    printf("'IAF': Instruction Access Fault\n");
+    printf("'II' : Illegal Instruction / Unimplemented Instruction\n");
+    printf("'BP' : Breakpoint (ebreak)\n");
+    printf("'LAM': Load Address Misaligned\n");
+    printf("'LAF': Load Access Fault\n");
+    printf("'SAM': Store/AMO Address Misaligned\n");
+    printf("'SAF': Store/AMO Access Fault\n");
+    printf("'ECU': Environment Call from U-mode\n");
+    printf("'ECS': Environment Call from S-mode\n");
+    printf("'ECM': Environment Call from M-mode\n");
+    printf("'IPF': Instruction Page Fault\n");
+    printf("'LPF': Load Page Fault\n");
+    printf("'SPF': Store/AMO Page Fault\n");
+    printf("'HE' : Hardware Error (implementation specific)\n");
+    printf("'UNK': Unknown / Reserved\n");
+}
+
 int res[SUPORTED_INSTRUCTIONS][REPEAT_INSTRUCTIONS];
 void eval_results(){
+    if(PRINTS >= 4) help_errors();
     printf("\nRESULTS\n");
     for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++){
-        printf("%s\t ", get_OP(i));
+        printf("%d - %s\t ", i, get_OP(i));
         for(int j = 0; j < REPEAT_INSTRUCTIONS; j++){
             printf("[%s] ", get_err(res[i][j]));
         }
@@ -517,8 +649,8 @@ void all_test() {
     }
 
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
-
-    for(int z = 0; z < SUPORTED_INSTRUCTIONS; z++){
+    int z = 0;
+    for(; z < SUPORTED_INSTRUCTIONS; z++){
         for(int j = 0; j < REPEAT_INSTRUCTIONS; j++){
             int prev_error = error_count;
             if(PRINTS >= 3)printf("==== Begginning test  %d ======\n\n", z * REPEAT_INSTRUCTIONS + j);
@@ -536,12 +668,13 @@ void all_test() {
                 if(PRINTS >= 1)printf("Divergence\n");
                 res[z][j] = 1;
                 if(prev_error < error_count){
-                    printf("Hardware error detected, might be unimplemented instruction\n");
+                    printf("Hardware error detected\n");
                     res[z][j] = -last_hw_error;
                 } 
             }
         }
     }
+    printf("index: %d\n", z * REPEAT_INSTRUCTIONS * inc);
 
     eval_results(res);
 }
