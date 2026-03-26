@@ -44,9 +44,9 @@ volatile int32_t vet_res[NUM_REGISTERS][EL_PER_BLOCK];
 void generate_initial_values(){
     msrand(11234);
     for (int i = 0; i < N; i++) {
-        A[i] = mrand() % 2147000000;
-        B[i] = mrand() % 2147000000;
-        OUT[i] = mrand() % 2147000000;
+        A[i] = mrand();
+        B[i] = mrand();
+        OUT[i] = mrand();
     }
 }
 
@@ -111,40 +111,45 @@ void store_to_vet(int* vet, int reg){
 }
 
 enum VEC_INSTRUCTIONS{
-    VADD_VV   = 0,
-    VSUB_VV   = 1,
-    VDIV_VV   = 2,
-    VMUL_VV   = 3,
-    VSLL_VV   = 4,
-    VSRL_VV   = 5,
-    VAND_VV   = 6,
-    VOR_VV    = 7,
-    VXOR_VV   = 8,
-    VADD_VI   = 9,
-    VSLL_VI   = 10,
-    VSRL_VI   = 11,
-    VAND_VI   = 12,
-    VOR_VI    = 13,
-    VXOR_VI   = 14,
-    VADD_VX   = 15,
-    VSUB_VX   = 16,
-    VDIV_VX   = 17,
-    VMUL_VX   = 18,
-    VSLL_VX   = 19,
-    VSRL_VX   = 20,
-    VAND_VX   = 21,
-    VOR_VX    = 22,
-    VXOR_VX   = 23,
-    VFADD_VV  = 24,
-    VFADD_VF  = 25,
-    VFSUB_VV  = 26,
-    VFSUB_VF  = 27,
-    VFMUL_VV  = 28,
-    VFMUL_VF  = 29,
-    VFDIV_VV  = 30,
-    VFDIV_VF  = 31,
-    VFSQRT_V  = 32,
-    VFMACC_VV = 33,
+    VADD_VV       = 0,
+    VSUB_VV       = 1,
+    VDIV_VV       = 2,
+    VMUL_VV       = 3,
+    VSLL_VV       = 4,
+    VSRL_VV       = 5,
+    VAND_VV       = 6,
+    VOR_VV        = 7,
+    VXOR_VV       = 8,
+    VADD_VI       = 9,
+    VSLL_VI       = 10,
+    VSRL_VI       = 11,
+    VAND_VI       = 12,
+    VOR_VI        = 13,
+    VXOR_VI       = 14,
+    VADD_VX       = 15,
+    VSUB_VX       = 16,
+    VDIV_VX       = 17,
+    VMUL_VX       = 18,
+    VSLL_VX       = 19,
+    VSRL_VX       = 20,
+    VAND_VX       = 21,
+    VOR_VX        = 22,
+    VXOR_VX       = 23,
+    VFADD_VV      = 24,
+    VFADD_VF      = 25,
+    VFSUB_VV      = 26,
+    VFSUB_VF      = 27,
+    VFMUL_VV      = 28,
+    VFMUL_VF      = 29,
+    VFDIV_VV      = 30,
+    VFDIV_VF      = 31,
+    VFSQRT_V      = 32,
+    VFMACC_VV     = 33,
+    VSLIDEUP_VI   = 34,
+    VSLIDEUP_VX   = 35,
+    VSLIDEDOWN_VI = 36,
+    VSLIDEDOWN_VX = 37,
+    
     NOP = 555
 };
 
@@ -193,6 +198,10 @@ char* get_OP(int op){
         case 31: return "VFDIV_VF";
         case 32: return "VFSQRT_V";
         case 33: return "VFMACC_VV";
+        case 34: return "VSLIDEUP_VI";
+        case 35: return "VSLIDEUP_VX";
+        case 36: return "VSLIDEDOWN_VI";
+        case 37: return "VSLIDEDOWN_VX";
     }
     return "ERROR";    
 }
@@ -495,7 +504,62 @@ int add_instruction(int op, int rx[3], int r[3]){
             instr = VFSQRT_V_INSTR;
             instr_type = V;
             break;
-        //TODO: ADD VFMACC_VV
+        case VFMACC_VV: // TODO: fix very big numbers issue
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d * [%d]%d) + [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j], rx[0], scalar_res[rx[0]][j]);
+                // Note que sqrt() precisa da math.h
+                scalar_res[rx[0]][j] = float_to_bits(bits_to_float(scalar_res[rx[1]][j]) * bits_to_float(scalar_res[rx[2]][j]) + bits_to_float(scalar_res[rx[0]][j]));
+            }
+            instr = VFMACC_VV_INSTR;
+            break;
+        case VSLIDEUP_VI:
+            imm = 2;
+            for(int j = EL_PER_BLOCK - 1; j >= imm; j--){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j - imm]);
+                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j - imm]);
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VSLIDEUP_VI_INSTR;
+            instr_type = VI;
+            break;
+        case VSLIDEUP_VX:
+            for(int j = EL_PER_BLOCK - 1; j >= t0_VALUE; j--){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j - t0_VALUE]);
+                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j - t0_VALUE]);
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VSLIDEUP_VX_INSTR;
+            instr_type = VX;
+            break;
+        case VSLIDEDOWN_VI:
+            imm = 2;
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(j >= EL_PER_BLOCK - imm){
+                    if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = 0;\n", rx[0], j);
+                    scalar_res[rx[0]][j] = 0;
+                }else{
+                    if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j + imm]);
+                    scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j + imm]);
+                }
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VSLIDEDOWN_VI_INSTR;
+            instr_type = VI;
+            break;
+        case VSLIDEDOWN_VX:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(j >= EL_PER_BLOCK - imm){
+                    if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = 0;\n", rx[0], j);
+                    scalar_res[rx[0]][j] = 0;
+                }else{
+                    if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j + t0_VALUE]);
+                    scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j + t0_VALUE]);
+                }
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VSLIDEDOWN_VX_INSTR;
+            instr_type = VX;
+            break;
         case NOP:
             return ADDI_ZZZ_INSTR;
         default:
@@ -586,53 +650,54 @@ void generate_RIS(int op, int index){
 
 char* get_err(int err){
     switch(err){
-        case   2: return "X"; // correct answer
+        case   2: return "XX"; // correct answer
         case   1: return "WA"; // wrong answer
-        case   0: return "IAM";  // Instruction Address Misaligned
-        case  -1: return "IAF";  // Instruction Access Fault
+        case   0: return "IM";  // Instruction Address Misaligned
+        case  -1: return "IF";  // Instruction Access Fault
         case  -2: return "II";   // Illegal Instruction
         case  -3: return "BP";   // Breakpoint (ebreak)
-        case  -4: return "LAM";  // Load Address Misaligned
-        case  -5: return "LAF";  // Load Access Fault
-        case  -6: return "SAM";  // Store/AMO Address Misaligned
-        case  -7: return "SAF";  // Store/AMO Access Fault
-        case  -8: return "ECU";  // Environment Call from U-mode
-        case  -9: return "ECS";  // Environment Call from S-mode
-        case -11: return "ECM";  // Environment Call from M-mode
-        case -12: return "IPF";  // Instruction Page Fault
-        case -13: return "LPF";  // Load Page Fault
-        case -15: return "SPF";  // Store/AMO Page Fault
+        case  -4: return "LM";  // Load Address Misaligned
+        case  -5: return "LF";  // Load Access Fault
+        case  -6: return "SM";  // Store/AMO Address Misaligned
+        case  -7: return "SF";  // Store/AMO Access Fault
+        case  -8: return "EU";  // Environment Call from U-mode
+        case  -9: return "ES";  // Environment Call from S-mode
+        case -11: return "EM";  // Environment Call from M-mode
+        case -12: return "IP";  // Instruction Page Fault
+        case -13: return "LP";  // Load Page Fault
+        case -15: return "SP";  // Store/AMO Page Fault
         case -16: return "HE";   // Hardware Error (implementation specific)
-        default: return "UNK";  // Unknown / Reserved
+        default: return "UK";  // Unknown / Reserved
     }
 }
 
 void help_errors(){
     printf("Error reference:\n");
-    printf("'X'  : correct answer\n\n");
+    printf("'XX'  : correct answer\n\n");
     printf("'WA' : wrong answer (no hardware errors)\n");
     printf("Hardware errors\n");
-    printf("'IAM': Instruction Address Misaligned\n");
-    printf("'IAF': Instruction Access Fault\n");
+    printf("'IM': Instruction Address Misaligned\n");
+    printf("'IF': Instruction Access Fault\n");
     printf("'II' : Illegal Instruction / Unimplemented Instruction\n");
     printf("'BP' : Breakpoint (ebreak)\n");
-    printf("'LAM': Load Address Misaligned\n");
-    printf("'LAF': Load Access Fault\n");
-    printf("'SAM': Store/AMO Address Misaligned\n");
-    printf("'SAF': Store/AMO Access Fault\n");
-    printf("'ECU': Environment Call from U-mode\n");
-    printf("'ECS': Environment Call from S-mode\n");
-    printf("'ECM': Environment Call from M-mode\n");
-    printf("'IPF': Instruction Page Fault\n");
-    printf("'LPF': Load Page Fault\n");
-    printf("'SPF': Store/AMO Page Fault\n");
+    printf("'LM': Load Address Misaligned\n");
+    printf("'LF': Load Access Fault\n");
+    printf("'SM': Store/AMO Address Misaligned\n");
+    printf("'SF': Store/AMO Access Fault\n");
+    printf("'EU': Environment Call from U-mode\n");
+    printf("'ES': Environment Call from S-mode\n");
+    printf("'EM': Environment Call from M-mode\n");
+    printf("'IP': Instruction Page Fault\n");
+    printf("'LP': Load Page Fault\n");
+    printf("'SP': Store/AMO Page Fault\n");
     printf("'HE' : Hardware Error (implementation specific)\n");
-    printf("'UNK': Unknown / Reserved\n");
+    printf("'UK': Unknown / Reserved\n");
 }
 
 int res[SUPORTED_INSTRUCTIONS][REPEAT_INSTRUCTIONS];
 void eval_results(){
     if(PRINTS >= 4) help_errors();
+
     printf("\nRESULTS\n");
     for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++){
         printf("%d - %s\t ", i, get_OP(i));
