@@ -152,6 +152,15 @@ enum VEC_INSTRUCTIONS{
     VMV_V_V       = 38,
     VMV_V_I       = 39,
     VMV_V_X       = 40,
+    VWADD_VV      = 41,
+    VWADD_VX      = 42,
+    VWSUB_VV      = 43,
+    VWSUB_VX      = 44,
+    VWADDU_VV     = 45,
+    VWADDU_VX     = 46,
+    VWMUL_VV      = 47,
+    VWMUL_VX      = 48,
+    VWMACC_VV     = 49,
     NOP = 555
 };
 
@@ -208,6 +217,15 @@ char* get_OP(int op){
         case 38: return "VMV_V_V";
         case 39: return "VMV_V_I";
         case 40: return "VMV_V_X";
+        case 41: return "VWADD_VV";
+        case 42: return "VWADD_VX";
+        case 43: return "VWSUB_VV";
+        case 44: return "VWSUB_VX";
+        case 45: return "VWADDU_VV";
+        case 46: return "VWADDU_VX";
+        case 47: return "VWMUL_VV";
+        case 48: return "VWMUL_VX";
+        case 49: return "VWMACC_VV";
     }
     return "ERROR";    
 }
@@ -216,7 +234,7 @@ void execute_RIS(int* vet, int r[NUM_REGISTERS]){
     set_vet_settings();
     load_init_values_vector(vet, r);
     set_vet_settings();
-    load_OUT_t0_vet((int*)t0_VALUE);
+    load_OUT_t0_vet((int*)t0_VALUE);// Gambiarra simples para ter t0 com t0_VALUE
     jump_to_vet(&ADDRESS_VECTOR[0]);
     store_vet_values(r);
 }
@@ -604,6 +622,132 @@ int add_instruction(int op, int rx[3], int r[3]){
             instr = change_vet_rs2(instr, 5);
             instr_type = NO_TYPE;
             break;
+        case VWADD_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
+                int64_t res = (int64_t)((int64_t)scalar_res[rx[1]][j] + (int64_t)scalar_res[rx[2]][j]);
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                res & 0xFFFFFFFF;
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                (res >> 32);
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VWADD_VV_INSTR;
+            break;
+        case VWADD_VX:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + %d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
+                int64_t res = (int64_t)((int64_t)scalar_res[rx[1]][j] + (int64_t)t0_VALUE);
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                res & 0xFFFFFFFF;
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                (res >> 32);
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VWADD_VX_INSTR;
+            instr_type = VX;
+            break;
+        case VWSUB_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d - [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
+                int64_t res = (int64_t)((int64_t)scalar_res[rx[1]][j] - (int64_t)scalar_res[rx[2]][j]);
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                res & 0xFFFFFFFF;
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                (res >> 32);
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VWSUB_VV_INSTR;
+            break;
+        case VWSUB_VX:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d - %d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
+                int64_t res = (int64_t)((int64_t)scalar_res[rx[1]][j] - (int64_t)t0_VALUE);
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                res & 0xFFFFFFFF;
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                (res >> 32);
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VWSUB_VX_INSTR;
+            instr_type = VX;
+            break;
+        case VWADDU_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
+                uint64_t res = (uint64_t)((uint64_t)scalar_res[rx[1]][j] + (uint64_t)scalar_res[rx[2]][j]);
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                res & 0xFFFFFFFF;
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                (res >> 32);
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VWADDU_VV_INSTR;
+            break;
+        case VWADDU_VX:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + %d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
+                uint64_t res = (uint64_t)((uint64_t)scalar_res[rx[1]][j] + (uint64_t)t0_VALUE);
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                res & 0xFFFFFFFF;
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                (res >> 32);
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VWADDU_VX_INSTR;
+            instr_type = VX;
+            break;
+        case VWMUL_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d * [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
+                int64_t res = (int64_t)((int64_t)scalar_res[rx[1]][j] * (int64_t)scalar_res[rx[2]][j]);
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                res & 0xFFFFFFFF;
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                (res >> 32);
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VWMUL_VV_INSTR;
+            break;
+        case VWMUL_VX:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d * %d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
+                uint64_t res = (uint64_t)((uint64_t)scalar_res[rx[1]][j] * (uint64_t)t0_VALUE);
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                res & 0xFFFFFFFF;
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                (res >> 32);
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VWMUL_VX_INSTR;
+            instr_type = VX;
+            break;
+        case VWMACC_VV:
+            int64_t res[EL_PER_BLOCK];
+            for(int j = 0; j < EL_PER_BLOCK; j++) {
+                int64_t product = (int64_t)scalar_res[rx[1]][j] * (int64_t)scalar_res[rx[2]][j];
+
+                // 2. Reconstruct the EXISTING 64-bit accumulator from the dest registers
+                int row_idx = rx[j / (EL_PER_BLOCK / 2)];
+                int col_idx = (2 * j) % EL_PER_BLOCK;
+
+                uint32_t lo = (uint32_t)scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK];
+                uint32_t hi = (uint32_t)scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1];                
+                int64_t existing_acc = (int64_t)(((uint64_t)hi << 32) | lo);
+
+                // 3. Accumulate
+                res[j] = product + existing_acc;
+            }
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                res[j] & 0xFFFFFFFF;
+                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                (res[j] >> 32);
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VWMACC_VV_INSTR;
+            break;
         case NOP:
             return ADDI_ZZZ_INSTR;
         default:
@@ -754,7 +898,49 @@ void eval_results(){
     printf("\nHardware errors: %d\n", error_count);
 }
 
+int test_for_ls32(){
+    if(PRINTS >= 3)printf("==== Testing required instructions ======\n\n");
+    int res[REPEAT_INSTRUCTIONS];
+    int inc = NUM_REGISTERS * EL_PER_BLOCK;
+    for(int j = 0; j < REPEAT_INSTRUCTIONS; j++){
+        int prev_error = error_count;
+
+        if(PRINTS >= 3)printf("Executing instruction VLE32_V VSE32_V %d\n", j);
+        load_init_values_scalar(&OUT[j * inc]);
+        set_vet_settings();
+        load_init_values_vector(&OUT[j * inc], r);
+        store_vet_values(r);
+
+        if(PRINTS >= 3)print_matrix(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
+        if(PRINTS >= 3)print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
+        
+        if(prev_error < error_count){
+            if(PRINTS >= 1) printf("Hardware error detected\n");
+            res[j] = -last_hw_error;
+        } else {
+            if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
+                if(PRINTS >= 1)printf("Convergence \n");
+                res[j] = 2;
+            }else{
+                if(PRINTS >= 1)printf("Divergence\n");
+                res[j] = 1;
+            }
+        }
+    }
+    int ret = 1;
+    printf("\nRESULTS\n");
+    printf("VLE32_V VSE32_V\t ");
+    for(int j = 0; j < REPEAT_INSTRUCTIONS; j++){
+        printf("[%s] ", get_err(res[j]));
+        if(res[j] != 2) ret = 0;
+    }
+    printf("\n\n");
+
+    return ret;
+}
+
 void all_test() {
+
 
     set_vet_settings();
     generate_initial_values();
@@ -763,6 +949,11 @@ void all_test() {
     for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++){
         for(int j = 0; j < REPEAT_INSTRUCTIONS; j++)
             res[i][j] = 2;
+    }
+
+    if(!test_for_ls32()){
+        printf("Store and load not working properly, impossible to continue\n");
+        exit(1);
     }
 
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
