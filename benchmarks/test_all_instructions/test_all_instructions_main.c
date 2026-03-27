@@ -6,7 +6,7 @@
 #include "mysrand.h"
 #include "float_operator.h"
 
-#define MAX_N 1024 * 16
+#define MAX_N 4096
 
 #define REPEAT_INSTRUCTIONS 4
 
@@ -44,9 +44,9 @@ volatile int32_t vet_res[NUM_REGISTERS][EL_PER_BLOCK];
 void generate_initial_values(){
     msrand(11234);
     for (int i = 0; i < N; i++) {
-        A[i] = mrand();
-        B[i] = mrand();
-        OUT[i] = mrand();
+        A[i] = mrand() % 2147000000;
+        B[i] = mrand() % 2147000000;
+        OUT[i] = mrand() % 2147000000;
     }
 }
 
@@ -149,7 +149,9 @@ enum VEC_INSTRUCTIONS{
     VSLIDEUP_VX   = 35,
     VSLIDEDOWN_VI = 36,
     VSLIDEDOWN_VX = 37,
-    
+    VMV_V_V       = 38,
+    VMV_V_I       = 39,
+    VMV_V_X       = 40,
     NOP = 555
 };
 
@@ -159,7 +161,8 @@ enum INSTR_TYPES{
     VX = 2,
     VF = 3,
     V  = 4,
-    VM = 5
+    VM = 5,
+    NO_TYPE = 155
 };
 
 char* get_OP(int op){
@@ -202,6 +205,9 @@ char* get_OP(int op){
         case 35: return "VSLIDEUP_VX";
         case 36: return "VSLIDEDOWN_VI";
         case 37: return "VSLIDEDOWN_VX";
+        case 38: return "VMV_V_V";
+        case 39: return "VMV_V_I";
+        case 40: return "VMV_V_X";
     }
     return "ERROR";    
 }
@@ -560,6 +566,44 @@ int add_instruction(int op, int rx[3], int r[3]){
             instr = VSLIDEDOWN_VX_INSTR;
             instr_type = VX;
             break;
+        case VMV_V_V:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = %d;\n", rx[0], j, scalar_res[rx[1]][j]);
+                scalar_res[rx[0]][j] = scalar_res[rx[1]][j];
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMV_V_V_INSTR;
+            instr = change_vet_rd(instr, r[rx[0]]);
+            instr = change_vet_rs1(instr, 0);
+            instr = change_vet_rs2(instr, r[rx[1]]);
+            instr_type = NO_TYPE;
+            break;
+        case VMV_V_I:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = %d;\n", rx[0], j, imm);
+                scalar_res[rx[0]][j] = imm;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMV_V_I_INSTR;
+
+            instr = change_vet_rd(instr, r[rx[0]]);
+            instr = change_vet_rs1(instr, 0);
+            instr = change_vet_rs2(instr, imm);
+
+            instr_type = NO_TYPE;
+            break;
+        case VMV_V_X:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = %d;\n", rx[0], j, t0_VALUE);
+                scalar_res[rx[0]][j] = t0_VALUE;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMV_V_X_INSTR;
+            instr = change_vet_rd(instr, r[rx[0]]);
+            instr = change_vet_rs1(instr, 0);
+            instr = change_vet_rs2(instr, 5);
+            instr_type = NO_TYPE;
+            break;
         case NOP:
             return ADDI_ZZZ_INSTR;
         default:
@@ -574,7 +618,7 @@ int add_instruction(int op, int rx[3], int r[3]){
         instr = change_vet_rd(instr, r[rx[0]]);
         instr = change_vet_rs1(instr, r[rx[1]]);
         instr = change_vet_rs2(instr, 5);
-        load_OUT_t0_vet((int*)t0_VALUE);
+        //load_OUT_t0_vet((int*)t0_VALUE);
     }
     if(instr_type == VI){
         instr = change_vet_rd(instr, r[rx[0]]);
@@ -734,17 +778,18 @@ void all_test() {
 
             if(PRINTS >= 3)print_matrix(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
             if(PRINTS >= 3)print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
-
-            if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
-                if(PRINTS >= 1)printf("Convergence \n");
-            }else{
-                if(PRINTS >= 1)printf("Divergence\n");
-                res[z][j] = 1;
-                if(prev_error < error_count){
-                    printf("Hardware error detected\n");
-                    res[z][j] = -last_hw_error;
-                } 
-            }
+            
+            if(prev_error < error_count){
+                if(PRINTS >= 1) printf("Hardware error detected\n");
+                res[z][j] = -last_hw_error;
+            } else {
+                if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
+                    if(PRINTS >= 1)printf("Convergence \n");
+                }else{
+                    if(PRINTS >= 1)printf("Divergence\n");
+                    res[z][j] = 1;
+                }
+            } 
         }
     }
     printf("index: %d\n", z * REPEAT_INSTRUCTIONS * inc);
