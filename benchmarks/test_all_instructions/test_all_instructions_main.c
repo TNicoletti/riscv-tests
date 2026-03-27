@@ -161,6 +161,15 @@ enum VEC_INSTRUCTIONS{
     VWMUL_VV      = 47,
     VWMUL_VX      = 48,
     VWMACC_VV     = 49,
+    VREDSUM_VS    = 50,
+    VREDMAXU_VS   = 51,  
+    VREDMAX_VS    = 52, 
+    VREDMINU_VS   = 53,  
+    VREDMIN_VS    = 54, 
+    VREDAND_VS    = 55, 
+    VREDOR_VS     = 56,
+    VREDXOR_VS    = 57, 
+    VLUXEI32_V    = 511,
     NOP = 555
 };
 
@@ -226,6 +235,15 @@ char* get_OP(int op){
         case 47: return "VWMUL_VV";
         case 48: return "VWMUL_VX";
         case 49: return "VWMACC_VV";
+        case 50: return "VREDSUM_VS";
+        case 51: return "VREDMAXU_VS";  
+        case 52: return "VREDMAX_VS"; 
+        case 53: return "VREDMINU_VS";  
+        case 54: return "VREDMIN_VS"; 
+        case 55: return "VREDAND_VS"; 
+        case 56: return "VREDOR_VS";
+        case 57: return "VREDXOR_VS";
+        case 511: return "VLUXEI32_V";
     }
     return "ERROR";    
 }
@@ -748,6 +766,154 @@ int add_instruction(int op, int rx[3], int r[3]){
             if(PRINTS >= 2) printf("\n");
             instr = VWMACC_VV_INSTR;
             break;
+        /*case VLUXEI32_V:
+            // VLUXEI32.V: Indexed load (unordered). vd, (rs1), vs2.
+            // Maps rx[1] -> rs1 (base address) and rx[2] -> vs2 (vector of indices).
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = MEM[rs1 + [%d]%d];\n", rx[0], j, rx[2], scalar_res[rx[2]][j]);
+                
+                scalar_res[rx[0]][j] = 0; 
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VLUXEI32_V_INSTR;
+            instr_type = V; 
+            break;*/
+
+        case VREDSUM_VS:
+            // VREDSUM.VS: Vector reduction sum. vd[0] = sum(vs2[0..VL-1]) + vs1[0]
+            // Maps rx[1] -> vs1 (scalar accumulator) and rx[2] -> vs2 (vector to reduce).
+            int32_t sum = scalar_res[rx[2]][0];
+            if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][0] = [%d]%d", rx[0], rx[1], scalar_res[rx[1]][0]);
+            
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf(" + [%d]%d", rx[2], scalar_res[rx[2]][j]);
+                sum += scalar_res[rx[1]][j];
+            }
+            if(PRINTS >= 2) printf(";\n\n");
+            
+            scalar_res[rx[0]][0] = (int32_t)sum;
+
+            instr = VREDSUM_VS_INSTR;
+            instr_type = VV; 
+            break;
+        case VREDMAXU_VS:
+            // VREDSUM.VS: Vector reduction sum. vd[0] = sum(vs2[0..VL-1]) + vs1[0]
+            // Maps rx[1] -> vs1 (scalar accumulator) and rx[2] -> vs2 (vector to reduce).
+            uint32_t mx = scalar_res[rx[2]][0];
+            if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][0] = MAX [%d]%d", rx[0], rx[2], scalar_res[rx[2]][0]);
+            
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("; [%d]%d", rx[1], scalar_res[rx[1]][j]);
+                mx = max(mx, scalar_res[rx[1]][j]);
+            }
+            if(PRINTS >= 2) printf(";\n\n");
+            
+            scalar_res[rx[0]][0] = (uint32_t)mx;
+
+            instr = VREDMAXU_VS_INSTR;
+            instr_type = VV; 
+            break;
+
+        case VREDMAX_VS:
+            int32_t mx_s = scalar_res[rx[2]][0]; // vs1[0] is the scalar accumulator
+            if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][0] = MAX_S [%d]%d", rx[0], rx[2], mx_s);
+            
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                int32_t val = (int32_t)scalar_res[rx[1]][j];
+                if(PRINTS >= 2) printf("; [%d]%d", rx[1], val);
+                mx_s = max(mx_s, val);
+            }
+            if(PRINTS >= 2) printf(";\n\n");
+            
+            scalar_res[rx[0]][0] = (int32_t)mx_s;
+            instr = VREDMAX_VS_INSTR;
+            instr_type = VV; 
+            break;
+
+        case VREDMINU_VS:
+            // VREDMINU.VS: Vector reduction minimum (unsigned)
+            uint32_t mn_u = (uint32_t)scalar_res[rx[2]][0];
+            if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][0] = MIN_U [%d]%u", rx[0], rx[2], mn_u);
+            
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                uint32_t val = (uint32_t)scalar_res[rx[1]][j];
+                if(PRINTS >= 2) printf("; [%d]%u", rx[1], val);
+                if(val < mn_u) mn_u = val;
+            }
+            if(PRINTS >= 2) printf(";\n\n");
+            
+            scalar_res[rx[0]][0] = (uint32_t)mn_u;
+            instr = VREDMINU_VS_INSTR;
+            instr_type = VV; 
+            break;
+
+        case VREDMIN_VS:
+            // VREDMIN.VS: Vector reduction minimum (signed)
+            int32_t mn_s = (int32_t)scalar_res[rx[2]][0];
+            if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][0] = MIN_S [%d]%d", rx[0], rx[2], mn_s);
+            
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                int32_t val = (int32_t)scalar_res[rx[1]][j];
+                if(PRINTS >= 2) printf("; [%d]%d", rx[1], val);
+                if(val < mn_s) mn_s = val;
+            }
+            if(PRINTS >= 2) printf(";\n\n");
+            
+            scalar_res[rx[0]][0] = (int32_t)mn_s;
+            instr = VREDMIN_VS_INSTR;
+            instr_type = VV; 
+            break;
+
+        case VREDAND_VS:
+            // VREDAND.VS: Vector reduction bitwise AND
+            uint32_t and_res = (uint32_t)scalar_res[rx[2]][0];
+            if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][0] = AND [%d]%x", rx[0], rx[2], and_res);
+            
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                uint32_t val = (uint32_t)scalar_res[rx[1]][j];
+                if(PRINTS >= 2) printf(" & [%d]%x", rx[1], val);
+                and_res &= val;
+            }
+            if(PRINTS >= 2) printf(";\n\n");
+            
+            scalar_res[rx[0]][0] = and_res;
+            instr = VREDAND_VS_INSTR;
+            instr_type = VV; 
+            break;
+
+        case VREDOR_VS:
+            // VREDOR.VS: Vector reduction bitwise OR
+            uint32_t or_res = (uint32_t)scalar_res[rx[2]][0];
+            if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][0] = OR [%d]%x", rx[0], rx[2], or_res);
+            
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                uint32_t val = (uint32_t)scalar_res[rx[1]][j];
+                if(PRINTS >= 2) printf(" | [%d]%x", rx[1], val);
+                or_res |= val;
+            }
+            if(PRINTS >= 2) printf(";\n\n");
+            
+            scalar_res[rx[0]][0] = or_res;
+            instr = VREDOR_VS_INSTR;
+            instr_type = VV; 
+            break;
+
+        case VREDXOR_VS:
+            // VREDXOR.VS: Vector reduction bitwise XOR
+            uint32_t xor_res = (uint32_t)scalar_res[rx[2]][0];
+            if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][0] = XOR [%d]%x", rx[0], rx[2], xor_res);
+            
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                uint32_t val = (uint32_t)scalar_res[rx[1]][j];
+                if(PRINTS >= 2) printf(" ^ [%d]%x", rx[1], val);
+                xor_res ^= val;
+            }
+            if(PRINTS >= 2) printf(";\n\n");
+            
+            scalar_res[rx[0]][0] = xor_res;
+            instr = VREDXOR_VS_INSTR;
+            instr_type = VV; 
+            break;
         case NOP:
             return ADDI_ZZZ_INSTR;
         default:
@@ -762,7 +928,6 @@ int add_instruction(int op, int rx[3], int r[3]){
         instr = change_vet_rd(instr, r[rx[0]]);
         instr = change_vet_rs1(instr, r[rx[1]]);
         instr = change_vet_rs2(instr, 5);
-        //load_OUT_t0_vet((int*)t0_VALUE);
     }
     if(instr_type == VI){
         instr = change_vet_rd(instr, r[rx[0]]);

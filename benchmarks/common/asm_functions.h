@@ -50,6 +50,13 @@
 
 // VECTOR REDUCTION
 #define VREDSUM_VS_INSTR    0x0215a557 // vredsum.vs v10, v1, v11
+#define VREDMAXU_VS_INSTR   0x1a20a057 // v0,v2,v1
+#define VREDMAX_VS_INSTR    0x1e20a057 // v0,v2,v1
+#define VREDMINU_VS_INSTR   0x1220a057 // v0,v2,v1
+#define VREDMIN_VS_INSTR    0x1620a057 // v0,v2,v1
+#define VREDAND_VS_INSTR    0x0620a057 // v0,v2,v1
+#define VREDOR_VS_INSTR     0x0a20a057 // v0,v2,v1
+#define VREDXOR_VS_INSTR    0x0e20a057 // v0,v2,v1
 
 // Memory
 // (la a0, data_array é pseudo-instrução e não possui opcode fixo vetorizado direto)
