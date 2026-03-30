@@ -1343,9 +1343,8 @@ int add_instruction(int op, int rx[3], int r[3]){
             // vmerge utiliza a máscara de v0. Assumindo que v0 está mapeado em scalar_res[0]
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 int mask_active = (scalar_res[0][j / SEW] & i) == 0;
-                printf("mask_active: %d\n", mask_active);
 
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = mask(v0) ? [%d]%d : [%d]%d;\n", rx[0], j, rx[2], scalar_res[rx[2]][j], rx[1], scalar_res[rx[1]][j]);
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = mask(%d) ? [%d]%d : [%d]%d;\n", rx[0], j, mask_active, rx[2], scalar_res[rx[2]][j], rx[1], scalar_res[rx[1]][j]);
                 
                 scalar_res[1][j] = mask_active ? scalar_res[2][j]: 0/* MASK 3 */;
                 
@@ -1365,9 +1364,8 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMERGE_VXM:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 int mask_active = (scalar_res[0][j / SEW] & i) == 0;
-                printf("mask_active: %d\n", mask_active);
 
-                //if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = mask(v0) ? [%d]%d : [%d]%d;\n", rx[0], j, rx[2], scalar_res[rx[2]][j], rx[1], scalar_res[rx[1]][j]);
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = mask(%d) ? [%d]%d : %d;\n", rx[0], j, mask_active, rx[2], scalar_res[rx[2]][j], t0_VALUE);
                 
                 scalar_res[1][j] = mask_active ? scalar_res[2][j]: t0_VALUE/* MASK 3 */;
                 
@@ -1387,9 +1385,8 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMERGE_VIM:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 int mask_active = (scalar_res[0][j / SEW] & i) == 0;
-                printf("mask_active: %d\n", mask_active);
 
-                //if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = mask(v0) ? [%d]%d : [%d]%d;\n", rx[0], j, rx[2], scalar_res[rx[2]][j], rx[1], scalar_res[rx[1]][j]);
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = mask(%d) ? [%d]%d : %d;\n", rx[0], j, mask_active, rx[2], scalar_res[rx[2]][j], imm);
                 
                 scalar_res[1][j] = mask_active ? scalar_res[2][j]: imm/* MASK 3 */;
                 
@@ -1611,7 +1608,7 @@ void all_test() {
     }
 
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
-    int z = 81;
+    int z = 0;
     for(; z < SUPORTED_INSTRUCTIONS; z++){
         for(int j = 0; j < REPEAT_INSTRUCTIONS; j++){
             int prev_error = error_count;
