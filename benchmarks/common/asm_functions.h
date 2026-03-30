@@ -139,10 +139,8 @@
 
 #define VMFLT_VV_INSTR      0x6e111057 // vmflt.vv v0, v1, v2
 #define VMFLE_VV_INSTR      0x66111057 // vmfle.vv v0, v1, v2
-#define VMFGT_VV_INSTR      0x6e209057 // vmflt.vv v0, v2, v1 (Mapeado de vmfgt.vv)
-#define VMFGE_VV_INSTR      0x66209057 // vmfle.vv v0, v2, v1 (Mapeado de vmfge.vv)
 
 // Vector mask merge
-#define VMERGE_VVM_INSTR 0x5c110057          	//vmerge.vvm	v0,v1,v2,v0
-#define VMERGE_VXM_INSTR 0x5c13c057          	//vmerge.vxm	v0,v1,t2,v0
-#define VMERGE_VIM_INSTR 0x5c113057          	//vmerge.vim	v0,v1,2,v0
+#define VMERGE_VVM_INSTR 0x5c2180d7          	//vmerge.vvm	v0,v1,v2,v0
+#define VMERGE_VXM_INSTR 0x5c2e40d7          	//vmerge.vxm	v0,v1,t2,v0
+#define VMERGE_VIM_INSTR 0x5c21b0d7          	//vmerge.vim	v0,v1,2,v0

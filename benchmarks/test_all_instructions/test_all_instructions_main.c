@@ -6,11 +6,11 @@
 #include "mysrand.h"
 #include "float_operator.h"
 
-#define MAX_N 4096
+#define MAX_N 4200
 
 #define REPEAT_INSTRUCTIONS 4
 
-int N = 4096;
+int N = 4200;
 int error_count = 0;
 int last_hw_error = 0;
 
@@ -192,7 +192,14 @@ enum VEC_INSTRUCTIONS{
     VMSGT_VX      = 74,
     VCOMPRESS_VM  = 75,
     VCPOP_M       = 76,
-    VFIRST_M      = 77,  
+    VFIRST_M      = 77,
+    VMFEQ_VV      = 78,     
+    VMFNE_VV      = 79,     
+    VMFLT_VV      = 80,     
+    VMFLE_VV      = 81,     
+    VMERGE_VVM    = 82,
+    VMERGE_VXM    = 83,
+    VMERGE_VIM    = 84,
     VLUXEI32_V    = 511,
     NOP = 555
 };
@@ -286,7 +293,14 @@ char* get_OP(int op){
         case 74: return "VMSGT_VX";
         case 75: return "VCOMPRESS_VM";
         case 76: return "VCPOP_M";
-        case 77: return "VFIRST_M"; 
+        case 77: return "VFIRST_M";
+        case 78: return "VMFEQ_VV";   
+        case 79: return "VMFNE_VV";   
+        case 80: return "VMFLT_VV";   
+        case 81: return "VMFLE_VV";   
+        case 82: return "VMERGE_VVM";
+        case 83: return "VMERGE_VXM";
+        case 84: return "VMERGE_VIM";
         case 511: return "VLUXEI32_V";
     }
     return "ERROR";    
@@ -1259,6 +1273,138 @@ int add_instruction(int op, int rx[3], int r[3]){
             instr_type = NO_TYPE;
             break;
         }
+        case VMFEQ_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                float f1 = bits_to_float(scalar_res[rx[1]][j]);
+                float f2 = bits_to_float(scalar_res[rx[2]][j]);
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = (%f == %f) ? 1 : 0;\n", rx[0], j / SEW, f1, f2);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (f1 == f2) ? i : 0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMFEQ_VV_INSTR;
+            break;
+
+        case VMFNE_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                float f1 = bits_to_float(scalar_res[rx[1]][j]);
+                float f2 = bits_to_float(scalar_res[rx[2]][j]);
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = (%f != %f) ? 1 : 0;\n", rx[0], j / SEW, f1, f2);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (f1 != f2) ? i : 0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMFNE_VV_INSTR;
+            break;
+
+        case VMFLT_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                float f1 = bits_to_float(scalar_res[rx[1]][j]);
+                float f2 = bits_to_float(scalar_res[rx[2]][j]);
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = (%f < %f) ? 1 : 0;\n", rx[0], j / SEW, f1, f2);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (f1 < f2) ? i : 0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMFLT_VV_INSTR;
+            break;
+
+        case VMFLE_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                float f1 = bits_to_float(scalar_res[rx[1]][j]);
+                float f2 = bits_to_float(scalar_res[rx[2]][j]);
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = (%d <= %d) ? 1 : 0;\n", rx[0], j / SEW, f1, f2);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (f1 <= f2) ? i : 0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMFLE_VV_INSTR;
+            break;
+
+       
+
+        case VMERGE_VVM:
+            // vmerge utiliza a máscara de v0. Assumindo que v0 está mapeado em scalar_res[0]
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                int mask_active = (scalar_res[0][j / SEW] & i) == 0;
+                printf("mask_active: %d\n", mask_active);
+
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = mask(v0) ? [%d]%d : [%d]%d;\n", rx[0], j, rx[2], scalar_res[rx[2]][j], rx[1], scalar_res[rx[1]][j]);
+                
+                scalar_res[1][j] = mask_active ? scalar_res[2][j]: 0/* MASK 3 */;
+                
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMERGE_VVM_INSTR;
+            instr = change_vet_rd(instr,  1);
+            instr = change_vet_rs1(instr, 2);
+            instr = change_vet_rs2(instr, 3);
+            instr_type = NO_TYPE;
+            break;
+
+        case VMERGE_VXM:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                int mask_active = (scalar_res[0][j / SEW] & i) == 0;
+                printf("mask_active: %d\n", mask_active);
+
+                //if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = mask(v0) ? [%d]%d : [%d]%d;\n", rx[0], j, rx[2], scalar_res[rx[2]][j], rx[1], scalar_res[rx[1]][j]);
+                
+                scalar_res[1][j] = mask_active ? scalar_res[2][j]: t0_VALUE/* MASK 3 */;
+                
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMERGE_VXM_INSTR;
+            instr = change_vet_rd(instr,  1);
+            instr = change_vet_rs1(instr, 2);
+            instr = change_vet_rs2(instr, 5);
+            instr_type = NO_TYPE;
+            break;
+
+        case VMERGE_VIM:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                int mask_active = (scalar_res[0][j / SEW] & i) == 0;
+                printf("mask_active: %d\n", mask_active);
+
+                //if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = mask(v0) ? [%d]%d : [%d]%d;\n", rx[0], j, rx[2], scalar_res[rx[2]][j], rx[1], scalar_res[rx[1]][j]);
+                
+                scalar_res[1][j] = mask_active ? scalar_res[2][j]: imm/* MASK 3 */;
+                
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMERGE_VIM_INSTR;
+            instr = change_vet_rd(instr,  1);
+            instr = change_vet_rs1(instr, 2);
+            instr = change_vet_rs2(instr, imm);
+            instr_type = NO_TYPE;
+            break;
         case NOP:
             return ADDI_ZZZ_INSTR;
         default:
@@ -1450,8 +1596,6 @@ int test_for_ls32(){
 }
 
 void all_test() {
-
-
     set_vet_settings();
     generate_initial_values();
     printf("Done init values\n");
@@ -1467,7 +1611,7 @@ void all_test() {
     }
 
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
-    int z = 0;
+    int z = 81;
     for(; z < SUPORTED_INSTRUCTIONS; z++){
         for(int j = 0; j < REPEAT_INSTRUCTIONS; j++){
             int prev_error = error_count;
