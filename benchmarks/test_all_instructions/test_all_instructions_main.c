@@ -14,6 +14,9 @@ int N = 4096;
 int error_count = 0;
 int last_hw_error = 0;
 
+int compare_registers = 0;  //
+int actual_t0 = 0;
+
 int32_t ADDRESS_VECTOR[255];
 
 /* ===== EXTERNALS ===== */
@@ -25,6 +28,7 @@ extern void jump_to_vet(int* vet);
 
 extern int* load_OUT_t0_vet(int* address);
 extern void load_value_ft0(float f);
+extern int return_t0();
 
 #define t0_VALUE 16
 
@@ -168,7 +172,27 @@ enum VEC_INSTRUCTIONS{
     VREDMIN_VS    = 54, 
     VREDAND_VS    = 55, 
     VREDOR_VS     = 56,
-    VREDXOR_VS    = 57, 
+    VREDXOR_VS    = 57,
+    VMAND_MM      = 58,
+    VMOR_MM       = 59,
+    VMNAND_MM     = 60,
+    VMXOR_MM      = 61,
+    VMSEQ_VV      = 62,
+    VMSEQ_VI      = 63,
+    VMSEQ_VX      = 64,
+    VMSNE_VV      = 65,
+    VMSNE_VI      = 66,
+    VMSNE_VX      = 67,
+    VMSLT_VV      = 68,
+    VMSLT_VX      = 69,
+    VMSLE_VV      = 70,
+    VMSLE_VI      = 71,
+    VMSLE_VX      = 72,
+    VMSGT_VI      = 73,
+    VMSGT_VX      = 74,
+    VCOMPRESS_VM  = 75,
+    VCPOP_M       = 76,
+    VFIRST_M      = 77,  
     VLUXEI32_V    = 511,
     NOP = 555
 };
@@ -243,6 +267,26 @@ char* get_OP(int op){
         case 55: return "VREDAND_VS"; 
         case 56: return "VREDOR_VS";
         case 57: return "VREDXOR_VS";
+        case 58: return "VMAND_MM";
+        case 59: return "VMOR_MM";
+        case 60: return "VMNAND_MM";
+        case 61: return "VMXOR_MM";
+        case 62: return "VMSEQ_VV";
+        case 63: return "VMSEQ_VI";
+        case 64: return "VMSEQ_VX";
+        case 65: return "VMSNE_VV";
+        case 66: return "VMSNE_VI";
+        case 67: return "VMSNE_VX";
+        case 68: return "VMSLT_VV";
+        case 69: return "VMSLT_VX";
+        case 70: return "VMSLE_VV";
+        case 71: return "VMSLE_VI";
+        case 72: return "VMSLE_VX";
+        case 73: return "VMSGT_VI";
+        case 74: return "VMSGT_VX";
+        case 75: return "VCOMPRESS_VM";
+        case 76: return "VCPOP_M";
+        case 77: return "VFIRST_M"; 
         case 511: return "VLUXEI32_V";
     }
     return "ERROR";    
@@ -254,6 +298,7 @@ void execute_RIS(int* vet, int r[NUM_REGISTERS]){
     set_vet_settings();
     load_OUT_t0_vet((int*)t0_VALUE);// Gambiarra simples para ter t0 com t0_VALUE
     jump_to_vet(&ADDRESS_VECTOR[0]);
+    actual_t0 = return_t0();
     store_vet_values(r);
 }
 
@@ -262,6 +307,8 @@ int add_instruction(int op, int rx[3], int r[3]){
     int instr_type = VV;
     int imm = 7;
     float f_vf = 0.15;
+
+    int i = 1;
     switch (op){
         case VADD_VV:
             for(int j = 0; j < EL_PER_BLOCK; j++){
@@ -912,8 +959,306 @@ int add_instruction(int op, int rx[3], int r[3]){
             
             scalar_res[rx[0]][0] = xor_res;
             instr = VREDXOR_VS_INSTR;
-            instr_type = VV; 
+            instr_type = VV;
             break;
+        case VMAND_MM:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d & [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                scalar_res[rx[0]][j / SEW] &= (0xFFFFFFFF ^ i);
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][0] & i) & (scalar_res[rx[2]][0] & i);
+                if(i == 1 << SEW - 1)
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMAND_MM_INSTR;
+            break;
+
+        case VMOR_MM:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d | [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                scalar_res[rx[0]][j / SEW] &= (0xFFFFFFFF ^ i);
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][0] & i) | (scalar_res[rx[2]][0] & i);
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMOR_MM_INSTR;
+            break;
+
+        case VMNAND_MM:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d NAND [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (~(scalar_res[rx[1]][j / SEW] & scalar_res[rx[2]][j / SEW])) & i;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMNAND_MM_INSTR;
+            break;
+
+        case VMXOR_MM:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d ^ [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= ((scalar_res[rx[1]][j / SEW] ^ scalar_res[rx[2]][j / SEW])) & i;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMXOR_MM_INSTR;
+            break;
+
+        case VMSEQ_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d == [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] == scalar_res[rx[2]][j])?i:0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMSEQ_VV_INSTR;
+            break;
+
+        case VMSEQ_VI:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d == imm(%d)) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], imm);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] == imm)?i:0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMSEQ_VI_INSTR;
+            instr_type = VI;
+            break;
+
+        case VMSEQ_VX:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d == %d) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] == t0_VALUE)?i:0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMSEQ_VX_INSTR;
+            instr_type = VX;
+            break;
+
+        case VMSNE_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d != [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] != scalar_res[rx[2]][j])?i:0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMSNE_VV_INSTR;
+            break;
+
+        case VMSNE_VI:
+           for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d != imm(%d)) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], imm);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] != imm)?i:0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMSNE_VI_INSTR;
+            instr_type = VI;
+            break;
+
+        case VMSNE_VX:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d != %d) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] != t0_VALUE)?i:0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMSNE_VX_INSTR;
+            instr_type = VX;
+            break;
+
+        case VMSLT_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d < [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] < scalar_res[rx[2]][j])?i:0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMSLT_VV_INSTR;
+            break;
+        case VMSLT_VX:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d < %d) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] < t0_VALUE)?i:0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMSLT_VX_INSTR;
+            instr_type = VX;
+            break;
+
+        case VMSLE_VV:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d <= [%d]%d) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] <= scalar_res[rx[2]][j])?i:0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMSLE_VV_INSTR;
+            break;
+
+        case VMSLE_VI:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d <= %d) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] <= t0_VALUE)?i:0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMSLE_VI_INSTR;
+            instr_type = VI;
+            break;
+
+        case VMSLE_VX:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d < %d) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], imm);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] < imm)?i:0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMSLE_VX_INSTR;
+            instr_type = VX;
+            break;
+        case VMSGT_VI:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d > %d) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] > t0_VALUE)?i:0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMSGT_VI_INSTR;
+            instr_type = VI;
+            break;
+
+        case VMSGT_VX:
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d > %d) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], imm);
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] > imm)?i:0;
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VMSGT_VX_INSTR;
+            instr_type = VX;
+            break;
+
+        case VCOMPRESS_VM: {
+            // Compressão baseada na máscara vs1 (rx[2]), filtrando elementos de vs2 (rx[1])
+            int compress_idx = 0;
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if((scalar_res[rx[2]][j / SEW] & i) != 0){ // Se o bit da máscara está ativo
+                    scalar_res[rx[0]][compress_idx] = scalar_res[rx[1]][j];
+                    compress_idx++;
+                }
+                i = (i == (1 << SEW - 1))?1:i << 1;
+            }
+            if(PRINTS >= 2) printf("\n");
+            instr = VCOMPRESS_VM_INSTR;
+            break;
+        }
+
+        case VCPOP_M: {
+            // Conta bits setados na máscara (population count). Resultado é um escalar em vd.
+            int popcount = 0;
+            for(int j = 0; j < VLEN; j++){
+                if(scalar_res[rx[1]][j / SEW] & i != 0){ 
+                    popcount++;
+                }
+            }
+            if(PRINTS >= 2) printf("SCALAR_RESULT:t0 = POPCOUNT([%d]) = %d;\n\n", rx[0], popcount);
+            compare_registers = popcount;
+            instr = VCPOP_M_INSTR;
+            instr = change_vet_rd(instr, 5);
+            instr = change_vet_rs1(instr, r[rx[1]]);    
+            instr_type = NO_TYPE;
+            break;
+        }
+
+        case VFIRST_M: {
+            // Encontra o primeiro bit setado na máscara. Retorna índice, ou -1 se não encontrar.
+            int first_idx = -1;
+            for(int j = 0; j < VLEN; j++){
+                if(scalar_res[rx[1]][j / SEW] & i != 0){
+                    first_idx = j;
+                    break;
+                }
+                if(i == (1 << SEW - 1))
+                    i = 1;
+                else
+                    i = i << 1;
+            }
+            if(PRINTS >= 2) printf("SCALAR_RESULT:t0 = VFIRST([%d]) = %d;\n\n", rx[1], first_idx);
+            instr = VFIRST_M_INSTR;
+            compare_registers = first_idx;
+            instr = change_vet_rd(instr, 5);
+            instr = change_vet_rs1(instr, r[rx[1]]);    
+            instr_type = NO_TYPE;
+            break;
+        }
         case NOP:
             return ADDI_ZZZ_INSTR;
         default:
@@ -1132,19 +1477,32 @@ void all_test() {
             generate_RIS(z, (z * REPEAT_INSTRUCTIONS + j) * inc);
             execute_RIS(&OUT[(z * REPEAT_INSTRUCTIONS + j) * inc], r);
 
-            if(PRINTS >= 3)print_matrix(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
-            if(PRINTS >= 3)print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
+            if(PRINTS >= 3){printf("Scalar:\n");print_matrix(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
+            if(PRINTS >= 3){printf("Vetorial:\n");print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
             
             if(prev_error < error_count){
                 if(PRINTS >= 1) printf("Hardware error detected\n");
                 res[z][j] = -last_hw_error;
             } else {
-                if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
-                    if(PRINTS >= 1)printf("Convergence \n");
-                }else{
-                    if(PRINTS >= 1)printf("Divergence\n");
-                    res[z][j] = 1;
+                if(compare_registers != 0){
+                    if(actual_t0 != compare_registers){
+                        if(PRINTS >= 1)printf("Convergence \n");
+                        if(PRINTS >= 2)printf("registers compared\b");
+                    }else{
+                        if(PRINTS >= 1)printf("Divergence\n");
+                        if(PRINTS >= 2)printf("t0: %d\n", actual_t0);
+                        res[z][j] = 1;
+                    }
+                    compare_registers = 0;
                 }
+                else
+                    if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
+                        if(PRINTS >= 1)printf("Convergence \n");
+                    }else{
+                        if(PRINTS >= 1)printf("Divergence\n");
+                        res[z][j] = 1;
+                    }
+                
             } 
         }
     }

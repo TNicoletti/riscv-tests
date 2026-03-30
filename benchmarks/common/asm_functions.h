@@ -99,8 +99,6 @@
 #define VMSNE_VX_INSTR      0x6613c057 // vmsne.vx v0, v1, t2
 
 #define VMSLT_VV_INSTR      0x6e110057 // vmslt.vv v0, v1, v2
-// Nota: O dump não possui vmslt.vi v0, v1, 2; opcodes mais próximos no dump são:
-#define VMSLE_VI_1_INSTR    0x7610b057 // vmsle.vi v0, v1, 1 (linha ec)
 #define VMSLT_VX_INSTR      0x6e13c057 // vmslt.vx v0, v1, t2
 
 #define VMSLE_VV_INSTR      0x76110057 // vmsle.vv v0, v1, v2
@@ -108,12 +106,8 @@
 #define VMSLE_VX_INSTR      0x7613c057 // vmsle.vx v0, v1, t2
 
 // Mapeamentos para pseudo-instruções "Greater Than" geradas pelo compilador
-#define VMSGT_VV_INSTR      0x6e208057 // vmslt.vv v0, v2, v1 (Mapeado de vmsgt.vv)
 #define VMSGT_VI_INSTR      0x7e113057 // vmsgt.vi v0, v1, 2
 #define VMSGT_VX_INSTR      0x7e13c057 // vmsgt.vx v0, v1, t2
-
-#define VMSGE_VV_INSTR      0x76208057 // vmsle.vv v0, v2, v1 (Mapeado de vmsge.vv)
-// Nota: O dump apresenta vmsgt.vi v0,v1,1 na linha 110 (0x7e10b057) para a versão imediata de vmsge
 
 // COMPRESS
 #define VCOMPRESS_VM_INSTR  0x5e2020d7 // vcompress.vm v1, v2, v0
