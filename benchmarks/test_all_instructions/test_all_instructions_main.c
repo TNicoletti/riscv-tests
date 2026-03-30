@@ -6,11 +6,11 @@
 #include "mysrand.h"
 #include "float_operator.h"
 
-#define MAX_N 4200
+#define REPEAT_INSTRUCTIONS 6
+#define MAX_N EL_PER_BLOCK * REPEAT_INSTRUCTIONS * SUPORTED_INSTRUCTIONS * NUM_REGISTERS
 
-#define REPEAT_INSTRUCTIONS 4
 
-int N = 4200;
+int N = MAX_N;
 int error_count = 0;
 int last_hw_error = 0;
 
@@ -46,11 +46,11 @@ volatile int32_t vet_res[NUM_REGISTERS][EL_PER_BLOCK];
 
 /* ===== RANDOMIZERS ===== */
 void generate_initial_values(){
-    msrand(11234);
+    msrand(SEED);
     for (int i = 0; i < N; i++) {
-        A[i] = mrand() % 2147000000;
-        B[i] = mrand() % 2147000000;
-        OUT[i] = mrand() % 2147000000;
+        A[i] = mrand();
+        B[i] = mrand();
+        OUT[i] = mrand();
     }
 }
 
@@ -216,92 +216,92 @@ enum INSTR_TYPES{
 
 char* get_OP(int op){
     switch(op){
-        case  0: return "VADD_VV";
-        case  1: return "VSUB_VV";
-        case  2: return "VDIV_VV";
-        case  3: return "VMUL_VV";
-        case  4: return "VSLL_VV";
-        case  5: return "VSRL_VV";
-        case  6: return "VAND_VV";
-        case  7: return "VOR_VV";
-        case  8: return "VXOR_VV";
-        case  9: return "VADD_VI";
-        case 10: return "VSLL_VI";
-        case 11: return "VSRL_VI";
-        case 12: return "VAND_VI";
-        case 13: return "VOR_VI";
-        case 14: return "VXOR_VI";
-        case 15: return "VADD_VX";
-        case 16: return "VSUB_VX";
-        case 17: return "VDIV_VX";
-        case 18: return "VMUL_VX";
-        case 19: return "VSLL_VX";
-        case 20: return "VSRL_VX";
-        case 21: return "VAND_VX";
-        case 22: return "VOR_VX";
-        case 23: return "VXOR_VX";
-        case 24: return "VFADD_VV";
-        case 25: return "VFADD_VF";
-        case 26: return "VFSUB_VV";
-        case 27: return "VFSUB_VF";
-        case 28: return "VFMUL_VV";
-        case 29: return "VFMUL_VF";
-        case 30: return "VFDIV_VV";
-        case 31: return "VFDIV_VF";
-        case 32: return "VFSQRT_V";
-        case 33: return "VFMACC_VV";
-        case 34: return "VSLIDEUP_VI";
-        case 35: return "VSLIDEUP_VX";
+        case  0: return "VADD_VV      ";
+        case  1: return "VSUB_VV      ";
+        case  2: return "VDIV_VV      ";
+        case  3: return "VMUL_VV      ";
+        case  4: return "VSLL_VV      ";
+        case  5: return "VSRL_VV      ";
+        case  6: return "VAND_VV      ";
+        case  7: return "VOR_VV       ";
+        case  8: return "VXOR_VV      ";
+        case  9: return "VADD_VI      ";
+        case 10: return "VSLL_VI      ";
+        case 11: return "VSRL_VI      ";
+        case 12: return "VAND_VI      ";
+        case 13: return "VOR_VI       ";
+        case 14: return "VXOR_VI      ";
+        case 15: return "VADD_VX      ";
+        case 16: return "VSUB_VX      ";
+        case 17: return "VDIV_VX      ";
+        case 18: return "VMUL_VX      ";
+        case 19: return "VSLL_VX      ";
+        case 20: return "VSRL_VX      ";
+        case 21: return "VAND_VX      ";
+        case 22: return "VOR_VX       ";
+        case 23: return "VXOR_VX      ";
+        case 24: return "VFADD_VV     ";
+        case 25: return "VFADD_VF     ";
+        case 26: return "VFSUB_VV     ";
+        case 27: return "VFSUB_VF     ";
+        case 28: return "VFMUL_VV     ";
+        case 29: return "VFMUL_VF     ";
+        case 30: return "VFDIV_VV     ";
+        case 31: return "VFDIV_VF     ";
+        case 32: return "VFSQRT_V     ";
+        case 33: return "VFMACC_VV    ";
+        case 34: return "VSLIDEUP_VI  ";
+        case 35: return "VSLIDEUP_VX  ";
         case 36: return "VSLIDEDOWN_VI";
         case 37: return "VSLIDEDOWN_VX";
-        case 38: return "VMV_V_V";
-        case 39: return "VMV_V_I";
-        case 40: return "VMV_V_X";
-        case 41: return "VWADD_VV";
-        case 42: return "VWADD_VX";
-        case 43: return "VWSUB_VV";
-        case 44: return "VWSUB_VX";
-        case 45: return "VWADDU_VV";
-        case 46: return "VWADDU_VX";
-        case 47: return "VWMUL_VV";
-        case 48: return "VWMUL_VX";
-        case 49: return "VWMACC_VV";
-        case 50: return "VREDSUM_VS";
-        case 51: return "VREDMAXU_VS";  
-        case 52: return "VREDMAX_VS"; 
-        case 53: return "VREDMINU_VS";  
-        case 54: return "VREDMIN_VS"; 
-        case 55: return "VREDAND_VS"; 
-        case 56: return "VREDOR_VS";
-        case 57: return "VREDXOR_VS";
-        case 58: return "VMAND_MM";
-        case 59: return "VMOR_MM";
-        case 60: return "VMNAND_MM";
-        case 61: return "VMXOR_MM";
-        case 62: return "VMSEQ_VV";
-        case 63: return "VMSEQ_VI";
-        case 64: return "VMSEQ_VX";
-        case 65: return "VMSNE_VV";
-        case 66: return "VMSNE_VI";
-        case 67: return "VMSNE_VX";
-        case 68: return "VMSLT_VV";
-        case 69: return "VMSLT_VX";
-        case 70: return "VMSLE_VV";
-        case 71: return "VMSLE_VI";
-        case 72: return "VMSLE_VX";
-        case 73: return "VMSGT_VI";
-        case 74: return "VMSGT_VX";
-        case 75: return "VCOMPRESS_VM";
-        case 76: return "VCPOP_M";
-        case 77: return "VFIRST_M";
-        case 78: return "VMFEQ_VV";   
-        case 79: return "VMFNE_VV";   
-        case 80: return "VMFLT_VV";   
-        case 81: return "VMFLE_VV";   
-        case 82: return "VMERGE_VVM";
-        case 83: return "VMERGE_VXM";
-        case 84: return "VMERGE_VIM";
-        case 511: return "VLUXEI32_V";
+        case 38: return "VMV_V_V      ";
+        case 39: return "VMV_V_I      ";
+        case 40: return "VMV_V_X      ";
+        case 41: return "VWADD_VV     ";
+        case 42: return "VWADD_VX     ";
+        case 43: return "VWSUB_VV     ";
+        case 44: return "VWSUB_VX     ";
+        case 45: return "VWADDU_VV    ";
+        case 46: return "VWADDU_VX    ";
+        case 47: return "VWMUL_VV     ";
+        case 48: return "VWMUL_VX     ";
+        case 49: return "VWMACC_VV    ";
+        case 50: return "VREDSUM_VS   ";
+        case 51: return "VREDMAXU_VS  ";  
+        case 52: return "VREDMAX_VS   "; 
+        case 53: return "VREDMINU_VS  ";  
+        case 54: return "VREDMIN_VS   "; 
+        case 55: return "VREDAND_VS   "; 
+        case 56: return "VREDOR_VS    ";
+        case 57: return "VREDXOR_VS   ";
+        case 58: return "VMAND_MM     ";
+        case 59: return "VMOR_MM      ";
+        case 60: return "VMNAND_MM    ";
+        case 61: return "VMXOR_MM     ";
+        case 62: return "VMSEQ_VV     ";
+        case 63: return "VMSEQ_VI     ";
+        case 64: return "VMSEQ_VX     ";
+        case 65: return "VMSNE_VV     ";
+        case 66: return "VMSNE_VI     ";
+        case 67: return "VMSNE_VX     ";
+        case 68: return "VMSLT_VV     ";
+        case 69: return "VMSLT_VX     ";
+        case 70: return "VMSLE_VV     ";
+        case 71: return "VMSLE_VI     ";
+        case 72: return "VMSLE_VX     ";
+        case 73: return "VMSGT_VI     ";
+        case 74: return "VMSGT_VX     ";
+        case 75: return "VCOMPRESS_VM ";
+        case 76: return "VCPOP_M      ";
+        case 77: return "VFIRST_M     ";
+        case 78: return "VMFEQ_VV     ";   
+        case 79: return "VMFNE_VV     ";   
+        case 80: return "VMFLT_VV     ";   
+        case 81: return "VMFLE_VV     ";   
+        case 82: return "VMERGE_VVM   ";
+        case 83: return "VMERGE_VXM   ";
+        case 84: return "VMERGE_VIM   ";
+        case 511: return "VLUXEI32_V  ";
     }
     return "ERROR";    
 }
@@ -1537,6 +1537,7 @@ void help_errors(){
 
 int res[SUPORTED_INSTRUCTIONS][REPEAT_INSTRUCTIONS];
 void eval_results(){
+    int qtt_errors = 0;
     if(PRINTS >= 4) help_errors();
 
     printf("\nRESULTS\n");
@@ -1544,11 +1545,15 @@ void eval_results(){
         printf("%d - %s\t ", i, get_OP(i));
         for(int j = 0; j < REPEAT_INSTRUCTIONS; j++){
             printf("[%s] ", get_err(res[i][j]));
+            if(res[i][j] != 2)
+                qtt_errors++;
         }
         printf("\n");
     }
 
-    printf("\nHardware errors: %d\n", error_count);
+    printf("\nErrors: %d\n", qtt_errors);
+    printf("Hardware errors: %d\n", error_count);
+    printf("Wrong answers: %d\n", qtt_errors - error_count);
 }
 
 int test_for_ls32(){
@@ -1603,8 +1608,12 @@ void all_test() {
     }
 
     if(!test_for_ls32()){
-        printf("Store and load not working properly, impossible to continue\n");
-        exit(1);
+        if(MEM_PROTECION){
+            printf("Store and load not working properly, impossible to continue\n");
+            printf("Disable MEM_PROTECTION to continue anyway");
+            exit(1);
+        }
+        printf("WARNING: some memory tests were incorrect, could generate random errors\n");        
     }
 
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
@@ -1647,7 +1656,7 @@ void all_test() {
             } 
         }
     }
-    printf("index: %d\n", z * REPEAT_INSTRUCTIONS * inc);
+    if(PRINTS >= 3) printf("index: %d\n", z * REPEAT_INSTRUCTIONS * inc);
 
     eval_results(res);
 }
