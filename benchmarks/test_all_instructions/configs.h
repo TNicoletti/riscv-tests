@@ -5,7 +5,6 @@
 #define NUM_REGISTERS 3
 #define SUPORTED_INSTRUCTIONS (84 + 1)
 
-#define SEED 99999
 #define MEM_PROTECION 0
 
-#define PRINTS 4
+int PRINTS = 4;

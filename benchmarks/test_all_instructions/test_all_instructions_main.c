@@ -2,15 +2,20 @@
 #include "configs.h"
 #include "myutil.h"
 #include "asm_functions.h"
-#include "parameters.h"
 #include "mysrand.h"
 #include "float_operator.h"
+#include "parameters.h"
 
-#define REPEAT_INSTRUCTIONS 6
-#define MAX_N EL_PER_BLOCK * REPEAT_INSTRUCTIONS * SUPORTED_INSTRUCTIONS * NUM_REGISTERS
+#define MAX_REPEAT_INSTRUCTIONS 6
+int repeat_instructions = 6;
+#define MAX_N EL_PER_BLOCK * MAX_REPEAT_INSTRUCTIONS * SUPORTED_INSTRUCTIONS * NUM_REGISTERS
 
-
+/* PARAMETERS */
+int SEED = 0;
+int sole_execution = -1;
 int N = MAX_N;
+
+
 int error_count = 0;
 int last_hw_error = 0;
 
@@ -1535,7 +1540,7 @@ void help_errors(){
     printf("'UK': Unknown / Reserved\n");
 }
 
-int res[SUPORTED_INSTRUCTIONS][REPEAT_INSTRUCTIONS];
+int res[SUPORTED_INSTRUCTIONS][MAX_REPEAT_INSTRUCTIONS];
 void eval_results(){
     int qtt_errors = 0;
     if(PRINTS >= 4) help_errors();
@@ -1543,7 +1548,7 @@ void eval_results(){
     printf("\nRESULTS\n");
     for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++){
         printf("%d - %s\t ", i, get_OP(i));
-        for(int j = 0; j < REPEAT_INSTRUCTIONS; j++){
+        for(int j = 0; j < repeat_instructions; j++){
             printf("[%s] ", get_err(res[i][j]));
             if(res[i][j] != 2)
                 qtt_errors++;
@@ -1558,9 +1563,9 @@ void eval_results(){
 
 int test_for_ls32(){
     if(PRINTS >= 3)printf("==== Testing required instructions ======\n\n");
-    int res[REPEAT_INSTRUCTIONS];
+    int res[repeat_instructions];
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
-    for(int j = 0; j < REPEAT_INSTRUCTIONS; j++){
+    for(int j = 0; j < repeat_instructions; j++){
         int prev_error = error_count;
 
         if(PRINTS >= 3)printf("Executing instruction VLE32_V VSE32_V %d\n", j);
@@ -1588,7 +1593,7 @@ int test_for_ls32(){
     int ret = 1;
     printf("\nRESULTS\n");
     printf("VLE32_V VSE32_V\t ");
-    for(int j = 0; j < REPEAT_INSTRUCTIONS; j++){
+    for(int j = 0; j < repeat_instructions; j++){
         printf("[%s] ", get_err(res[j]));
         if(res[j] != 2) ret = 0;
     }
@@ -1597,13 +1602,68 @@ int test_for_ls32(){
     return ret;
 }
 
+void single_test(int op){
+    set_vet_settings();
+    int inc = NUM_REGISTERS * EL_PER_BLOCK;
+    N = inc * repeat_instructions;
+    generate_initial_values();
+    printf("Done init values\n");
+    
+    for(int i = 0; i < repeat_instructions; i++)
+        res[0][i] = 2;
+    
+
+    for(int j = 0; j < repeat_instructions; j++){
+        int prev_error = error_count;
+        if(PRINTS >= 3)printf("==== Begginning test ======\n\n");
+
+        if(PRINTS >= 3)printf("Executing instruction %s\n", get_OP(op));
+        generate_RIS(0, j * inc);
+        execute_RIS(&OUT[j * inc], r);
+
+        if(PRINTS >= 3){printf("Scalar:\n");print_matrix(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
+        if(PRINTS >= 3){printf("Vetorial:\n");print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
+        
+        if(prev_error < error_count){
+            if(PRINTS >= 1) printf("Hardware error detected\n");
+            res[0][j] = -last_hw_error;
+        } else {
+            if(compare_registers != 0){
+                if(actual_t0 != compare_registers){
+                    if(PRINTS >= 1)printf("Convergence \n");
+                    if(PRINTS >= 2)printf("registers compared\b");
+                }else{
+                    if(PRINTS >= 1)printf("Divergence\n");
+                    if(PRINTS >= 2)printf("t0: %d\n", actual_t0);
+                    res[0][j] = 1;
+                }
+                compare_registers = 0;
+            }
+            else
+                if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
+                    if(PRINTS >= 1)printf("Convergence \n");
+                }else{
+                    if(PRINTS >= 1)printf("Divergence\n");
+                    res[0][j] = 1;
+                }   
+        } 
+    }
+
+    printf("Results: - %s\t ", get_OP(op));
+    for(int j = 0; j < repeat_instructions; j++){
+        printf("[%s] ", get_err(res[0][j]));
+    }
+    printf("\n");
+}
+
 void all_test() {
     set_vet_settings();
+    N = EL_PER_BLOCK * repeat_instructions * SUPORTED_INSTRUCTIONS * NUM_REGISTERS;
     generate_initial_values();
     printf("Done init values\n");
     
     for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++){
-        for(int j = 0; j < REPEAT_INSTRUCTIONS; j++)
+        for(int j = 0; j < repeat_instructions; j++)
             res[i][j] = 2;
     }
 
@@ -1619,13 +1679,13 @@ void all_test() {
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
     int z = 0;
     for(; z < SUPORTED_INSTRUCTIONS; z++){
-        for(int j = 0; j < REPEAT_INSTRUCTIONS; j++){
+        for(int j = 0; j < repeat_instructions; j++){
             int prev_error = error_count;
-            if(PRINTS >= 3)printf("==== Begginning test  %d ======\n\n", z * REPEAT_INSTRUCTIONS + j);
+            if(PRINTS >= 3)printf("==== Begginning test  %d ======\n\n", z * repeat_instructions + j);
 
             if(PRINTS >= 3)printf("Executing instruction %s\n", get_OP(z));
-            generate_RIS(z, (z * REPEAT_INSTRUCTIONS + j) * inc);
-            execute_RIS(&OUT[(z * REPEAT_INSTRUCTIONS + j) * inc], r);
+            generate_RIS(z, (z * repeat_instructions + j) * inc);
+            execute_RIS(&OUT[(z * repeat_instructions + j) * inc], r);
 
             if(PRINTS >= 3){printf("Scalar:\n");print_matrix(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
             if(PRINTS >= 3){printf("Vetorial:\n");print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
@@ -1656,14 +1716,29 @@ void all_test() {
             } 
         }
     }
-    if(PRINTS >= 3) printf("index: %d\n", z * REPEAT_INSTRUCTIONS * inc);
+    if(PRINTS >= 3) printf("index: %d\n", z * repeat_instructions * inc);
 
     eval_results(res);
 }
 
+int digest_parameters(){
+    if(parameter.argc > 0) SEED                = parameter.argv[0];
+    if(parameter.argc > 1) sole_execution      = parameter.argv[1];
+    if(parameter.argc > 2) PRINTS              = parameter.argv[2];
+    if(parameter.argc > 3) repeat_instructions = parameter.argv[3];
+}
+
 int main(){
+    digest_parameters();
     asm volatile("csrw mtvec, %0" : : "r" (new_trap_handler));
-    printf("Executing all instructions once\n");
-    all_test();
+    
+    if (sole_execution != -1){
+        printf("Executing single instruction\n");
+        single_test(sole_execution);
+    }
+    else{
+        printf("Executing all instructions once\n");
+        all_test();
+    } 
     exit(0);
 }
