@@ -1659,6 +1659,7 @@ void single_test(int op){
 void all_test() {
     set_vet_settings();
     N = EL_PER_BLOCK * repeat_instructions * SUPORTED_INSTRUCTIONS * NUM_REGISTERS;
+    printf("N: %d\n", N);
     generate_initial_values();
     printf("Done init values\n");
     
