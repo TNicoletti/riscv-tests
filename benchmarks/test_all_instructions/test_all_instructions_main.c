@@ -7,7 +7,7 @@
 #include "parameters.h"
 #include "add_instruction.h"
 
-#define MAX_REPEAT_INSTRUCTIONS 6
+#define MAX_REPEAT_INSTRUCTIONS 10
 int repeat_instructions = 6;
 #define MAX_N EL_PER_BLOCK * MAX_REPEAT_INSTRUCTIONS * SUPORTED_INSTRUCTIONS * NUM_REGISTERS
 
@@ -301,6 +301,7 @@ void single_test(int op){
         generate_RIS(op, j * inc);
         execute_RIS(&OUT[j * inc], r);
 
+        if(PRINTS >= 3){printf("IN:\n");print_vector(&OUT[0], NUM_REGISTERS * EL_PER_BLOCK, EL_PER_BLOCK);}
         if(PRINTS >= 3){printf("Scalar:\n");print_matrix(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
         if(PRINTS >= 3){printf("Vetorial:\n");print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
         

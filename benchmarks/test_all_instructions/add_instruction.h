@@ -1127,7 +1127,6 @@ int add_instruction(int op, int rx[3], int r[3]){
             // Conta bits setados na máscara (population count). Resultado é um escalar em vd.
             int popcount = 0;
             for(int j = 0; j < EL_PER_BLOCK; j++){
-                printf("%d\n", i);
                 if((scalar_res[rx[1]][j / SEW] & i) != 0){ 
                     popcount++;
                 }
@@ -1148,7 +1147,6 @@ int add_instruction(int op, int rx[3], int r[3]){
             for(int j = 0; j < VLEN; j++){
                 if((scalar_res[rx[1]][j / SEW] & i) != 0){
                     first_idx = j;
-                    printf("HELLO\n");
                     break;
                 }
                 if(i == (1 << SEW - 1))
