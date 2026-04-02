@@ -3,7 +3,6 @@
 #include "myutil.h"
 #include "asm_functions.h"
 #include "mysrand.h"
-#include "float_operator.h"
 #include "parameters.h"
 #include "add_instruction.h"
 

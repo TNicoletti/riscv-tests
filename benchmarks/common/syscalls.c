@@ -348,6 +348,35 @@ static void vprintfmt(void (*putch)(int, void**), void **putdat, const char *fmt
     signed_number:
       printnum(putch, putdat, num, base, width, padc);
       break;
+    case 'f': {
+      int raw = va_arg(ap, int);
+      float val;
+      memcpy(&val, &raw, sizeof(val));
+
+      if (val < 0) {
+        putch('-', putdat);
+        val = -val;
+      }
+
+      int int_part = (int) val;
+      float frac = val - int_part;
+
+      // print integer part
+      printnum(putch, putdat, int_part, 10, width, padc);
+
+      putch('.', putdat);
+
+      if(precision <= 0)
+        precision = 6;
+
+      for (int i = 0; i < precision; i++) {
+        frac *= 10;
+        int digit = (int) frac;
+        putch('0' + digit, putdat);
+        frac -= digit;
+      }
+      break;
+    }
 
     // escaped '%' character
     case '%':

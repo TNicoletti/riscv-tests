@@ -1,3 +1,5 @@
+#include "float_operator.h"
+
 int t0_VALUE = 16;
 float f_vf = 0.15;
 
