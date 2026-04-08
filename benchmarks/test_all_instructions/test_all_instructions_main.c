@@ -10,6 +10,8 @@
 int repeat_instructions = 6;
 #define MAX_N EL_PER_BLOCK * MAX_REPEAT_INSTRUCTIONS * SUPORTED_INSTRUCTIONS * NUM_REGISTERS
 
+int allowed_instructions[SUPORTED_INSTRUCTIONS];
+
 /* PARAMETERS */
 int SEED = 0;
 int sole_execution = -1;
@@ -226,6 +228,8 @@ void eval_results(){
 
     printf("\nRESULTS\n");
     for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++){
+        if(allowed_instructions[i] == 0)
+            continue;
         printf("%d - %s\t ", i, get_OP(i));
         for(int j = 0; j < repeat_instructions; j++){
             printf("[%s] ", get_err(res[i][j]));
@@ -338,6 +342,8 @@ void all_test() {
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
     int z = 0;
     for(; z < SUPORTED_INSTRUCTIONS; z++){
+        if(allowed_instructions[z] == 0)
+            continue;
         for(int j = 0; j < repeat_instructions; j++){
             int prev_error = error_count;
             if(PRINTS >= 3)printf("==== Begginning test  %d ======\n\n", z * repeat_instructions + j);
@@ -369,6 +375,10 @@ int digest_parameters(){
     if(parameter.argc > 1) sole_execution      = parameter.argv[1];
     if(parameter.argc > 2) PRINTS              = parameter.argv[2];
     if(parameter.argc > 3) repeat_instructions = parameter.argv[3];
+    if(parameter.argc > 3 + SUPORTED_INSTRUCTIONS){
+        for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++)
+            allowed_instructions[i] = parameter.argv[4 + i];
+    }
 }
 
 int main(){

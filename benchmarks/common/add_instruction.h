@@ -213,6 +213,8 @@ int add_instruction(int op, int rx[3], int r[3]){
     int imm = 7;
 
     int i = 1;
+
+    if(PRINTS >= 2) printf("OP: %s\n", get_OP(op));
     switch (op){
         case VADD_VV:
             for(int j = 0; j < EL_PER_BLOCK; j++){
@@ -249,7 +251,7 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VSLL_VV:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d << [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] << scalar_res[rx[2]][j]);
+                scalar_res[rx[0]][j] = (int32_t)((uint32_t)scalar_res[rx[1]][j] << (scalar_res[rx[2]][j]));
             }
             if(PRINTS >= 2) printf("\n");
             instr = VSLL_VV_INSTR;
@@ -257,7 +259,7 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VSRL_VV:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d >> [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] >> scalar_res[rx[2]][j]);
+                scalar_res[rx[0]][j] = (int32_t)((uint32_t)scalar_res[rx[1]][j] >> (scalar_res[rx[2]][j]));
             }
             if(PRINTS >= 2) printf("\n");
             instr = VSRL_VV_INSTR;
@@ -307,7 +309,7 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VSRL_VI:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d >> imm(%d);\n", rx[0], j, rx[1], scalar_res[rx[1]][j], imm);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] >> imm);
+                scalar_res[rx[0]][j] = (int32_t)((uint32_t)scalar_res[rx[1]][j] >> imm);
             }
             if(PRINTS >= 2) printf("\n");
             instr = VSRL_VI_INSTR;

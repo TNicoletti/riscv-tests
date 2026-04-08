@@ -1,4 +1,4 @@
-prefix          := /usr/target
+prefix          := /usr/local
 abs_top_src_dir := /home/ubu2/Documents/Mestrado/rvv_verification_strategies/riscv-tests
 XLEN            := 64
 target_alias    := 

@@ -23,8 +23,10 @@ include $(src_dir)/rv64si/Makefrag
 include $(src_dir)/rv64ssvnapot/Makefrag
 include $(src_dir)/rv64mi/Makefrag
 include $(src_dir)/rv64mzicbo/Makefrag
-include $(src_dir)/tests/Makefrag
 include $(src_dir)/hypervisor/Makefrag
+
+include $(src_dir)/tests/Makefrag
+include $(src_dir)/test_all_instructions/Makefrag
 endif
 include $(src_dir)/rv32ui/Makefrag
 include $(src_dir)/rv32uc/Makefrag
@@ -61,7 +63,7 @@ vpath %.S $(src_dir)
 	$(RISCV_OBJDUMP) $< > $@
 
 %.out: %
-	$(RISCV_SIM) --isa=rv64gch_ziccid_zfh_zicboz_svnapot_zicntr_zba_zbb_zbc_zbs --misaligned $< 2> $@
+	$(RISCV_SIM) --isa=rv64gcvh_ziccid_zfh_zicboz_svnapot_zicntr_zba_zbb_zbc_zbs --misaligned $< 2> $@
 
 %.out32: %
 	$(RISCV_SIM) --isa=rv32gc_ziccid_zfh_zicboz_svnapot_zicntr_zba_zbb_zbc_zbs --misaligned $< 2> $@
@@ -120,8 +122,9 @@ $(eval $(call compile_template,rv64mzicbo,-march=rv64g_zicboz -mabi=lp64))
 $(eval $(call compile_template,rv64si,-march=rv64g -mabi=lp64))
 $(eval $(call compile_template,rv64ssvnapot,-march=rv64g -mabi=lp64))
 $(eval $(call compile_template,rv64mi,-march=rv64g -mabi=lp64))
-$(eval $(call compile_template,tests,-march=rv64gcv -mabi=lp64d))
 $(eval $(call compile_template,hypervisor,-march=rv64gh -mabi=lp64))
+$(eval $(call compile_template,tests,-march=rv64gcv -mabi=lp64d))
+$(eval $(call compile_template,test_all_instructions,-march=rv64gcv -mabi=lp64d))
 endif
 
 tests_dump = $(addsuffix .dump, $(tests))

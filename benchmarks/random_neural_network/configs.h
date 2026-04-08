@@ -3,6 +3,6 @@
 #define LMUL 1
 #define EL_PER_BLOCK (VLEN / SEW) * LMUL
 #define NUM_REGISTERS 3
-#define SUPORTED_INSTRUCTIONS 4
+#define SUPORTED_INSTRUCTIONS (28 + 1)
 
-#define PRINTS 1
+int PRINTS = 1;

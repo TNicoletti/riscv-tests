@@ -100,19 +100,26 @@ int is_divergent(int *vec, int *vec2, int n){
 
 int checksum_matrix(int32_t* vec, int n, int m){
   int chk = 0;
-  int chk2 = 0;
 
   for(int i = 0;i < n; i++)
     for(int j = 0; j < m; j++){
       chk ^= vec[i * m + j];
-      chk2 += vec[i * m + j];
     }
-  return chk ^ chk2;
+  return chk;
 }
 int is_divergent_matrix(int32_t* vec, int32_t* vec2, int n, int m){
-  int c1 = checksum_matrix(vec, n, m), c2 = checksum_matrix(vec2, n, m);
-  
-  return c1 == c2;
+  int c1 = checksum_matrix(vec, n, m);
+  int c2 = checksum_matrix(vec2, n, m);
+  return c1 != c2;
+}
+
+int manual_convergence(int32_t* vec, int32_t* vec2, int n, int m){
+  for(int i = 0;i < n; i++)
+    for(int j = 0; j < m; j++){
+      if(vec[i * m + j] != vec2[i * m + j])
+        return false;
+    }
+  return true;
 }
 
 /* BIT FLIP JIT CHANGERS HELPERS */
@@ -122,12 +129,20 @@ int32_t change_vet_rs1(int32_t inst, int nr2) {
     nr2 = (nr2 & 0x1F) << 20; 
     return inst | nr2;
 }
+int32_t get_vet_rs1(int32_t inst){
+  uint32_t mask = 0x1F << 20;
+  return (inst & mask) >> 20;
+}
 
 int32_t change_vet_rs2(int32_t inst, int nr1){
   uint32_t mask = ~(0x1F << 15);
   inst &= mask;
   inst |= (nr1 & 0x1F) << 15;
   return inst;
+}
+int32_t get_vet_rs2(int32_t inst){
+  uint32_t mask = 0x1F << 15;
+  return (inst & mask) >> 15;
 }
 
 // Field rd: bits 11 to 7
@@ -136,6 +151,10 @@ int32_t change_vet_rd(int32_t inst, int nrd) {
     inst &= mask;
     inst |= (nrd & 0x1F) << 7;
     return inst;
+}
+int32_t get_vet_rd(int32_t inst){
+  uint32_t mask = 0x1F << 7;
+  return (inst & mask) >> 7;
 }
 
 // Field rd: bits 11 to 7
@@ -146,6 +165,19 @@ int32_t change_imm(int32_t inst, int imm) {
     return inst;
 }
 
+/*int32_t change_imm5(int32_t inst, int imm){
+  uint32_t mask = ~(0x1F << 20); 
+  inst &= mask;
+  
+  inst |= (imm & 0x1F) << 20;
+  
+  return inst;
+}*/
+
+int32_t get_imm(int32_t inst){
+  return inst >> 20;
+}
+
 // Field rd: bits 11 to 7
 int32_t change_vet_vd(int32_t inst, int imm) {
     uint32_t mask = ~(0x1F << 20);
@@ -154,8 +186,56 @@ int32_t change_vet_vd(int32_t inst, int imm) {
     return inst;
 }
 
+int32_t get_vd(int32_t inst){
+  uint32_t mask = 0x1F << 20;
+  return (inst & mask) >> 20;
+}
+
+void get_instruction_signature(int32_t inst, int ret[3]){
+  int a0 = 0, a1 = 0, a2 = 0;
+  a0 = get_vet_rd(inst);
+  a1 = get_vet_rs1(inst);
+  a2 = get_vet_rs2(inst);
+
+  get_reg_signature(a0, a1, a2, ret);
+}
+
+void get_reg_signature(int a0, int a1, int a2, int ret[3]){
+  ret[0] = 0;
+  if(a0 == a1 && a0 == a2){
+    ret[1] = 0;
+    ret[2] = 0;
+    return;
+  }
+  if(a0 == a1){
+    ret[1] = 0;
+    ret[2] = 1;
+    return;
+  }
+
+  ret[1] = 1;
+  if(a0 == a2){
+    ret[2] = 0;
+    return;
+  }
+
+  if(a2 == a1){
+    ret[2] = 1;
+    return;
+  }
+  ret[2] = 2;
+}
+
 /* CACHE SYNCHRONIZER HELPER */
 static inline void sync_caches() {
     // Tells the RISC-V core to synchronize the I-Cache with memory/D-Cache
     __asm__ volatile ("fence.i" ::: "memory");
+}
+
+uint32_t maxu(uint32_t a1, uint32_t a2){
+  return a1>a2 ? a1 : a2;
+}
+
+int32_t max(int32_t a1, int32_t a2){
+  return a1>a2 ? a1 : a2;
 }

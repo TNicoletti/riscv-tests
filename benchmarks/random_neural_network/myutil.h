@@ -165,6 +165,15 @@ int32_t change_imm(int32_t inst, int imm) {
     return inst;
 }
 
+/*int32_t change_imm5(int32_t inst, int imm){
+  uint32_t mask = ~(0x1F << 20); 
+  inst &= mask;
+  
+  inst |= (imm & 0x1F) << 20;
+  
+  return inst;
+}*/
+
 int32_t get_imm(int32_t inst){
   return inst >> 20;
 }
@@ -221,4 +230,12 @@ void get_reg_signature(int a0, int a1, int a2, int ret[3]){
 static inline void sync_caches() {
     // Tells the RISC-V core to synchronize the I-Cache with memory/D-Cache
     __asm__ volatile ("fence.i" ::: "memory");
+}
+
+uint32_t maxu(uint32_t a1, uint32_t a2){
+  return a1>a2 ? a1 : a2;
+}
+
+int32_t max(int32_t a1, int32_t a2){
+  return a1>a2 ? a1 : a2;
 }

@@ -14,3 +14,6 @@
 benchmarks/CasioGemm/sgemm_rvv.c
 
 mem.*.bin
+
+# mem files should not be in github
+*.mem

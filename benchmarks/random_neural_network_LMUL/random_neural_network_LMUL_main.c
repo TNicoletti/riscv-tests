@@ -4,6 +4,7 @@
 #include "myutil.h"
 #include "asm_functions.h"
 #include "permute.h"
+#include "add_instruction.h"
 
 #define N 1024
 
@@ -103,75 +104,12 @@ void store_to_vet(int* vet, int reg){
     jump_to_vet(&SL_A_VECTOR[0]);
 }
 
-enum VEC_INSTRUCTIONS{
-    VADD_VV = 0,
-    VSUB_VV = 1,
-    VDIV_VV = 2,
-    VMUL_VV = 3,
-    NOP = 555
-};
-char* get_OP(int op){
-    switch(op){
-        case 0: return "+";
-        case 1: return "-";
-        case 2: return "/";
-        case 3: return "*";
-    }
-    return "ERROR";    
-}
-
 void execute_RIS(int* vet, int r[3]){
     set_vet_settings();
     load_init_values_vector(vet, r);
     set_vet_settings();
     jump_to_vet(&ADDRESS_VECTOR[0]);
     store_vet_values(r);
-}
-
-int add_instruction(int op, int rx[3], int r[3]){
-    int instr = 0;
-    switch (op){
-        case VADD_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] + scalar_res[rx[2]][j]);
-            }
-            if(PRINTS >= 2) printf("\n");
-            instr = VADD_VV_INSTR;
-            break;
-        case VSUB_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d - [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] - scalar_res[rx[2]][j]);
-            }
-            if(PRINTS >= 2) printf("\n");
-            instr = VSUB_VV_INSTR;
-            break;
-        case VDIV_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d / [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] / scalar_res[rx[2]][j]);
-            }
-            if(PRINTS >= 2) printf("\n");
-            instr = VDIV_VV_INSTR;
-            break;
-        case VMUL_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d * [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] * scalar_res[rx[2]][j]);
-            }
-            if(PRINTS >= 2) printf("\n");
-            instr = VMUL_VV_INSTR;
-            break;
-        case NOP:
-            return ADDI_ZZZ_INSTR;
-        default:
-            break;
-    }
-    instr = change_vet_rd(instr,  r[rx[0]]);
-    instr = change_vet_rs1(instr, r[rx[1]]);
-    instr = change_vet_rs2(instr, r[rx[2]]);
-    return instr;
 }
 
 load_init_values_scalar(int* vet){

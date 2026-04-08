@@ -5,6 +5,7 @@
 #include "asm_functions.h"
 #include "permute.h"
 #include "parameters.h"
+#include "add_instruction.h"
 
 #define MAX_N 1024 * 16
 
@@ -20,6 +21,9 @@ int32_t ADDRESS_VECTOR[255];
 
 extern void clean_vector_scalar(int* v1, int n);
 extern void STALL(int cycles);
+
+extern int* load_OUT_t0_vet(int* address);
+extern void load_value_ft0(float f);
 
 extern void jump_to_vet(int* vet);
 
@@ -110,75 +114,16 @@ void store_to_vet(int* vet, int reg){
     jump_to_vet(&SL_A_VECTOR[0]);
 }
 
-enum VEC_INSTRUCTIONS{
-    VADD_VV = 0,
-    VSUB_VV = 1,
-    VDIV_VV = 2,
-    VMUL_VV = 3,
-    NOP = 555
-};
-char* get_OP(int op){
-    switch(op){
-        case 0: return "+";
-        case 1: return "-";
-        case 2: return "/";
-        case 3: return "*";
-    }
-    return "ERROR";    
-}
-
 void execute_RIS(int* vet, int r[NUM_REGISTERS]){
     set_vet_settings();
     load_init_values_vector(vet, r);
+
+    load_OUT_t0_vet((int*)t0_VALUE);// Gambiarra simples para ter t0 com t0_VALUE
+    load_value_ft0(f_vf);
+
     set_vet_settings();
     jump_to_vet(&ADDRESS_VECTOR[0]);
     store_vet_values(r);
-}
-
-int add_instruction(int op, int rx[3], int r[3]){
-    int instr = 0;
-    switch (op){
-        case VADD_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] + scalar_res[rx[2]][j]);
-            }
-            if(PRINTS >= 2) printf("\n");
-            instr = VADD_VV_INSTR;
-            break;
-        case VSUB_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d - [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] - scalar_res[rx[2]][j]);
-            }
-            if(PRINTS >= 2) printf("\n");
-            instr = VSUB_VV_INSTR;
-            break;
-        case VDIV_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d / [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] / scalar_res[rx[2]][j]);
-            }
-            if(PRINTS >= 2) printf("\n");
-            instr = VDIV_VV_INSTR;
-            break;
-        case VMUL_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d * [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] * scalar_res[rx[2]][j]);
-            }
-            if(PRINTS >= 2) printf("\n");
-            instr = VMUL_VV_INSTR;
-            break;
-        case NOP:
-            return ADDI_ZZZ_INSTR;
-        default:
-            break;
-    }
-    instr = change_vet_rd(instr,  r[rx[0]]);
-    instr = change_vet_rs1(instr, r[rx[1]]);
-    instr = change_vet_rs2(instr, r[rx[2]]);
-    return instr;
 }
 
 load_init_values_scalar(int* vet){
@@ -208,10 +153,11 @@ store_vet_values(int r[NUM_REGISTERS]){
 /*===== RANDOM TEST FUNCTIONS =====*/
 int wrong_op = -1;
 void analyze_results(int passed[QTD_HEURISTICS], int qtd_tests[QTD_HEURISTICS]){
+    printf("===== ERROR RESULTS ANALISIS =====\n");
     int all_passed = 0;
     for(int i = 0; i < QTD_HEURISTICS; i++){
         all_passed += passed[i] / qtd_tests[i];
-        printf("RESULTS %d: %d out of %d tests converged\n\n", i, passed[i], qtd_tests[i]);
+        printf("RESULTS %d: %d out of %d tests converged\n", i, passed[i], qtd_tests[i]);
     }
 
     if(passed[0] == 0){
@@ -277,7 +223,7 @@ void analyze_results(int passed[QTD_HEURISTICS], int qtd_tests[QTD_HEURISTICS]){
 void error_discoverer(int index){
     int qtd_tests[QTD_HEURISTICS] = {0, 0, 0, 0, 0, 0, 0};
     int passed[QTD_HEURISTICS]    = {0, 0, 0, 0, 0, 0, 0};
-    printf("\n===== Heuristic 0 ===== \n");
+    if(PRINTS >= 1) printf("\n===== Heuristic 0 ===== \n");
     for(int i = 0; i < 5; i++){
         qtd_tests[0]++;
         load_init_values_scalar(&OUT[index]);
@@ -290,10 +236,10 @@ void error_discoverer(int index){
 
         execute_RIS(&OUT[index], r);
         if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
-            printf("Convergence\n");
+            if(PRINTS >= 1) printf("Convergence\n");
             passed[0]++;
         }else{
-            printf("Divergence\n");
+            if(PRINTS >= 1) printf("Divergence\n");
         }
         if(PRINTS >= 3){
             printf("SCALAR:\n");
@@ -303,7 +249,7 @@ void error_discoverer(int index){
         }
     }
 
-    printf("\n===== Heuristic 1 ===== \n");
+    if(PRINTS >= 1) printf("\n===== Heuristic 1 ===== \n");
     qtd_tests[1] = 1;
     int qtd_nops = 32;
     load_init_values_scalar(&OUT[index]);
@@ -316,16 +262,16 @@ void error_discoverer(int index){
     execute_RIS(&OUT[index], r);
 
     if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
-        printf("Convergence, probably data hazard problem\n");
+        if(PRINTS >= 1) printf("Convergence, probably data hazard problem\n");
         passed[1]++;
     }else{
-        printf("Divergence => proceed to next test\n");
-        print_matrix(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
-        print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
+        if(PRINTS >= 1) printf("Divergence => proceed to next test\n");
+        if(PRINTS >= 3) print_matrix(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
+        if(PRINTS >= 3) print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
 
     }
 
-    printf("\n===== Heuristic 2 ===== \n\n");
+    if(PRINTS >= 1) printf("\n===== Heuristic 2 ===== \n\n");
     for(int i = 0; i < 4; i++){
         qtd_tests[2]++;        
         load_init_values_scalar(&OUT[index]);
@@ -333,19 +279,19 @@ void error_discoverer(int index){
         ADDRESS_VECTOR[1] = RET_INSTR;
         execute_RIS(&OUT[index], r);
         if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
-            printf("Convergence\n");
+            if(PRINTS >= 1) printf("Convergence\n");
             passed[2]++;
         }
         else {
-            printf("Divergence => problem single with instruction\n");
-            printf("v = %d %s %d\n", rx[i][1], get_OP(ops[i]), rx[i][2]);
+            if(PRINTS >= 1) printf("Divergence => problem single with instruction\n");
+            if(PRINTS >= 3) printf("v = %d %s %d\n", rx[i][1], get_OP(ops[i]), rx[i][2]);
         }
     }
 
 
-    printf("\n===== Heuristic 3 ===== \n\n");
+    if(PRINTS >= 1) printf("\n===== Heuristic 3 ===== \n\n");
     for(int i = 0; i < 4; i++){
-        printf("Removed instruction %d\n", i);
+        if(PRINTS >= 1) printf("Removed instruction %d\n", i);
         qtd_tests[3]++;        
         load_init_values_scalar(&OUT[index]);
         for(int j = 0; j < 4; j++){
@@ -359,19 +305,19 @@ void error_discoverer(int index){
         ADDRESS_VECTOR[3] = RET_INSTR;
         execute_RIS(&OUT[index], r);
         if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
-            printf("Convergence\n\n");
+            if(PRINTS >= 1) printf("Convergence\n");
             passed[3]++;
         }
         else {
-            printf("Divergence\n\n");
+            if(PRINTS >= 1) printf("Divergence\n");
         }
     }
 
-    printf("\n===== Heuristic 3.1 ===== \n\n");
+    if(PRINTS >= 1) printf("\n===== Heuristic 3.1 ===== \n\n");
     for(int i = 0; i < 4; i++)
         for(int j = i + 1; j < 4; j++){
             qtd_tests[3]++;
-            printf("Removed instruction %d %d\n", i, j);        
+            if(PRINTS >= 1) printf("Removed instruction %d %d\n", i, j);        
             load_init_values_scalar(&OUT[index]);
             int t = 0;
             for(int z = 0; z < 4; z++){
@@ -383,13 +329,13 @@ void error_discoverer(int index){
             ADDRESS_VECTOR[2] = RET_INSTR;
             execute_RIS(&OUT[index], r);
             if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
-                printf("Convergence\n\n");
+                if(PRINTS >= 1) printf("Convergence\n");
                 passed[3]++;
             }
-            else printf("Divergence\n\n");
+            else if(PRINTS >= 1) printf("Divergence\n");
         }
         
-    printf("\n===== Heuristic 4 ===== \n\n");
+    if(PRINTS >= 1) printf("\n===== Heuristic 4 ===== \n\n");
     qtd_tests[4] = 1;
     int other_r[3] = {0, 8, 24};
     load_init_values_scalar(&OUT[index]);
@@ -400,21 +346,22 @@ void error_discoverer(int index){
     ADDRESS_VECTOR[4] = RET_INSTR;
     execute_RIS(&OUT[index], other_r);
     if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
-        printf("Convergence\n\n");
+        if(PRINTS >= 1) printf("Convergence\n\n");
         passed[4]++;
     }
-    else printf("Divergence\n\n");
-    print_matrix(&vet_res[0][0], 3, EL_PER_BLOCK);
-    print_matrix(&scalar_res[0][0], 3, EL_PER_BLOCK);
+    else{
+        if(PRINTS >= 1) printf("Divergence\n\n");
+        if(PRINTS >= 3) print_matrix(&vet_res[0][0], 3, EL_PER_BLOCK);
+        if(PRINTS >= 3) print_matrix(&scalar_res[0][0], 3, EL_PER_BLOCK);
+    } 
     
-    printf("\n===== Heuristic 5 ===== \n\n");
+    if(PRINTS >= 1) printf("\n===== Heuristic 5 ===== \n\n");
 
     for(int one = 0; one < 24; one++){
         qtd_tests[5]++;
         int perm[4];
         get_permutation(one, 4, &perm[0]);
-        printf("test %d\n", one);   
-        printf("PERMUTATION %d %d %d %d\n", perm[0], perm[1], perm[2], perm[3]);
+        if(PRINTS >= 1) printf("PERMUTATION %d %d %d %d\n", perm[0], perm[1], perm[2], perm[3]);
         load_init_values_scalar(&OUT[index]);
         ADDRESS_VECTOR[0] = add_instruction(ops[perm[0]], rx[perm[0]], r);
         ADDRESS_VECTOR[1] = add_instruction(ops[perm[1]], rx[perm[1]], r);
@@ -423,13 +370,15 @@ void error_discoverer(int index){
         ADDRESS_VECTOR[4] = RET_INSTR;
         execute_RIS(&OUT[index], r);
         if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
-            printf("Convergence\n\n");
+            if(PRINTS >= 1) printf("Convergence\n\n");
             passed[5]++;
         }
-        else printf("Divergence\n\n");
+        else{
+            if(PRINTS >= 1) printf("Divergence\n\n");
+        } 
     }
 
-    printf("\n===== Heuristic 6 ===== \n");
+    if(PRINTS >= 1) printf("\n===== Heuristic 6 ===== \n");
     for(int i = 0; i < NUM_RANDOM_OPS; i++){
         int signatures[5][3] = {
             {0, 0, 0},
@@ -452,13 +401,13 @@ void error_discoverer(int index){
             ADDRESS_VECTOR[30] = RET_INSTR;
             execute_RIS(&OUT[index], other_r);
             if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
-                printf("Convergence\n");
+                if(PRINTS >= 1) printf("Convergence\n");
                 passed[6]++;
             }
             else{
-            printf("Divergence\n");
-            printf("PROBLEMATIC OP: %s\n", get_OP(op));
-            wrong_op = op;  
+                if(PRINTS >= 1) printf("Divergence\n");
+                if(PRINTS >= 1) printf("PROBLEMATIC OP: %s\n", get_OP(op));
+                wrong_op = op;  
             } 
         }
     }
@@ -509,7 +458,7 @@ void random_test(int seed) {
     msrand(seed); // Length of the values should not alter significantly the operations
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
     for(int z = 0; z + inc <= N; z+= inc){
-        printf("==== Begginning test  %d ======\n\n", z / inc);
+        printf("==== Begginning test  %d ======\n", z / inc);
 
         generate_RIS(z);
         execute_RIS(&OUT[z], r);
@@ -537,26 +486,36 @@ void random_test(int seed) {
             error_discoverer(z);
             exit(0);
         }
-        printf("==== End test  %d ======\n", z / inc);
+        printf("==== End test  %d        ======\n\n", z / inc);
     }
 
 }
 
-int main(){
-    if (parameter.argc != 0)
-    {
-        printf("argc: %d\n", parameter.argc);
-        for(int i = 0; i < parameter.argc; i++){
-            printf("argv[%d] = %d;", i, parameter.argv[i]);
-        }
-        printf("\n");
-        
+void print_params(){
+    printf("argc: %d\n", parameter.argc);
+    for(int i = 0; i < parameter.argc; i++){
+        printf("argv[%d] = %d;\n", i, parameter.argv[i]);
+    }
+    printf("\n");
+}
+
+void digest_parameters(){
+    print_params();
+    if (parameter.argc > 0){
         SEED = parameter.argv[0];
-        if(parameter.argc > 1)
-            N = parameter.argv[1];
     }
 
-    printf("Doing random batch tests with registers v0-v7 with seed %d\n", SEED);
-    random_test(SEED);
+    if(parameter.argc > 1)
+        N = parameter.argv[1];
+
+    if(parameter.argc > 2)
+        PRINTS = parameter.argv[2];
+}
+
+int main(){
+    digest_parameters();
+
+    //printf("Doing random batch tests with registers v0-v7 with seed %d\n", SEED);
+    //random_test(SEED);
     exit(0);
 }
