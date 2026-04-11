@@ -17,3 +17,5 @@ mem.*.bin
 
 # mem files should not be in github
 *.mem
+
+/resps/*

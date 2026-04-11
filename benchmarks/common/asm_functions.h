@@ -144,3 +144,41 @@
 #define VMERGE_VVM_INSTR 0x5c2180d7          	//vmerge.vvm	v0,v1,v2,v0
 #define VMERGE_VXM_INSTR 0x5c2e40d7          	//vmerge.vxm	v0,v1,t2,v0
 #define VMERGE_VIM_INSTR 0x5c21b0d7          	//vmerge.vim	v0,v1,2,v0
+
+// Vector mask shift u (Comparisons)
+#define VMSLTU_VV_INSTR     0x6a110057 // vmsltu.vv v0, v1, v2
+#define VMSLTU_VX_INSTR     0x6a13c057 // vmsltu.vx v0, v1, t2
+#define VMSLEU_VV_INSTR     0x72110057 // vmsleu.vv v0, v1, v2
+#define VMSLEU_VX_INSTR     0x7213c057 // vmsleu.vx v0, v1, t2
+
+// Div unsigned
+#define VDIVU_VV_INSTR      0x82112057 // vdivu.vv v0, v1, v2
+#define VDIVU_VX_INSTR      0x8213e057 // vdivu.vx v0, v1, t2
+
+// Remainder
+#define VREM_VV_INSTR       0x8e112057 // vrem.vv v0, v1, v2
+#define VREM_VX_INSTR       0x8e13e057 // vrem.vx v0, v1, t2
+#define VREMU_VV_INSTR      0x8a112057 // vremu.vv v0, v1, v2
+#define VREMU_VX_INSTR      0x8a13e057 // vremu.vx v0, v1, t2
+
+// Mul High
+#define VMULH_VV_INSTR      0x9e112057
+#define VMULHU_VV_INSTR     0x92112057 // vmulhu.vv v0, v1, v2
+#define VMULHU_VX_INSTR     0x9213e057 // vmulhu.vx v0, v1, t2
+#define VMULHSU_VV_INSTR    0x9a112057 // vmulhsu.vv v0, v1, v2
+#define VMULHSU_VX_INSTR    0x9a13e057 // vmulhsu.vx v0, v1, t2
+
+// Min and max values
+#define VMIN_VV_INSTR       0x16110057 // vmin.vv v0, v1, v2
+#define VMIN_VX_INSTR       0x1613c057 // vmin.vx v0, v1, t2
+#define VMAX_VV_INSTR       0x1e110057 // vmax.vv v0, v1, v2
+#define VMAX_VX_INSTR       0x1e13c057 // vmax.vx v0, v1, t2
+#define VMINU_VV_INSTR      0x12110057 // vminu.vv v0, v1, v2
+#define VMINU_VX_INSTR      0x1213c057 // vminu.vx v0, v1, t2
+#define VMAXU_VV_INSTR      0x1a110057 // vmaxu.vv v0, v1, v2
+#define VMAXU_VX_INSTR      0x1a13c057 // vmaxu.vx v0, v1, t2
+
+// Arithmetic shift right
+#define VSRA_VV_INSTR       0xa6110057 // vsra.vv v0, v1, v2
+#define VSRA_VI_INSTR       0xa6113057 // vsra.vi v0, v1, 2
+#define VSRA_VX_INSTR       0xa613c057 // vsra.vx v0, v1, t2

@@ -44,9 +44,9 @@ volatile int32_t OUT[MAX_N];
 void generate_initial_values(){
     msrand(SEED);
     for (int i = 0; i < N; i++) {
-        A[i] = mrand();
-        B[i] = mrand();
-        OUT[i] = mrand();
+        A[i] = mrand_signed();
+        B[i] = mrand_signed();
+        OUT[i] = mrand_signed();
     }
 }
 
@@ -375,13 +375,16 @@ int digest_parameters(){
     if(parameter.argc > 1) sole_execution      = parameter.argv[1];
     if(parameter.argc > 2) PRINTS              = parameter.argv[2];
     if(parameter.argc > 3) repeat_instructions = parameter.argv[3];
-    if(parameter.argc > 3 + SUPORTED_INSTRUCTIONS){
+    /*if(parameter.argc > 3 + SUPORTED_INSTRUCTIONS){
         for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++)
             allowed_instructions[i] = parameter.argv[4 + i];
-    }
+    }*/
 }
 
 int main(){
+    for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++)
+        allowed_instructions[i] = 1;
+
     digest_parameters();
     asm volatile("csrw mtvec, %0" : : "r" (new_trap_handler));
     
