@@ -3,17 +3,22 @@
     {
       "name": "SEED",
       "type": "int",
-      "value": 17970262
+      "value": 1797026
     },
     {
       "name": "N",
       "type": "int",
-      "value": 10000
+      "value": 40000
     },
     {
       "name": "PRINTS",
       "type": "int",
       "value": 3
+    },
+    {
+      "name": "SUPORTED_INSTRUCTIONS",
+      "type": "int",
+      "value": 35
     },
     {
       "name": "instruction_set",

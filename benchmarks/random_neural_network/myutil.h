@@ -239,3 +239,11 @@ uint32_t maxu(uint32_t a1, uint32_t a2){
 int32_t max(int32_t a1, int32_t a2){
   return a1>a2 ? a1 : a2;
 }
+
+uint32_t minu(uint32_t a1, uint32_t a2){
+  return a1<a2 ? a1 : a2;
+}
+
+int32_t min(int32_t a1, int32_t a2){
+  return a1<a2 ? a1 : a2;
+}

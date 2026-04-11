@@ -500,7 +500,7 @@ void print_params(){
 }
 
 void digest_parameters(){
-    print_params();
+    //print_params();
     if (parameter.argc > 0){
         SEED = parameter.argv[0];
     }
@@ -510,12 +510,15 @@ void digest_parameters(){
 
     if(parameter.argc > 2)
         PRINTS = parameter.argv[2];
+
+    if(parameter.argc > 3)
+        SUPORTED_INSTRUCTIONS = parameter.argv[3];
 }
 
 int main(){
     digest_parameters();
 
-    //printf("Doing random batch tests with registers v0-v7 with seed %d\n", SEED);
-    //random_test(SEED);
+    printf("Doing random batch tests with registers v0-v7 with seed %d\n", SEED);
+    random_test(SEED);
     exit(0);
 }

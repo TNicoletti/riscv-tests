@@ -198,29 +198,6 @@ char* get_err(int err){
     }
 }
 
-void help_errors(){
-    printf("Error reference:\n");
-    printf("'XX'  : correct answer\n\n");
-    printf("'WA' : wrong answer (no hardware errors)\n");
-    printf("Hardware errors\n");
-    printf("'IM': Instruction Address Misaligned\n");
-    printf("'IF': Instruction Access Fault\n");
-    printf("'II' : Illegal Instruction / Unimplemented Instruction\n");
-    printf("'BP' : Breakpoint (ebreak)\n");
-    printf("'LM': Load Address Misaligned\n");
-    printf("'LF': Load Access Fault\n");
-    printf("'SM': Store/AMO Address Misaligned\n");
-    printf("'SF': Store/AMO Access Fault\n");
-    printf("'EU': Environment Call from U-mode\n");
-    printf("'ES': Environment Call from S-mode\n");
-    printf("'EM': Environment Call from M-mode\n");
-    printf("'IP': Instruction Page Fault\n");
-    printf("'LP': Load Page Fault\n");
-    printf("'SP': Store/AMO Page Fault\n");
-    printf("'HE' : Hardware Error (implementation specific)\n");
-    printf("'UK': Unknown / Reserved\n");
-}
-
 int res[SUPORTED_INSTRUCTIONS][MAX_REPEAT_INSTRUCTIONS];
 void eval_results(){
     int qtt_errors = 0;
