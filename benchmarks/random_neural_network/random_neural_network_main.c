@@ -10,12 +10,14 @@
 #define MAX_N 1024 * 16
 
 #define NUM_RANDOM_OPS 4
-#define QTD_HEURISTICS 7
+#define QTD_HEURISTICS 8
 
 int N = 4096;
 int SEED = 0x1123456;
 
 int32_t ADDRESS_VECTOR[255];
+int allowed_instructions[SUPORTED_INSTRUCTIONS];
+int fixed_suported_instructions = SUPORTED_INSTRUCTIONS;
 
 /* ===== EXTERNALS ===== */
 
@@ -85,9 +87,22 @@ void shuffle_registers(int r[NUM_REGISTERS]){
 
     }
 }
+
+int fix_op(int x){
+    int r = -1;
+    for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++){
+        if(allowed_instructions[i] == 1)
+            r++;
+        if(r == x)
+            return i;
+    }
+    return r;
+}
+
 void randomize_instructions(){
     for(int i = 0; i < NUM_RANDOM_OPS; i++){
-        ops[i] = mrand() % SUPORTED_INSTRUCTIONS;
+        ops[i] = mrand() % fixed_suported_instructions;
+        ops[i] = fix_op(ops[i]);
         rx[i][0] = mrand() % NUM_REGISTERS; rx[i][1] = mrand() % NUM_REGISTERS; rx[i][2] = mrand() % NUM_REGISTERS;
     }
 }
@@ -117,22 +132,13 @@ void store_to_vet(int* vet, int reg){
 void execute_RIS(int* vet, int r[NUM_REGISTERS]){
     set_vet_settings();
     load_init_values_vector(vet, r);
+    set_vet_settings();
 
     load_OUT_t0_vet((int*)t0_VALUE);// Gambiarra simples para ter t0 com t0_VALUE
     load_value_ft0(f_vf);
 
-    set_vet_settings();
     jump_to_vet(&ADDRESS_VECTOR[0]);
     store_vet_values(r);
-}
-
-load_init_values_scalar(int* vet){
-    for(int i = 0; i < EL_PER_BLOCK; i++)
-    {
-        scalar_res[0][i] = vet[i];
-        scalar_res[1][i] = vet[EL_PER_BLOCK + i];
-        scalar_res[2][i] = vet[2 * EL_PER_BLOCK + i];
-    }
 }
 
 load_init_values_vector(int* vet, int regs[NUM_REGISTERS]){    
@@ -218,6 +224,12 @@ void analyze_results(int passed[QTD_HEURISTICS], int qtd_tests[QTD_HEURISTICS]){
 
     6.1 - Do the operations one by one with differente "signatures"
     Seeks to identify eventually faulty single instructions
+
+    7 - Do the operations:
+        7.1 - only the first instruction 
+        7.2 - the first and the second instructions 
+        7.3 - the first, second and third instructions
+        7.4 - all instructions
     
 */
 void error_discoverer(int index){
@@ -228,8 +240,8 @@ void error_discoverer(int index){
         qtd_tests[0]++;
         load_init_values_scalar(&OUT[index]);
 
-        for(int i = 0; i < NUM_RANDOM_OPS; i++){
-            ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
+        for(int j = 0; j < NUM_RANDOM_OPS; j++){
+            ADDRESS_VECTOR[j] = add_instruction(ops[j], rx[j], r);
         }
     
         ADDRESS_VECTOR[NUM_RANDOM_OPS] = RET_INSTR;
@@ -391,12 +403,19 @@ void error_discoverer(int index){
             qtd_tests[6]++;
             int* s = &signatures[z][0];
             int op = ops[i];
-            //get_reg_signature(rx[i][0], rx[i][1], rx[i][2], s);
-            //printf("signature:%d %d %d; op = %s\n", s[0], s[1], s[2], get_OP(op));
 
+            int m1 = 0;
             load_init_values_scalar(&OUT[index]);
             for(int j = 0; j < 30; j++){
                 ADDRESS_VECTOR[j] = add_instruction(op, s, other_r);
+                if(ADDRESS_VECTOR[j] == -1){
+                    m1 = 1;
+                    break;
+                }
+            }
+            if(m1){
+                passed[6]++;
+                break;
             }
             ADDRESS_VECTOR[30] = RET_INSTR;
             execute_RIS(&OUT[index], other_r);
@@ -409,6 +428,35 @@ void error_discoverer(int index){
                 if(PRINTS >= 1) printf("PROBLEMATIC OP: %s\n", get_OP(op));
                 wrong_op = op;  
             } 
+        }
+    }
+    printf("\n");
+
+    if(PRINTS >= 1) printf("\n===== Heuristic 7 ===== \n");
+    for(int i = 0; i < NUM_RANDOM_OPS; i++){
+       if(PRINTS >= 1) printf("Test %d\n\n", i);
+
+        qtd_tests[7]++;
+        load_init_values_scalar(&OUT[index]);
+
+        for(int j = 0; j <= i; j++){
+            ADDRESS_VECTOR[j] = add_instruction(ops[j], rx[j], r);
+        }
+    
+        ADDRESS_VECTOR[NUM_RANDOM_OPS] = RET_INSTR;
+
+        execute_RIS(&OUT[index], r);
+        if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
+            if(PRINTS >= 1) printf("Convergence\n");
+            passed[7]++;
+        }else{
+            if(PRINTS >= 1) printf("Divergence\n");
+        }
+        if(PRINTS >= 3){
+            printf("SCALAR:\n");
+            print_matrix(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
+            printf("VETORIAL:\n");
+            print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
         }
     }
     printf("\n");
@@ -443,6 +491,46 @@ void generate_RIS(int index){
     if(PRINTS >= 2)printf("STEP BY STEP RESULTS: \n");
     for(int i = 0; i < NUM_RANDOM_OPS; i++){
         ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
+        if (ADDRESS_VECTOR[i] == -1){
+            rx[i][0] = 0;
+            rx[i][1] = 1;
+            rx[i][2] = 2;
+            ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
+        }
+        if (ADDRESS_VECTOR[i] == -1){
+            rx[i][0] = 0;
+            rx[i][1] = 2;
+            rx[i][2] = 1;
+            ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
+        }
+        if (ADDRESS_VECTOR[i] == -1){
+            rx[i][0] = 1;
+            rx[i][1] = 0;
+            rx[i][2] = 2;
+            ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
+        }
+        if (ADDRESS_VECTOR[i] == -1){
+            rx[i][0] = 1;
+            rx[i][1] = 2;
+            rx[i][2] = 0;
+            ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
+        }
+        if (ADDRESS_VECTOR[i] == -1){
+            rx[i][0] = 2;
+            rx[i][1] = 1;
+            rx[i][2] = 0;
+            ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
+        }
+        if (ADDRESS_VECTOR[i] == -1){
+            rx[i][0] = 2;
+            rx[i][1] = 0;
+            rx[i][2] = 1;
+            ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
+        }
+        if (ADDRESS_VECTOR[i] == -1){
+            ADDRESS_VECTOR[i] = RET_INSTR;
+            return;
+        }
     }
     
     ADDRESS_VECTOR[NUM_RANDOM_OPS] = RET_INSTR;
@@ -511,8 +599,21 @@ void digest_parameters(){
     if(parameter.argc > 2)
         PRINTS = parameter.argv[2];
 
-    if(parameter.argc > 3)
-        SUPORTED_INSTRUCTIONS = parameter.argv[3];
+    if(parameter.argc >= 3 + SUPORTED_INSTRUCTIONS){
+        fixed_suported_instructions = 0;
+        for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++){
+
+            allowed_instructions[i] = parameter.argv[3 + i];
+            printf("%s: %d\n", get_OP(i), allowed_instructions[i]);
+
+            if(allowed_instructions[i]) fixed_suported_instructions++;
+        }
+    }else{
+        for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++){
+            allowed_instructions[i] = 1;
+        }
+    }
+    
 }
 
 int main(){

@@ -125,15 +125,6 @@ void execute_RIS(int* vet, int r[NUM_REGISTERS]){
     store_vet_values(r);
 }
 
-void load_init_values_scalar(int* vet){
-    for(int i = 0; i < EL_PER_BLOCK; i++)
-    {
-        scalar_res[0][i] = vet[i];
-        scalar_res[1][i] = vet[EL_PER_BLOCK + i];
-        scalar_res[2][i] = vet[2 * EL_PER_BLOCK + i];
-    }
-}
-
 void load_init_values_vector(int* vet, int regs[NUM_REGISTERS]){    
     set_vet_settings();
     for(int i = 0; i < NUM_REGISTERS; i++)
@@ -348,20 +339,22 @@ void all_test() {
 }
 
 int digest_parameters(){
+    printf("parameter.argc: %d\n", parameter.argc);
     if(parameter.argc > 0) SEED                = parameter.argv[0];
     if(parameter.argc > 1) sole_execution      = parameter.argv[1];
     if(parameter.argc > 2) PRINTS              = parameter.argv[2];
     if(parameter.argc > 3) repeat_instructions = parameter.argv[3];
-    /*if(parameter.argc > 3 + SUPORTED_INSTRUCTIONS){
-        for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++)
+    if(parameter.argc >= 4 + SUPORTED_INSTRUCTIONS){
+        for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++){
             allowed_instructions[i] = parameter.argv[4 + i];
-    }*/
+        }
+    }else{
+        for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++)
+            allowed_instructions[i] = 1;
+    }
 }
 
 int main(){
-    for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++)
-        allowed_instructions[i] = 1;
-
     digest_parameters();
     asm volatile("csrw mtvec, %0" : : "r" (new_trap_handler));
     

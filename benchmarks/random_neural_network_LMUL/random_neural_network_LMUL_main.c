@@ -112,15 +112,6 @@ void execute_RIS(int* vet, int r[3]){
     store_vet_values(r);
 }
 
-load_init_values_scalar(int* vet){
-    for(int i = 0; i < EL_PER_BLOCK; i++)
-    {
-        scalar_res[0][i] = vet[i];
-        scalar_res[1][i] = vet[EL_PER_BLOCK + i];
-        scalar_res[2][i] = vet[2 * EL_PER_BLOCK + i];
-    }
-}
-
 load_init_values_vector(int* vet, int regs[3]){    
     set_vet_settings();
     load_to_vet(&vet[0], regs[0]);
