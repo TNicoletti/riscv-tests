@@ -82,6 +82,7 @@
         { "name": "VREDMIN_VS",    "value": true },
         { "name": "VREDAND_VS",    "value": true },
         { "name": "VREDOR_VS",     "value": true },
+        { "name": "VREDXOR_VS",    "value": true },
         { "name": "VMAND_MM",      "value": true },
         { "name": "VMOR_MM",       "value": true },
         { "name": "VMNAND_MM",     "value": true },
@@ -106,9 +107,9 @@
         { "name": "VMFNE_VV",      "value": true },
         { "name": "VMFLT_VV",      "value": true },
         { "name": "VMFLE_VV",      "value": true },
-        { "name": "VMERGE_VVM",    "value": true },
-        { "name": "VMERGE_VXM",    "value": true },
-        { "name": "VMERGE_VIM",    "value": true },
+        { "name": "VMERGE_VVM",    "value": false },
+        { "name": "VMERGE_VXM",    "value": false },
+        { "name": "VMERGE_VIM",    "value": false },
         { "name": "VMSLTU_VV",     "value": true },
         { "name": "VMSLTU_VX",     "value": true },
         { "name": "VMSLEU_VV",     "value": true },
@@ -134,8 +135,7 @@
         { "name": "VMAXU_VX",      "value": true },
         { "name": "VSRA_VV",       "value": true },
         { "name": "VSRA_VI",       "value": true },
-        { "name": "VSRA_VX",       "value": true },
-        { "name": "VLUXEI32_V",    "value": true }
+        { "name": "VSRA_VX",       "value": true }
         ]
     }
   ]

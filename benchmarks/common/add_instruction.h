@@ -287,6 +287,10 @@ int widening_forbid(int rx[3], int r[3]){
     return (r[rx[0]] % (LMUL * 2)) != 0;
 }
 
+void require_imm_positive(){
+    imm = (imm>=0)?imm:-imm;
+}
+
 void help_errors(){
     printf("Error reference:\n");
     printf("'XX'  : correct answer\n\n");
@@ -400,6 +404,7 @@ int add_instruction(int op, int rx[3], int r[3]){
             instr_type = VI;
             break;
         case VSLL_VI:
+            require_imm_positive();
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d << imm(%d);\n", rx[0], j, rx[1], scalar_res[rx[1]][j], imm);
                 scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] << imm);
@@ -409,6 +414,7 @@ int add_instruction(int op, int rx[3], int r[3]){
             instr_type = VI;
             break;
         case VSRL_VI:
+            require_imm_positive();
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d >> imm(%d);\n", rx[0], j, rx[1], scalar_res[rx[1]][j], imm);
                 scalar_res[rx[0]][j] = (int32_t)((uint32_t)scalar_res[rx[1]][j] >> imm);
@@ -418,9 +424,10 @@ int add_instruction(int op, int rx[3], int r[3]){
             instr_type = VI;
             break;
         case VAND_VI:
+            int ima = imm>=16?-imm:imm;
             for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d & imm(%d);\n", rx[0], j, rx[1], scalar_res[rx[1]][j], imm);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] & imm);
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d & imm(%d);\n", rx[0], j, rx[1], scalar_res[rx[1]][j], ima);
+                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] & ima);
             }
             if(PRINTS >= 2) printf("\n");
             instr = VAND_VI_INSTR;
@@ -701,26 +708,26 @@ int add_instruction(int op, int rx[3], int r[3]){
             instr_type = NO_TYPE;
             break;
         case VWADD_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(widening_forbid(rx, r)) return -1;
+            if(widening_forbid(rx, r)) return -1;
+            for(int j = 0; j < EL_PER_BLOCK / 2; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
                 int64_t res = (int64_t)((int64_t)scalar_res[rx[1]][j] + (int64_t)scalar_res[rx[2]][j]);
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK]     = \
                 res & 0xFFFFFFFF;
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK + 1 ] = \
                 (res >> 32);
             }
             if(PRINTS >= 2) printf("\n");
             instr = VWADD_VV_INSTR;
             break;
         case VWADD_VX:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(widening_forbid(rx, r)) return -1;
+            if(widening_forbid(rx, r)) return -1;
+            for(int j = 0; j < EL_PER_BLOCK / 2; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + %d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
                 int64_t res = (int64_t)((int64_t)scalar_res[rx[1]][j] + (int64_t)t0_VALUE);
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK]     = \
                 res & 0xFFFFFFFF;
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK + 1 ] = \
                 (res >> 32);
             }
             if(PRINTS >= 2) printf("\n");
@@ -728,26 +735,26 @@ int add_instruction(int op, int rx[3], int r[3]){
             instr_type = VX;
             break;
         case VWSUB_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(widening_forbid(rx, r)) return -1;
+            if(widening_forbid(rx, r)) return -1;
+            for(int j = 0; j < EL_PER_BLOCK / 2; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d - [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
                 int64_t res = (int64_t)((int64_t)scalar_res[rx[1]][j] - (int64_t)scalar_res[rx[2]][j]);
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK]     = \
                 res & 0xFFFFFFFF;
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK + 1 ] = \
                 (res >> 32);
             }
             if(PRINTS >= 2) printf("\n");
             instr = VWSUB_VV_INSTR;
             break;
         case VWSUB_VX:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(widening_forbid(rx, r)) return -1;
+            if(widening_forbid(rx, r)) return -1;
+            for(int j = 0; j < EL_PER_BLOCK / 2; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d - %d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
                 int64_t res = (int64_t)((int64_t)scalar_res[rx[1]][j] - (int64_t)t0_VALUE);
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK]     = \
                 res & 0xFFFFFFFF;
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK + 1 ] = \
                 (res >> 32);
             }
             if(PRINTS >= 2) printf("\n");
@@ -755,27 +762,27 @@ int add_instruction(int op, int rx[3], int r[3]){
             instr_type = VX;
             break;
         case VWADDU_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(widening_forbid(rx, r)) return -1;
+            if(widening_forbid(rx, r)) return -1;
+            for(int j = 0; j < EL_PER_BLOCK / 2; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
                 uint64_t res = ((uint64_t)(uint32_t)scalar_res[rx[1]][j] + 
                 (uint64_t)(uint32_t)scalar_res[rx[2]][j]);
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK]     = \
                 res & 0xFFFFFFFF;
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK + 1 ] = \
                 (res >> 32);
             }
             if(PRINTS >= 2) printf("\n");
             instr = VWADDU_VV_INSTR;
             break;
         case VWADDU_VX:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(widening_forbid(rx, r)) return -1;
+            if(widening_forbid(rx, r)) return -1;
+            for(int j = 0; j < EL_PER_BLOCK / 2; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + %d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
                 uint64_t res = ((uint64_t)(uint32_t)scalar_res[rx[1]][j] + (uint64_t)(uint32_t)t0_VALUE);
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK]     = \
                 res & 0xFFFFFFFF;
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK + 1 ] = \
                 (res >> 32);
             }
             if(PRINTS >= 2) printf("\n");
@@ -783,26 +790,26 @@ int add_instruction(int op, int rx[3], int r[3]){
             instr_type = VX;
             break;
         case VWMUL_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(widening_forbid(rx, r)) return -1;
+            if(widening_forbid(rx, r)) return -1;
+            for(int j = 0; j < EL_PER_BLOCK / 2; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d * [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
                 int64_t res = (int64_t)((int64_t)scalar_res[rx[1]][j] * (int64_t)scalar_res[rx[2]][j]);
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK]     = \
                 res & 0xFFFFFFFF;
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK + 1 ] = \
                 (res >> 32);
             }
             if(PRINTS >= 2) printf("\n");
             instr = VWMUL_VV_INSTR;
             break;
         case VWMUL_VX:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(widening_forbid(rx, r)) return -1;
+            if(widening_forbid(rx, r)) return -1;
+            for(int j = 0; j < EL_PER_BLOCK / 2; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d * %d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
                 uint64_t res = (uint64_t)((uint64_t)scalar_res[rx[1]][j] * (uint64_t)t0_VALUE);
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK]     = \
                 res & 0xFFFFFFFF;
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK + 1 ] = \
                 (res >> 32);
             }
             if(PRINTS >= 2) printf("\n");
@@ -812,43 +819,30 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VWMACC_VV:
             if(widening_forbid(rx, r)) return -1;
             int64_t res[EL_PER_BLOCK];
-            for(int j = 0; j < EL_PER_BLOCK; j++) {
+            for(int j = 0; j < EL_PER_BLOCK / 2; j++) {
                 int64_t product = (int64_t)scalar_res[rx[1]][j] * (int64_t)scalar_res[rx[2]][j];
 
                 // 2. Reconstruct the EXISTING 64-bit accumulator from the dest registers
-                int row_idx = rx[j / (EL_PER_BLOCK / 2)];
+                int row_idx = rx[0];
                 int col_idx = (2 * j) % EL_PER_BLOCK;
 
-                uint32_t lo = (uint32_t)scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK];
-                uint32_t hi = (uint32_t)scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1];                
+                uint32_t lo = (uint32_t)scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK];
+                uint32_t hi = (uint32_t)scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK + 1];                
                 int64_t existing_acc = (int64_t)(((uint64_t)hi << 32) | lo);
 
                 // 3. Accumulate
                 res[j] = product + existing_acc;
             }
-            for(int j = 0; j < EL_PER_BLOCK; j++){
+            for(int j = 0; j < EL_PER_BLOCK / 2; j++){
 
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK]     = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK]     = \
                 res[j] & 0xFFFFFFFF;
-                scalar_res[rx[j / (EL_PER_BLOCK / 2)]][(2 * j) % EL_PER_BLOCK + 1 ] = \
+                scalar_res[rx[0]][(2 * j) % EL_PER_BLOCK + 1 ] = \
                 (res[j] >> 32);
             }
             if(PRINTS >= 2) printf("\n");
             instr = VWMACC_VV_INSTR;
             break;
-        /*case VLUXEI32_V:
-            // VLUXEI32.V: Indexed load (unordered). vd, (rs1), vs2.
-            // Maps rx[1] -> rs1 (base address) and rx[2] -> vs2 (vector of indices).
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = MEM[rs1 + [%d]%d];\n", rx[0], j, rx[2], scalar_res[rx[2]][j]);
-                
-                scalar_res[rx[0]][j] = 0; 
-            }
-            if(PRINTS >= 2) printf("\n");
-            instr = VLUXEI32_V_INSTR;
-            instr_type = V; 
-            break;*/
-
         case VREDSUM_VS:
             // VREDSUM.VS: Vector reduction sum. vd[0] = sum(vs2[0..VL-1]) + vs1[0]
             // Maps rx[1] -> vs1 (scalar accumulator) and rx[2] -> vs2 (vector to reduce).
@@ -988,8 +982,10 @@ int add_instruction(int op, int rx[3], int r[3]){
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d & [%d]%d;\n", rx[0], j / SEW, rx[1], 
                     scalar_res[rx[1]][j / SEW] & i, rx[2], scalar_res[rx[2]][j / SEW] & i);
-                scalar_res[rx[0]][j / SEW] &= (0xFFFFFFFF ^ i);
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j / SEW] & i) & (scalar_res[rx[2]][j / SEW] & i);
+                int32_t vs1 = scalar_res[rx[1]][j / SEW];
+                int32_t vs2 = scalar_res[rx[2]][j / SEW];
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= ((vs1 & i) & (vs2 & i));
                 if(i == 1 << SEW - 1)
                     i = 1;
                 else
@@ -1002,8 +998,10 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMOR_MM:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d | [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
-                scalar_res[rx[0]][j / SEW] &= (0xFFFFFFFF ^ i);
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][0] & i) | (scalar_res[rx[2]][0] & i);
+                int32_t vs1 = scalar_res[rx[1]][j / SEW];
+                int32_t vs2 = scalar_res[rx[2]][j / SEW];
+                scalar_res[rx[0]][j / SEW] &= ~i;
+                scalar_res[rx[0]][j / SEW] |= (vs1 & i) | (vs2 & i);
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1016,8 +1014,10 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMNAND_MM:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d NAND [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                int32_t vs1 = scalar_res[rx[1]][j / SEW];
+                int32_t vs2 = scalar_res[rx[2]][j / SEW];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (~(scalar_res[rx[1]][j / SEW] & scalar_res[rx[2]][j / SEW])) & i;
+                scalar_res[rx[0]][j / SEW] |= (~(vs1 & vs2)) & i;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1030,8 +1030,10 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMXOR_MM:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d ^ [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                int32_t vs1 = scalar_res[rx[1]][j / SEW];
+                int32_t vs2 = scalar_res[rx[2]][j / SEW];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= ((scalar_res[rx[1]][j / SEW] ^ scalar_res[rx[2]][j / SEW])) & i;
+                scalar_res[rx[0]][j / SEW] |= ((vs1 ^ vs2)) & i;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1044,8 +1046,10 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMSEQ_VV:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d == [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                int32_t vs1 = scalar_res[rx[1]][j];
+                int32_t vs2 = scalar_res[rx[2]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] == scalar_res[rx[2]][j])?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 == vs2)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1058,8 +1062,9 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMSEQ_VI:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d == imm(%d)) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], imm);
+                int32_t vs1 = scalar_res[rx[1]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] == imm)?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 == imm)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1073,8 +1078,9 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMSEQ_VX:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d == %d) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
+                int32_t vs1 = scalar_res[rx[1]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] == t0_VALUE)?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 == t0_VALUE)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1088,8 +1094,10 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMSNE_VV:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d != [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                int32_t vs1 = scalar_res[rx[1]][j];
+                int32_t vs2 = scalar_res[rx[2]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] != scalar_res[rx[2]][j])?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 != vs2)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1102,8 +1110,9 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMSNE_VI:
            for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d != imm(%d)) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], imm);
+                int32_t vs1 = scalar_res[rx[1]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] != imm)?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 != imm)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1117,8 +1126,9 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMSNE_VX:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d != %d) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
+                int32_t vs1 = scalar_res[rx[1]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] != t0_VALUE)?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 != t0_VALUE)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1132,8 +1142,10 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMSLT_VV:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d < [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                int32_t vs1 = scalar_res[rx[1]][j];
+                int32_t vs2 = scalar_res[rx[2]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] < scalar_res[rx[2]][j])?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 < vs2)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1145,8 +1157,9 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMSLT_VX:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d < %d) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
+                int32_t vs1 = scalar_res[rx[1]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] < t0_VALUE)?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 < t0_VALUE)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1161,8 +1174,10 @@ int add_instruction(int op, int rx[3], int r[3]){
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d <= [%d]%d) ? 1 : 0;\n", rx[0], j,
                     rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
+                int32_t vs1 = scalar_res[rx[1]][j];
+                int32_t vs2 = scalar_res[rx[2]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] <= scalar_res[rx[2]][j])?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 <= vs2)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1176,8 +1191,9 @@ int add_instruction(int op, int rx[3], int r[3]){
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d <= %d) ? 1 : 0;\n", rx[0], j,
                     rx[1], scalar_res[rx[1]][j], imm);
+                int32_t vs1 = scalar_res[rx[1]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] <= imm)?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 <= imm)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1191,8 +1207,9 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMSLE_VX:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d < %d) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
+                int32_t vs1 = scalar_res[rx[1]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] <= t0_VALUE)?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 <= t0_VALUE)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1205,8 +1222,9 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMSGT_VI:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d > %d) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], imm);
+                int32_t vs1 = scalar_res[rx[1]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] > imm)?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 > imm)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1220,8 +1238,9 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMSGT_VX:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d > %d) ? 1 : 0;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
+                int32_t vs1 = scalar_res[rx[1]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (scalar_res[rx[1]][j] > t0_VALUE)?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 > t0_VALUE)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1320,7 +1339,8 @@ int add_instruction(int op, int rx[3], int r[3]){
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 float f1 = bits_to_float(scalar_res[rx[1]][j]);
                 float f2 = bits_to_float(scalar_res[rx[2]][j]);
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = (%f < %f) ? 1 : 0;\n", rx[0], j / SEW, f1, f2);
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ((%d)%f < (%d)%f) ? 1 : 0;\n",
+                    rx[0], j / SEW, rx[1], f1, rx[2], f2);
                 scalar_res[rx[0]][j / SEW] &= ~i;
                 scalar_res[rx[0]][j / SEW] |= (f1 < f2) ? i : 0;
                 if(i == (1 << SEW - 1))
@@ -1336,9 +1356,16 @@ int add_instruction(int op, int rx[3], int r[3]){
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 float f1 = bits_to_float(scalar_res[rx[1]][j]);
                 float f2 = bits_to_float(scalar_res[rx[2]][j]);
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = (%d <= %d) ? 1 : 0;\n", rx[0], j / SEW, f1, f2);
+                if(PRINTS >= 2){
+                    printf("SCALAR_RESULT:[%d][%d] = ((%d)%f", rx[0], j / SEW, rx[1], f1);
+                    printf(" <= (%d)%f)? 1 : 0;\n", rx[2], f2);
+                }
+                int result = (f1 <= f2);
+                if(is_nan(f1) || is_nan(f2)){
+                    result = 0;
+                }
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (f1 <= f2) ? i : 0;
+                scalar_res[rx[0]][j / SEW] |= (result) ? i : 0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1351,7 +1378,6 @@ int add_instruction(int op, int rx[3], int r[3]){
        
 
         case VMERGE_VVM:
-            // vmerge utiliza a máscara de v0. Assumindo que v0 está mapeado em scalar_res[0]
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 int mask_active = (scalar_res[0][j / SEW] & i) == 0;
 
@@ -1366,9 +1392,9 @@ int add_instruction(int op, int rx[3], int r[3]){
             }
             if(PRINTS >= 2) printf("\n");
             instr = VMERGE_VVM_INSTR;
-            instr = change_vet_rd(instr,  1);
-            instr = change_vet_rs1(instr, 2);
-            instr = change_vet_rs2(instr, 3);
+            instr = change_vet_rd(instr,  rx[1]);
+            instr = change_vet_rs1(instr, rx[2]);
+            instr = change_vet_rs2(instr, rx[1]);
             instr_type = NO_TYPE;
             break;
 
@@ -1387,8 +1413,8 @@ int add_instruction(int op, int rx[3], int r[3]){
             }
             if(PRINTS >= 2) printf("\n");
             instr = VMERGE_VXM_INSTR;
-            instr = change_vet_rd(instr,  1);
-            instr = change_vet_rs1(instr, 2);
+            instr = change_vet_rd(instr,  rx[1]);
+            instr = change_vet_rs1(instr, rx[2]);
             instr = change_vet_rs2(instr, 5);
             instr_type = NO_TYPE;
             break;
@@ -1408,8 +1434,8 @@ int add_instruction(int op, int rx[3], int r[3]){
             }
             if(PRINTS >= 2) printf("\n");
             instr = VMERGE_VIM_INSTR;
-            instr = change_vet_rd(instr,  1);
-            instr = change_vet_rs1(instr, 2);
+            instr = change_vet_rd(instr,  rx[1]);
+            instr = change_vet_rs1(instr, rx[2]);
             instr = change_vet_rs2(instr, imm);
             instr_type = NO_TYPE;
             break;
@@ -1429,8 +1455,9 @@ int add_instruction(int op, int rx[3], int r[3]){
         case VMSLTU_VX:
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d < [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                uint32_t vs1 = scalar_res[rx[1]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= ((uint32_t)scalar_res[rx[1]][j] < (uint32_t)t0_VALUE)?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 < t0_VALUE)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1442,9 +1469,11 @@ int add_instruction(int op, int rx[3], int r[3]){
             break;
         case VMSLEU_VV:
             for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d < [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d <= [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                uint32_t vs1 = scalar_res[rx[1]][j];
+                uint32_t vs2 = scalar_res[rx[2]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= ((uint32_t)scalar_res[rx[1]][j] < (uint32_t)scalar_res[rx[2]][j])?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 <= vs2)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1455,9 +1484,9 @@ int add_instruction(int op, int rx[3], int r[3]){
             break;
             case VMSLEU_VX:
             for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d < [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d <= [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= ((uint32_t)scalar_res[rx[1]][j] < (uint32_t)t0_VALUE)?i:0;
+                scalar_res[rx[0]][j / SEW] |= ((uint32_t)scalar_res[rx[1]][j] <= (uint32_t)t0_VALUE)?i:0;
                 if(i == (1 << SEW - 1))
                     i = 1;
                 else
@@ -1638,7 +1667,7 @@ int add_instruction(int op, int rx[3], int r[3]){
                 scalar_res[rx[0]][j] = max(scalar_res[rx[1]][j], t0_VALUE);
                 
                 if(PRINTS >= 2) {
-                    printf("VMAX_VX: [%d][%d] = (min)(%d, %d)\n", 
+                    printf("VMAX_VX: [%d][%d] = (max)(%d, %d)\n", 
                             rx[0], j, scalar_res[rx[1]][j], t0_VALUE);
                 }
             }
@@ -1714,8 +1743,8 @@ int add_instruction(int op, int rx[3], int r[3]){
             instr_type = VI;
             break;
         case VSRA_VX:
-            t0_VALUE = t0_VALUE % 32; // TODO -> get rid of
-            t0_VALUE = (t0_VALUE<0)?-t0_VALUE:t0_VALUE;
+            //t0_VALUE = t0_VALUE % 32; // TODO -> get rid of
+            //t0_VALUE = (t0_VALUE<0)?-t0_VALUE:t0_VALUE;
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d >> %d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], t0_VALUE);
                 scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] >> t0_VALUE);

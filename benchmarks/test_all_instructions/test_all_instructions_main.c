@@ -50,7 +50,7 @@ void generate_initial_values(){
     }
 }
 
-int r[3] = {0, 1, 2};
+int r[3] = {0, 8, 16};
 int rx[1][3] = {{0, 1, 2}};
 int ops[1];
 
@@ -339,7 +339,6 @@ void all_test() {
 }
 
 int digest_parameters(){
-    printf("parameter.argc: %d\n", parameter.argc);
     if(parameter.argc > 0) SEED                = parameter.argv[0];
     if(parameter.argc > 1) sole_execution      = parameter.argv[1];
     if(parameter.argc > 2) PRINTS              = parameter.argv[2];

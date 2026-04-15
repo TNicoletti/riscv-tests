@@ -44,9 +44,9 @@ volatile int32_t vet_res[NUM_REGISTERS][EL_PER_BLOCK];
 /* ===== RANDOMIZERS ===== */
 void generate_initial_values(){
     for (int i = 0; i < N; i++) {
-        A[i] = mrand() % 0x7FF;
-        B[i] = mrand() % 0x7FF;
-        OUT[i] = mrand() % 0x7FF;
+        A[i] = mrand();
+        B[i] = mrand();
+        OUT[i] = mrand();
     }
 }
 
@@ -160,6 +160,14 @@ store_vet_values(int r[NUM_REGISTERS]){
 int wrong_op = -1;
 void analyze_results(int passed[QTD_HEURISTICS], int qtd_tests[QTD_HEURISTICS]){
     printf("===== ERROR RESULTS ANALISIS =====\n");
+    if(PRINTS >= 0){
+        printf("Instructions: \n");
+        for(int i = 0; i < NUM_RANDOM_OPS; i++)
+            printf("%s; (%d, %d, %d)\n", get_OP(ops[i]), rx[i][0], rx[i][1], rx[i][2]);
+        printf("t0: %d\n", t0_VALUE);
+            printf("\n");
+
+    }
     int all_passed = 0;
     for(int i = 0; i < QTD_HEURISTICS; i++){
         all_passed += passed[i] / qtd_tests[i];
@@ -186,7 +194,10 @@ void analyze_results(int passed[QTD_HEURISTICS], int qtd_tests[QTD_HEURISTICS]){
 
     if(passed[2] == NUM_RANDOM_OPS - 1){
         printf("Problem is probably related to a single instruction\n");
-        printf("Probable problematic instruction: %s\n", get_OP(wrong_op));
+        if(wrong_op != -1)
+            printf("Probable problematic instruction: %s\n", get_OP(wrong_op));
+        else
+            printf("Problematic instruction could not be identified\n");
     }
 }
 
@@ -297,6 +308,7 @@ void error_discoverer(int index){
         else {
             if(PRINTS >= 1) printf("Divergence => problem single with instruction\n");
             if(PRINTS >= 3) printf("v = %d %s %d\n", rx[i][1], get_OP(ops[i]), rx[i][2]);
+            wrong_op = ops[i];
         }
     }
 
@@ -404,16 +416,16 @@ void error_discoverer(int index){
             int* s = &signatures[z][0];
             int op = ops[i];
 
-            int m1 = 0;
+            int invalid_instruction = 0;
             load_init_values_scalar(&OUT[index]);
             for(int j = 0; j < 30; j++){
                 ADDRESS_VECTOR[j] = add_instruction(op, s, other_r);
                 if(ADDRESS_VECTOR[j] == -1){
-                    m1 = 1;
+                    invalid_instruction = 1;
                     break;
                 }
             }
-            if(m1){
+            if(invalid_instruction){
                 passed[6]++;
                 break;
             }
@@ -443,7 +455,7 @@ void error_discoverer(int index){
             ADDRESS_VECTOR[j] = add_instruction(ops[j], rx[j], r);
         }
     
-        ADDRESS_VECTOR[NUM_RANDOM_OPS] = RET_INSTR;
+        ADDRESS_VECTOR[i + 1] = RET_INSTR;
 
         execute_RIS(&OUT[index], r);
         if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
@@ -604,7 +616,6 @@ void digest_parameters(){
         for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++){
 
             allowed_instructions[i] = parameter.argv[3 + i];
-            printf("%s: %d\n", get_OP(i), allowed_instructions[i]);
 
             if(allowed_instructions[i]) fixed_suported_instructions++;
         }
