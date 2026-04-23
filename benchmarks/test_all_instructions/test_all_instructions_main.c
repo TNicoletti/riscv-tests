@@ -26,8 +26,6 @@ extern void STALL(int cycles);
 
 extern void jump_to_vet(int* vet);
 
-extern int* load_OUT_t0_vet(int* address);
-extern void load_value_ft0(float f);
 extern int return_t0();
 
 extern void new_trap_handler(void);
@@ -88,28 +86,6 @@ void shuffle_registers(int r[NUM_REGISTERS]){
     }
 }
 
-/* ===== VECTOR LOADERS =====*/
-
-
-int32_t SL_A_VECTOR[2];
-void load_to_vet(int* vet, int reg){
-    SL_A_VECTOR[1] = RET_INSTR;
-    int32_t instr = VLE32_V_INSTR;
-    instr = change_vet_rd(instr, reg);
-    load_OUT_t0_vet(vet);
-    SL_A_VECTOR[0] = instr;
-    jump_to_vet(&SL_A_VECTOR[0]);
-}
-
-void store_to_vet(int* vet, int reg){
-    SL_A_VECTOR[1] = RET_INSTR;
-    int32_t instr = VSE32_V_INSTR;
-    instr = change_vet_rd(instr, reg);
-    load_OUT_t0_vet(vet);
-    SL_A_VECTOR[0] = instr;
-    jump_to_vet(&SL_A_VECTOR[0]);
-}
-
 void execute_RIS(int* vet, int r[NUM_REGISTERS]){
     set_vet_settings();
     load_init_values_vector(vet, r);
@@ -159,7 +135,7 @@ r3 = OUT[index + 2 * EL_PER_BLOCK]
 3 - picks
 */
 void generate_RIS(int op, int index){
-    load_init_values_scalar(&OUT[index]);
+    load_init_values_scalar(&OUT[index], r);
 
     ADDRESS_VECTOR[0] = add_instruction(op, rx[0], r);    
     
@@ -220,26 +196,15 @@ int test_for_ls32(){
         int prev_error = error_count;
 
         if(PRINTS >= 3)printf("Executing instruction VLE32_V VSE32_V %d\n", j);
-        load_init_values_scalar(&OUT[j * inc]);
+        load_init_values_scalar(&OUT[j * inc], r);
         set_vet_settings();
         load_init_values_vector(&OUT[j * inc], r);
         store_vet_values(r);
 
-        if(PRINTS >= 3)print_matrix(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
+        if(PRINTS >= 3)print_regs(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK, r);
         if(PRINTS >= 3)print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
         
-        if(prev_error < error_count){
-            if(PRINTS >= 1) printf("Hardware error detected\n");
-            res[j] = -last_hw_error;
-        } else {
-            if(manual_convergence(&scalar_res[0][0], &vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK)){
-                if(PRINTS >= 1)printf("Convergence \n");
-                res[j] = 2;
-            }else{
-                if(PRINTS >= 1)printf("Divergence\n");
-                res[j] = 1;
-            }
-        }
+        res[j] = compare_solutions(prev_error, r);
     }
     int ret = 1;
     printf("\nRESULTS\n");
@@ -273,14 +238,14 @@ void single_test(int op){
         execute_RIS(&OUT[j * inc], r);
 
         if(PRINTS >= 3){printf("IN:\n");print_vector(&OUT[0], NUM_REGISTERS * EL_PER_BLOCK, EL_PER_BLOCK);}
-        if(PRINTS >= 3){printf("Scalar:\n");print_matrix(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
+        if(PRINTS >= 3){printf("Scalar:\n");print_regs(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK, r);}
         if(PRINTS >= 3){printf("Vetorial:\n");print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
         
         if(prev_error < error_count){
             if(PRINTS >= 1) printf("Hardware error detected\n");
             res[0][j] = -last_hw_error;
         } else {
-            res[0][j] = compare_solutions(prev_error);   
+            res[0][j] = compare_solutions(prev_error, r);   
         } 
     }
 
@@ -321,7 +286,7 @@ void all_test() {
             generate_RIS(z, (z * repeat_instructions + j) * inc);
             execute_RIS(&OUT[(z * repeat_instructions + j) * inc], r);
             
-            if(PRINTS >= 3){printf("Scalar:\n");print_matrix(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
+            if(PRINTS >= 3){printf("Scalar:\n");print_regs(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK, r);}
             if(PRINTS >= 3){printf("Vetorial:\n");print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
 
 
@@ -329,7 +294,7 @@ void all_test() {
                 if(PRINTS >= 1) printf("Hardware error detected\n");
                 res[z][j] = -last_hw_error;
             } else {
-                res[z][j] = compare_solutions(prev_error);   
+                res[z][j] = compare_solutions(prev_error, r);   
             }  
         }
     }

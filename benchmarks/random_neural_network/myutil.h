@@ -75,6 +75,17 @@ void print_matrix(int* vet, int N, int M){
     printf("\n");
 }
 
+void print_regs(int* vet, int N, int M, int r[3]){
+    for(int i = 0; i < 3; i++){
+      int idx = r[i];
+      for(int j = 0; j < M; j++){
+        printf("v[%d][%d] = %d;", idx, j, vet[idx * M + j]);
+      }  
+      printf("\n");
+    }
+    printf("\n");
+}
+
 #pragma GCC optimize ("no-tree-vectorize")
 void clean_matrix(int vet[5][4], int N, int M){
   for(int i = 0; i < 3; i++)

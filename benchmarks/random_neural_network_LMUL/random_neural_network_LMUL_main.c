@@ -17,16 +17,12 @@ extern void STALL(int cycles);
 
 extern void jump_to_vet(int* vet);
 
-extern int* load_OUT_t0_vet(int* address);
-
 
 /* ===== NORMALS ===== */
 
 volatile int A[N];
 volatile int B[N];
 volatile int32_t OUT[N];
-volatile int32_t scalar_res[3][EL_PER_BLOCK];
-volatile int32_t vet_res[3][EL_PER_BLOCK];
 
 
 /* ===== RANDOMIZERS ===== */
@@ -81,29 +77,6 @@ void randomize_instructions(){
     rx[2][0] = mrand() % 3; rx[2][1] = mrand() % 3; rx[2][2] = mrand() % 3;
     rx[3][0] = mrand() % 3; rx[3][1] = mrand() % 3; rx[3][2] = mrand() % 3;
 }
-
-/* ===== VECTOR LOADERS =====*/
-
-
-int32_t SL_A_VECTOR[2];
-void load_to_vet(int* vet, int reg){
-    SL_A_VECTOR[1] = RET_INSTR;
-    int32_t instr = VLE32_V_INSTR;
-    instr = change_vet_rd(instr, reg);
-    load_OUT_t0_vet(vet);
-    SL_A_VECTOR[0] = instr;
-    jump_to_vet(&SL_A_VECTOR[0]);
-}
-
-void store_to_vet(int* vet, int reg){
-    SL_A_VECTOR[1] = RET_INSTR;
-    int32_t instr = VSE32_V_INSTR;
-    instr = change_vet_rd(instr, reg);
-    load_OUT_t0_vet(vet);
-    SL_A_VECTOR[0] = instr;
-    jump_to_vet(&SL_A_VECTOR[0]);
-}
-
 void execute_RIS(int* vet, int r[3]){
     set_vet_settings();
     load_init_values_vector(vet, r);
@@ -167,7 +140,7 @@ void error_discoverer(int index){
     printf("\n===== Heuristic 0 ===== \n");
     for(int i = 0; i < 5; i++){
         qtd_tests[0]++;
-        load_init_values_scalar(&OUT[index]);
+        load_init_values_scalar(&OUT[index], r);
 
         for(int i = 0; i < 4; i++){
             ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
@@ -192,7 +165,7 @@ void error_discoverer(int index){
 
     printf("\n===== Heuristic 1 ===== \n");
     qtd_tests[1] = 1;
-    load_init_values_scalar(&OUT[index]);
+    load_init_values_scalar(&OUT[index], r);
 
     ADDRESS_VECTOR[0] = add_instruction(ops[0], rx[0], r);
     for(int i = 0; i < 5; i++) ADDRESS_VECTOR[i + 1] = add_instruction(NOP, rx[0], r);
@@ -217,7 +190,7 @@ void error_discoverer(int index){
     printf("\n===== Heuristic 2 ===== \n\n");
     for(int i = 0; i < 4; i++){
         qtd_tests[2]++;        
-        load_init_values_scalar(&OUT[index]);
+        load_init_values_scalar(&OUT[index], r);
         ADDRESS_VECTOR[0] = add_instruction(ops[i], rx[i], r);
         ADDRESS_VECTOR[1] = RET_INSTR;
         execute_RIS(&OUT[index], r);
@@ -236,7 +209,7 @@ void error_discoverer(int index){
     for(int i = 0; i < 4; i++){
         printf("Removed instruction %d\n", i);
         qtd_tests[3]++;        
-        load_init_values_scalar(&OUT[index]);
+        load_init_values_scalar(&OUT[index], r);
         for(int j = 0; j < 4; j++){
             if(j == i)
                 continue;
@@ -261,7 +234,7 @@ void error_discoverer(int index){
         for(int j = i + 1; j < 4; j++){
             qtd_tests[3]++;
             printf("Removed instruction %d %d\n", i, j);        
-            load_init_values_scalar(&OUT[index]);
+            load_init_values_scalar(&OUT[index], r);
             int t = 0;
             for(int z = 0; z < 4; z++){
                 if(z == i || z == j)
@@ -281,7 +254,7 @@ void error_discoverer(int index){
     printf("\n===== Heuristic 4 ===== \n\n");
     qtd_tests[4] = 1;
     int other_r[3] = {0, 8, 24};
-    load_init_values_scalar(&OUT[index]);
+    load_init_values_scalar(&OUT[index], r);
     ADDRESS_VECTOR[0] = add_instruction(ops[0], rx[0], other_r);
     ADDRESS_VECTOR[1] = add_instruction(ops[1], rx[1], other_r);
     ADDRESS_VECTOR[2] = add_instruction(ops[2], rx[2], other_r);
@@ -304,7 +277,7 @@ void error_discoverer(int index){
         get_permutation(one, 4, &perm[0]);
         printf("test %d\n", one);   
         printf("PERMUTATION %d %d %d %d\n", perm[0], perm[1], perm[2], perm[3]);
-        load_init_values_scalar(&OUT[index]);
+        load_init_values_scalar(&OUT[index], r);
         ADDRESS_VECTOR[0] = add_instruction(ops[perm[0]], rx[perm[0]], r);
         ADDRESS_VECTOR[1] = add_instruction(ops[perm[1]], rx[perm[1]], r);
         ADDRESS_VECTOR[2] = add_instruction(ops[perm[2]], rx[perm[2]], r);
@@ -344,7 +317,7 @@ r3 = OUT[index + 2 * EL_PER_BLOCK]
 void generate_RIS(int index){
     shuffle_registers(r);
     randomize_instructions();
-    load_init_values_scalar(&OUT[index]);
+    load_init_values_scalar(&OUT[index], r);
 
     if(PRINTS >= 2)printf("STEP BY STEP RESULTS: \n");
     for(int i = 0; i < 4; i++){
