@@ -1,13 +1,7 @@
 #include <util.h>
 #include "mysrand.h"
+#include "config.h"
 #include "myutil.h"
-
-#define N_VECTOR    1024 * 1024
-#define SEED 0x12345678
-#define SEW  32
-#define VLEN 128
-#define LMUL 1
-#define ELEMENTS_PER_BLOCK 32
 
 /* EXTERNALS */
 extern int get_max_vl_8();
@@ -34,14 +28,6 @@ volatile int B[N_VECTOR];
 volatile int OUT[N_VECTOR];
 volatile int OUT_SCALAR[N_VECTOR];
 
-int checksum(int *vec, int n) {
-  int chk = 0;
-  for (int i = 0; i < n; i++) {
-    chk ^= vec[i];
-  }
-  return chk;
-}
-
 void random_test(int seed) {
     msrand(seed);
     for (int i = 0; i < N_VECTOR; i++) {
@@ -51,7 +37,7 @@ void random_test(int seed) {
     }
     printf("DONE INIT VALUES, BEGINNING EXECUTION \n");
     
-    for(int blk = 0; blk < N_VECTOR;blk += ELEMENTS_PER_BLOCK) {
+    for(int blk = 0; blk < N_VECTOR;blk += EL_PER_BLOCK) {
         int el_this_block = 0;
         int setting = abs(mrand() % 4);
         //printf("setting: %d \n", setting);
@@ -68,7 +54,7 @@ void random_test(int seed) {
         //printf("opt: %d; op2: %d \n", opt, op2);
 
         // Vetorial
-        for(int ver = 0; ver < ELEMENTS_PER_BLOCK; ver += el_this_block)
+        for(int ver = 0; ver < EL_PER_BLOCK; ver += el_this_block)
         {
             //printf("VER:%d\nBLOCK:%d\n", ver, blk);
             switch (opt){
@@ -85,31 +71,31 @@ void random_test(int seed) {
                 case  8: vet_vi_sum(&A[blk + ver], &OUT[blk + ver]); break;
             }
         }
-        int chksum_vector = checksum(&OUT[blk], ELEMENTS_PER_BLOCK);
+        int chksum_vector = checksum(&OUT[blk], EL_PER_BLOCK);
         
         // Escalar
         switch (opt){
-            case  0: for(int i = blk; i < blk+ELEMENTS_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] + B[i];
+            case  0: for(int i = blk; i < blk+EL_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] + B[i];
                 break;
-            case  1: for(int i = blk; i < blk+ELEMENTS_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] - B[i];
+            case  1: for(int i = blk; i < blk+EL_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] - B[i];
                 break;
-            case  2: for(int i = blk; i < blk+ELEMENTS_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] / B[i];
+            case  2: for(int i = blk; i < blk+EL_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] / B[i];
                 break;
-            case  3: for(int i = blk; i < blk+ELEMENTS_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] * B[i];
+            case  3: for(int i = blk; i < blk+EL_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] * B[i];
                 break;
-            case  4: for(int i = blk; i < blk+ELEMENTS_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] + op2;
+            case  4: for(int i = blk; i < blk+EL_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] + op2;
                 break;
-            case  5: for(int i = blk; i < blk+ELEMENTS_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] - op2;
+            case  5: for(int i = blk; i < blk+EL_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] - op2;
                 break;
-            case  6: for(int i = blk; i < blk+ELEMENTS_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] / op2;
+            case  6: for(int i = blk; i < blk+EL_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] / op2;
                 break;
-            case  7: for(int i = blk; i < blk+ELEMENTS_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] * op2;
+            case  7: for(int i = blk; i < blk+EL_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] * op2;
                 break;
-            case  8: for(int i = blk; i < blk+ELEMENTS_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] + 5;
+            case  8: for(int i = blk; i < blk+EL_PER_BLOCK; i++) OUT_SCALAR[i] = A[i] + 5;
                 break;
         }
 
-        int chksum_scalar = checksum(&OUT_SCALAR[blk], ELEMENTS_PER_BLOCK);
+        int chksum_scalar = checksum(&OUT_SCALAR[blk], EL_PER_BLOCK);
         if (chksum_vector != chksum_scalar) {
         printf("Mismatch at block %d: vector checksum = %08x, scalar checksum = %08x\n",
                 blk/el_this_block, chksum_vector, chksum_scalar);

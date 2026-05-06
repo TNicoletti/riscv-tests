@@ -1,5 +1,12 @@
+#ifndef true
 #define true 1
+#endif
+#ifndef false
 #define false 0
+#endif
+
+#ifndef MY_UTIL
+#define MY_UTIL
 
 /* VECTOR SETTINGS MACROS*/
 extern int set_vet_m1_Xx16(int X);
@@ -17,41 +24,43 @@ extern int set_vet_m2_Xx64(int X);
 extern int set_vet_m4_Xx64(int X);
 extern int set_vet_m8_Xx64(int X);
 
-void set_vet_settings(){
-    #if SEW == 16
-      #if LMUL == 1
-        set_vet_m1_Xx16(EL_PER_BLOCK);
-      #elif LMUL == 2
-        set_vet_m2_Xx16(EL_PER_BLOCK);
-      #elif LMUL == 4
-        set_vet_m4_Xx16(EL_PER_BLOCK);
-      #elif LMUL == 8
-        set_vet_m8_Xx16(EL_PER_BLOCK);
-      #endif
 
-    #elif SEW == 32
-      #if LMUL == 1
+
+void set_vet_settings(int SEW, int LMUL){
+    if(SEW == 16){
+      if(LMUL == 1)
+        set_vet_m1_Xx16(EL_PER_BLOCK);
+      else if(LMUL == 2)
+        set_vet_m2_Xx16(EL_PER_BLOCK);
+      else if(LMUL == 4)
+        set_vet_m4_Xx16(EL_PER_BLOCK);
+      else if(LMUL == 8)
+        set_vet_m8_Xx16(EL_PER_BLOCK);
+    }
+
+    else if(SEW == 32){
+      if(LMUL == 1)
         set_vet_m1_Xx32(EL_PER_BLOCK);
-      #elif LMUL == 2
+      else if(LMUL == 2)
         set_vet_m2_Xx32(EL_PER_BLOCK);
-      #elif LMUL == 4
+      else if(LMUL == 4)
         set_vet_m4_Xx32(EL_PER_BLOCK);
-      #elif LMUL == 8
+      else if(LMUL == 8)
         set_vet_m8_Xx32(EL_PER_BLOCK);
-      #endif
-    #elif SEW == 64
-      #if LMUL == 1
+    }
+    else if(SEW == 64)
+      if(LMUL == 1)
         set_vet_m1_Xx64(EL_PER_BLOCK);
-      #elif LMUL == 2
+      else if(LMUL == 2)
         set_vet_m2_Xx64(EL_PER_BLOCK);
-      #elif LMUL == 4
+      else if(LMUL == 4)
         set_vet_m4_Xx64(EL_PER_BLOCK);
-      #elif LMUL == 8
+      else if(LMUL == 8)
         set_vet_m8_Xx64(EL_PER_BLOCK);
-      #endif
-    #else
-        #error "Valor de SEW não suportado!"
-    #endif
+    else{
+      printf("Valor de SEW não suportado!\n");
+      exit(1);
+    }
 }
 
 /* STRUCTURE PRINT HELPERS*/
@@ -69,6 +78,17 @@ void print_matrix(int* vet, int N, int M){
     for(int i = 0; i < N; i++){
       for(int j = 0; j < M; j++){
         printf("v[%d][%d] = %d;", i, j, vet[i * M + j]);
+      }  
+      printf("\n");
+    }
+    printf("\n");
+}
+
+void print_regs(int* vet, int N, int M, int r[3]){
+    for(int i = 0; i < 3; i++){
+      int idx = r[i];
+      for(int j = 0; j < M; j++){
+        printf("v[%d][%d] = %d;", idx, j, vet[idx * M + j]);
       }  
       printf("\n");
     }
@@ -247,3 +267,5 @@ uint32_t minu(uint32_t a1, uint32_t a2){
 int32_t min(int32_t a1, int32_t a2){
   return a1<a2 ? a1 : a2;
 }
+
+#endif

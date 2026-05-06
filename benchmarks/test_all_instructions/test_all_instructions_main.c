@@ -1,119 +1,9 @@
-#include <util.h>
-#include "configs.h"
-#include "myutil.h"
-#include "asm_functions.h"
-#include "mysrand.h"
-#include "parameters.h"
-#include "add_instruction.h"
-
-#define MAX_REPEAT_INSTRUCTIONS 10
-int repeat_instructions = 6;
-#define MAX_N EL_PER_BLOCK * MAX_REPEAT_INSTRUCTIONS * SUPORTED_INSTRUCTIONS * NUM_REGISTERS
-
-int allowed_instructions[SUPORTED_INSTRUCTIONS];
-
-/* PARAMETERS */
-int SEED = 0;
-int sole_execution = -1;
-int N = MAX_N;
-
-int32_t ADDRESS_VECTOR[255];
-
-/* ===== EXTERNALS ===== */
-
-extern void clean_vector_scalar(int* v1, int n);
-extern void STALL(int cycles);
-
-extern void jump_to_vet(int* vet);
-
-extern int return_t0();
-
-extern void new_trap_handler(void);
-
-
-/* ===== NORMALS ===== */
-
-volatile int A[MAX_N];
-volatile int B[MAX_N];
-volatile int32_t OUT[MAX_N];
-
+#include "test_all_instructions.h"
 
 /* ===== RANDOMIZERS ===== */
 void generate_initial_values(){
     msrand(SEED);
-    for (int i = 0; i < N; i++) {
-        A[i] = mrand_signed();
-        B[i] = mrand_signed();
-        OUT[i] = mrand_signed();
-    }
-}
-
-int r[3] = {0, 8, 16};
-int rx[1][3] = {{0, 1, 2}};
-int ops[1];
-
-int get_random_reg(){
-    #if LMUL == 1
-        return mrand() % 32;
-    #elif LMUL == 2
-        return mrand() % 16 * 2;
-    #elif LMUL == 4
-        return mrand() % 8 * 4;
-    #elif LMUL == 8
-        return mrand() % 4 * 8;
-    #endif
-}
-
-int is_register_different_from_previous(int* r, int idx){
-    for(int i = 0; i < idx; i++)
-        if(r[i] == r[idx])
-            return false;
-    return true;
-}
-
-void shuffle_registers(int r[NUM_REGISTERS]){
-    for(int i = 0; i < NUM_REGISTERS; i++){
-        do
-        r[i] = get_random_reg();
-        while(!is_register_different_from_previous(&r[0], i));
-    }
-    if(PRINTS >= 2){
-        printf("Register choice:\n");
-        for(int i = 0; i < NUM_REGISTERS; i++)
-            printf("r[%d]= %d;", i, r[i]);
-        printf("\n\n");
-
-    }
-}
-
-void execute_RIS(int* vet, int r[NUM_REGISTERS]){
-    set_vet_settings();
-    load_init_values_vector(vet, r);
-    set_vet_settings();
-
-    load_OUT_t0_vet((int*)t0_VALUE);// Gambiarra simples para ter t0 com t0_VALUE
-    load_value_ft0(f_vf);
-    
-    jump_to_vet(&ADDRESS_VECTOR[0]);
-    actual_t0 = return_t0();
-    if(PRINTS >= 2 && compare_registers != -1) 
-        printf("Compare_registers: %d, actual_t0: %d \n", compare_registers, actual_t0);
-    store_vet_values(r);
-}
-
-void load_init_values_vector(int* vet, int regs[NUM_REGISTERS]){    
-    set_vet_settings();
-    for(int i = 0; i < NUM_REGISTERS; i++)
-        load_to_vet(&vet[i * EL_PER_BLOCK], regs[i]);
-}
-
-void store_vet_values(int r[NUM_REGISTERS]){
-    clean_vector_scalar(&vet_res[0][0], EL_PER_BLOCK * NUM_REGISTERS);
-
-    set_vet_settings();
-    for(int i = 0; i < NUM_REGISTERS; i++)
-        store_to_vet(&vet_res[i][0], r[i]);
-    
+    randomize_vector(OUT, N);
 }
 
 /*
@@ -142,30 +32,6 @@ void generate_RIS(int op, int index){
     ADDRESS_VECTOR[1] = RET_INSTR;
 }
 
-char* get_err(int err){
-    switch(err){
-        case   2: return "XX"; // correct answer
-        case   1: return "WA"; // wrong answer
-        case   0: return "IM";  // Instruction Address Misaligned
-        case  -1: return "IF";  // Instruction Access Fault
-        case  -2: return "II";   // Illegal Instruction
-        case  -3: return "BP";   // Breakpoint (ebreak)
-        case  -4: return "LM";  // Load Address Misaligned
-        case  -5: return "LF";  // Load Access Fault
-        case  -6: return "SM";  // Store/AMO Address Misaligned
-        case  -7: return "SF";  // Store/AMO Access Fault
-        case  -8: return "EU";  // Environment Call from U-mode
-        case  -9: return "ES";  // Environment Call from S-mode
-        case -11: return "EM";  // Environment Call from M-mode
-        case -12: return "IP";  // Instruction Page Fault
-        case -13: return "LP";  // Load Page Fault
-        case -15: return "SP";  // Store/AMO Page Fault
-        case -16: return "HE";   // Hardware Error (implementation specific)
-        default: return "UK";  // Unknown / Reserved
-    }
-}
-
-int res[SUPORTED_INSTRUCTIONS][MAX_REPEAT_INSTRUCTIONS];
 void eval_results(){
     int qtt_errors = 0;
     if(PRINTS >= 4) help_errors();
@@ -199,12 +65,12 @@ int test_for_ls32(){
         load_init_values_scalar(&OUT[j * inc], r);
         set_vet_settings();
         load_init_values_vector(&OUT[j * inc], r);
-        store_vet_values(r);
+        store_vet_values(r, &vet_res[0][0], EL_PER_BLOCK, NUM_REGISTERS);
 
         if(PRINTS >= 3)print_regs(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK, r);
         if(PRINTS >= 3)print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
         
-        res[j] = compare_solutions(prev_error, r);
+        res[j] = compare_solutions(prev_error, r, &vet_res[0][0]);
     }
     int ret = 1;
     printf("\nRESULTS\n");
@@ -235,7 +101,7 @@ void single_test(int op){
 
         if(PRINTS >= 3)printf("Executing instruction %s\n", get_OP(op));
         generate_RIS(op, j * inc);
-        execute_RIS(&OUT[j * inc], r);
+        execute_RIS(&OUT[j * inc], r, ADDRESS_VECTOR);
 
         if(PRINTS >= 3){printf("IN:\n");print_vector(&OUT[0], NUM_REGISTERS * EL_PER_BLOCK, EL_PER_BLOCK);}
         if(PRINTS >= 3){printf("Scalar:\n");print_regs(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK, r);}
@@ -245,7 +111,7 @@ void single_test(int op){
             if(PRINTS >= 1) printf("Hardware error detected\n");
             res[0][j] = -last_hw_error;
         } else {
-            res[0][j] = compare_solutions(prev_error, r);   
+            res[0][j] = compare_solutions(prev_error, r, &vet_res[0][0]);   
         } 
     }
 
@@ -284,7 +150,7 @@ void all_test() {
             if(PRINTS >= 3)printf("Executing instruction %s\n", get_OP(z));
 
             generate_RIS(z, (z * repeat_instructions + j) * inc);
-            execute_RIS(&OUT[(z * repeat_instructions + j) * inc], r);
+            execute_RIS(&OUT[(z * repeat_instructions + j) * inc], r, ADDRESS_VECTOR);
             
             if(PRINTS >= 3){printf("Scalar:\n");print_regs(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK, r);}
             if(PRINTS >= 3){printf("Vetorial:\n");print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
@@ -294,7 +160,7 @@ void all_test() {
                 if(PRINTS >= 1) printf("Hardware error detected\n");
                 res[z][j] = -last_hw_error;
             } else {
-                res[z][j] = compare_solutions(prev_error, r);   
+                res[z][j] = compare_solutions(prev_error, r, &vet_res[0][0]);   
             }  
         }
     }

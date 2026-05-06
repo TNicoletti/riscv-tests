@@ -1,4 +1,5 @@
-
+#ifndef ASM_FUNCTIONS
+#define ASM_FUNCTIONS
 // Scalar OPS
 #define ADDI_ZERO_T0_INSTR 0x00100293 // addi t0, zero, 1
 #define ADDI_ZZZ_INSTR 0x00000013 // addi zero, zero, 0 // NOP
@@ -182,3 +183,5 @@
 #define VSRA_VV_INSTR       0xa6110057 // vsra.vv v0, v1, v2
 #define VSRA_VI_INSTR       0xa6113057 // vsra.vi v0, v1, 2
 #define VSRA_VX_INSTR       0xa613c057 // vsra.vx v0, v1, t2
+
+#endif

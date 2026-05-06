@@ -2,7 +2,7 @@
 #define SEW 32
 #define VLEN 128
 #define LMUL 2
-#define EL_PER_REG (VLEN / SEW) * LMUL
+#define EL_PER_BLOCK (VLEN / SEW) * LMUL
 
 #define PRINTS 1
 

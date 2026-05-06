@@ -38,32 +38,6 @@ int r[3];
 int rx[6][3];
 int ops[6];
 
-int get_random_reg(){
-    #if LMUL == 1
-        return mrand() % 32;
-    #elif LMUL == 2
-        return mrand() % 16 * 2;
-    #elif LMUL == 4
-        return mrand() % 8 * 4;
-    #elif LMUL == 8
-        return mrand() % 4 * 8;
-    #endif
-}
-
-void shuffle_registers(int r[3]){
-    r[0] = get_random_reg();
-
-    do
-    r[1] = get_random_reg();
-    while(r[1] == r[0]);
-    
-    do
-    r[2] = get_random_reg();
-    while(r[2] == r[0] || r[2] == r[1]);
-
-    if(PRINTS >= 2) printf("Register choice:\nr[0]= %d; r[1]= %d; r[2]= %d;\n\n", r[0], r[1], r[2]);
-}
-
 void randomize_instructions(){
     ops[0] = mrand() % 4;
     ops[1] = mrand() % 4;
@@ -76,29 +50,6 @@ void randomize_instructions(){
     rx[1][0] = mrand() % 3; rx[1][1] = mrand() % 3; rx[1][2] = mrand() % 3;
     rx[2][0] = mrand() % 3; rx[2][1] = mrand() % 3; rx[2][2] = mrand() % 3;
     rx[3][0] = mrand() % 3; rx[3][1] = mrand() % 3; rx[3][2] = mrand() % 3;
-}
-void execute_RIS(int* vet, int r[3]){
-    set_vet_settings();
-    load_init_values_vector(vet, r);
-    set_vet_settings();
-    jump_to_vet(&ADDRESS_VECTOR[0]);
-    store_vet_values(r);
-}
-
-load_init_values_vector(int* vet, int regs[3]){    
-    set_vet_settings();
-    load_to_vet(&vet[0], regs[0]);
-    load_to_vet(&vet[EL_PER_BLOCK], regs[1]);
-    load_to_vet(&vet[2 * EL_PER_BLOCK], regs[2]);
-}
-
-store_vet_values(int r[3]){
-    clean_vector_scalar(&vet_res[0][0], EL_PER_BLOCK * 3);
-
-    set_vet_settings();
-    store_to_vet(&vet_res[0][0], r[0]);
-    store_to_vet(&vet_res[1][0], r[1]);
-    store_to_vet(&vet_res[2][0], r[2]);
 }
 
 /*===== RANDOM TEST FUNCTIONS =====*/
@@ -148,7 +99,7 @@ void error_discoverer(int index){
     
         ADDRESS_VECTOR[4] = RET_INSTR;
 
-        execute_RIS(&OUT[index], r);
+        execute_RIS(&OUT[index], r, ADDRESS_VECTOR);
         if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
             printf("Convergence\n");
             passed[0]++;
@@ -175,7 +126,7 @@ void error_discoverer(int index){
     for(int i = 0; i < 5; i++) ADDRESS_VECTOR[i + 12] = add_instruction(NOP, rx[0], r);
     ADDRESS_VECTOR[16] = add_instruction(ops[3], rx[3], r);
     ADDRESS_VECTOR[17] = RET_INSTR;
-    execute_RIS(&OUT[index], r);
+    execute_RIS(&OUT[index], r, ADDRESS_VECTOR);
 
     if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
         printf("Convergence, probably data hazard problem\n");
@@ -193,7 +144,7 @@ void error_discoverer(int index){
         load_init_values_scalar(&OUT[index], r);
         ADDRESS_VECTOR[0] = add_instruction(ops[i], rx[i], r);
         ADDRESS_VECTOR[1] = RET_INSTR;
-        execute_RIS(&OUT[index], r);
+        execute_RIS(&OUT[index], r, ADDRESS_VECTOR);
         if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
             printf("Convergence\n");
             passed[2]++;
@@ -219,7 +170,7 @@ void error_discoverer(int index){
                 ADDRESS_VECTOR[j - 1] = add_instruction(ops[j], rx[j], r);
         }
         ADDRESS_VECTOR[3] = RET_INSTR;
-        execute_RIS(&OUT[index], r);
+        execute_RIS(&OUT[index], r, ADDRESS_VECTOR);
         if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
             printf("Convergence\n\n");
             passed[3]++;
@@ -243,7 +194,7 @@ void error_discoverer(int index){
                 t++;
             }
             ADDRESS_VECTOR[2] = RET_INSTR;
-            execute_RIS(&OUT[index], r);
+            execute_RIS(&OUT[index], r, ADDRESS_VECTOR);
             if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
                 printf("Convergence\n\n");
                 passed[3]++;
@@ -260,7 +211,7 @@ void error_discoverer(int index){
     ADDRESS_VECTOR[2] = add_instruction(ops[2], rx[2], other_r);
     ADDRESS_VECTOR[3] = add_instruction(ops[3], rx[3], other_r);
     ADDRESS_VECTOR[4] = RET_INSTR;
-    execute_RIS(&OUT[index], other_r);
+    execute_RIS(&OUT[index], other_r, ADDRESS_VECTOR);
     if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
         printf("Convergence\n\n");
         passed[4]++;
@@ -283,7 +234,7 @@ void error_discoverer(int index){
         ADDRESS_VECTOR[2] = add_instruction(ops[perm[2]], rx[perm[2]], r);
         ADDRESS_VECTOR[3] = add_instruction(ops[perm[3]], rx[perm[3]], r);
         ADDRESS_VECTOR[4] = RET_INSTR;
-        execute_RIS(&OUT[index], r);
+        execute_RIS(&OUT[index], r, ADDRESS_VECTOR);
         if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
             printf("Convergence\n\n");
             passed[5]++;
@@ -315,7 +266,7 @@ r3 = OUT[index + 2 * EL_PER_BLOCK]
 3 - picks
 */
 void generate_RIS(int index){
-    shuffle_registers(r);
+    shuffle_registers(r, NUM_REGISTERS, LMUL);
     randomize_instructions();
     load_init_values_scalar(&OUT[index], r);
 
@@ -341,7 +292,7 @@ void random_test(int seed) {
         printf("==== Begginning test  %d ======\n\n", z / inc);
 
         generate_RIS(z);
-        execute_RIS(&OUT[z], r);
+        execute_RIS(&OUT[z], r, ADDRESS_VECTOR);
 
         if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
             printf("Convergence %d-%d\n", z, z + inc);

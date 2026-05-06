@@ -1,13 +1,7 @@
 #include <util.h>
 #include "mysrand.h"
+#include "config.h"
 #include "myutil.h"
-
-#define N_VECTOR 1024*1024
-#define SEED 0x12345678
-#define SEW 32
-#define VLEN 128
-#define LMUL 1
-#define EL_PER_BLOCK 4 * VLEN/SEW * LMUL
 
 /* EXTERNALS */
 extern int set_vet_Xx16(int X);
@@ -32,14 +26,6 @@ volatile int A[N_VECTOR];
 volatile int B[N_VECTOR];
 volatile int OUT[N_VECTOR];
 volatile int OUT_SCALAR[N_VECTOR];
-
-int checksum(int *vec, int n) {
-  int chk = 0;
-  for (int i = 0; i < n; i++) {
-    chk ^= vec[i];
-  }
-  return chk;
-}
 
 void random_test(int seed) {
     #if SEW == 16

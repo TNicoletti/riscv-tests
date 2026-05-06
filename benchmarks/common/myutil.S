@@ -3,66 +3,102 @@
 /* SEW = 16 */
 .globl set_vet_m1_Xx16
 set_vet_m1_Xx16:
+    .option push
+    .option arch, +v
     vsetvli a0, a0, e16, m1, tu, mu
+    .option pop
     ret
 
 .globl set_vet_m2_Xx16
 set_vet_m2_Xx16:
+    .option push
+    .option arch, +v
     vsetvli a0, a0, e16, m2, tu, mu
+    .option pop
     ret
 
 .globl set_vet_m4_Xx16
 set_vet_m4_Xx16:
+    .option push
+    .option arch, +v
     vsetvli a0, a0, e16, m2, tu, mu
+    .option pop
     ret
 
 .globl set_vet_m8_Xx16
 set_vet_m8_Xx16:
+    .option push
+    .option arch, +v
     vsetvli a0, a0, e16, m2, tu, mu
+    .option pop
     ret
 
 /* SEW = 32 */
 
 .globl set_vet_m1_Xx32
 set_vet_m1_Xx32:
+    .option push
+    .option arch, +v
     vsetvli a0, a0, e32, m1, tu, mu
+    .option pop
     ret
 
 .globl set_vet_m2_Xx32
 set_vet_m2_Xx32:
+    .option push
+    .option arch, +v
     vsetvli a0, a0, e32, m2, tu, mu
+    .option pop
     ret
 
 .globl set_vet_m4_Xx32
 set_vet_m4_Xx32:
+    .option push
+    .option arch, +v
     vsetvli a0, a0, e32, m4, tu, mu
+    .option pop
     ret
 
 .globl set_vet_m8_Xx32
 set_vet_m8_Xx32:
+    .option push
+    .option arch, +v
     vsetvli a0, a0, e32, m8, tu, mu
+    .option pop
     ret
 
 /* SEW = 64 */
 
 .globl set_vet_m1_Xx64
 set_vet_m1_Xx64:
+    .option push
+    .option arch, +v
     vsetvli a0, a0, e64, m1, tu, mu
+    .option pop
     ret
 
 .globl set_vet_m2_Xx64
 set_vet_m2_Xx64:
+    .option push
+    .option arch, +v
     vsetvli a0, a0, e64, m2, tu, mu
+    .option pop
     ret
 
 .globl set_vet_m4_Xx64
 set_vet_m4_Xx64:
+    .option push
+    .option arch, +v
     vsetvli a0, a0, e64, m4, tu, mu
+    .option pop
     ret
 
 .globl set_vet_m8_Xx64
 set_vet_m8_Xx64:
+    .option push
+    .option arch, +v
     vsetvli a0, a0, e64, m8, tu, mu
+    .option pop
     ret
 
 /* JUMPER */
@@ -89,9 +125,9 @@ clean_vector_scalar:
         bnez t0, 1b
     ret 
 
-/* StuLL */
-.globl StuLL
-StuLL:
+/* STALL */
+.globl STALL
+STALL:
     mv t0, a0
 
     1:

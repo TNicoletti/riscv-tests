@@ -1,26 +1,15 @@
 #include <util.h>
-
-#define true 1
-#define false 0
-
-#define N_VECTOR 512
-#define SEED 0x12345678
-#define SEW 32
-#define VLEN 128
-#define LMUL 1
-#define EL_PER_BLOCK VLEN / SEW
-#define NUM_REGISTERS 3
+#include "config.h"
+#include "myutil.h"
 
 #define PRINTS 1
+
+#define QTD_TESTS 15
 
 int32_t ADDRESS_VECTOR[20];
 
 /* EXTERNALS */
-extern int set_vet_Xx16(int X);
-extern int set_vet_Xx32(int X);
-extern int set_vet_Xx64(int X);
-
-extern int test(int *vet);
+extern int test(int *vet, int *result);
 
 int equals(int *vet1, int*vet2){
     for(int i = 0; i < 12; i++)
@@ -32,37 +21,59 @@ int equals(int *vet1, int*vet2){
 int main(){
     printf("Single test \n");
     
-    int v[12] = {1085, 1355, 1235, 176, 
-        1753, 1661, 1309, 1890,
-        1523, 1818, 898, 595};
 
-    int resp[12] = {1, 1, 1, 1,
-        1753, 1661, 1309, 1890,
-        1753, 1661, 1309, 1890};
+    
+    int init[12] = {
+        158653998, 221290364, 191570381, 36659268, 
+        136484931, 66907504,  256742140, 270325384, 
+        166659206, 288208687, 65823742,  242653232, 
+    };
+    int result[12] = {
+        0, 0, 0, 0, 
+        0, 0, 0, 0, 
+        0, 0, 0, 0, 
+    };
+
+    int resp[12] = {
+        36659268, 221290364, 191570381, 36659268,
+        572801, 3457661, 2993287, 572801,
+        -1508851712, 0, -1302364160, 30238848,
+    };
         
-    set_vet_Xx32(4);
-    test(v);
+    set_vet_settings();
 
-    if(equals(v, resp)){
-        printf("Convergence\n");
-        exit(0);
-    }
-
-    printf("RESULTS:\n");
-    for(int i = 0; i < 12; i++){
-        printf("v[%d] = %d; ", i, v[i]);
-        if(i % 4 == 3)printf("\n");
-    }
+    int con_div[QTD_TESTS];
 
     printf("RESP:\n");
     for(int i = 0; i < 12; i++){
         printf("v[%d] = %d; ", i, resp[i]);
         if(i % 4 == 3)printf("\n");
     }
+    printf("\n");
 
+    for(int i = 0; i < QTD_TESTS; i++){
+        test(init, result);
+        if(equals(result, resp)){
+            printf("Convergence\n");
+            con_div[i] = 1;
+        }else{
+            printf("Divergence\n");
+            con_div[i] = 0;
+        }
+        
+        printf("RESULTS:\n");
+        for(int i = 0; i < 12; i++){
+            printf("v[%d] = %d; ", i, result[i]);
+            if(i % 4 == 3)printf("\n");
+        }
+        printf("\n");
+    }
 
+    printf("FINAL RESULTS:\n");
+    for(int i = 0; i < QTD_TESTS; i++)
+        printf("[%c] ", con_div[i]?'C':'W');
 
-    //int res = 
+    printf("\n");
 
     exit(0);
 }
