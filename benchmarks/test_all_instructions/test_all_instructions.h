@@ -1,14 +1,12 @@
 #include <util.h>
 #include "configs.h"
-#include "myutil.h"
-#include "asm_functions.h"
 #include "mysrand.h"
 #include "parameters.h"
 #include "add_instruction.h"
 
 #define MAX_REPEAT_INSTRUCTIONS 10
 int repeat_instructions = 6;
-#define MAX_N EL_PER_BLOCK * MAX_REPEAT_INSTRUCTIONS * SUPORTED_INSTRUCTIONS * NUM_REGISTERS
+#define MAX_N MAX_EL_PER_BLOCK * MAX_REPEAT_INSTRUCTIONS * SUPORTED_INSTRUCTIONS * NUM_REGISTERS
 
 int allowed_instructions[SUPORTED_INSTRUCTIONS];
 
@@ -43,6 +41,24 @@ int ops[1];
 
 /* ===== Register Instruction Strategy(RIS)  ===== */
 
+/*
+r1 = OUT[index + 0]
+r2 = OUT[index + 1 * EL_PER_BLOCK]
+r3 = OUT[index + 2 * EL_PER_BLOCK]
+
+rx1 = rx2 op1 rx3
+rx4 = rx5 op1 rx6
+rx7 = rx8 op1 rx9
+rx10 = rx11 op12 rx13
+
+r1 = OUT[index + 0]
+r2 = OUT[index + 1 * EL_PER_BLOCK]
+r3 = OUT[index + 2 * EL_PER_BLOCK]
+
+1 - picks 3 different registers
+2 - picks 4 operations
+3 - picks
+*/
 void generate_RIS(int op, int index);
 
 /* ===== Test Results ===== */

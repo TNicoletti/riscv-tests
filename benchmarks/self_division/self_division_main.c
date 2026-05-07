@@ -57,26 +57,6 @@ void randomize_instructions(){
 
 /* ===== VECTOR LOADERS =====*/
 
-
-int32_t SL_A_VECTOR[2];
-void load_to_vet(int* vet, int reg){
-    SL_A_VECTOR[1] = RET_INSTR;
-    int32_t instr = VLE32_V_INSTR;
-    instr = change_vet_rd(instr, reg);
-    load_OUT_t0_vet(vet);
-    SL_A_VECTOR[0] = instr;
-    jump_to_vet(&SL_A_VECTOR[0]);
-}
-
-void store_to_vet(int* vet, int reg){
-    SL_A_VECTOR[1] = RET_INSTR;
-    int32_t instr = VSE32_V_INSTR;
-    instr = change_vet_rd(instr, reg);
-    load_OUT_t0_vet(vet);
-    SL_A_VECTOR[0] = instr;
-    jump_to_vet(&SL_A_VECTOR[0]);
-}
-
 enum VEC_INSTRUCTIONS{
     VADD_VV = 0,
     VSUB_VV = 1,

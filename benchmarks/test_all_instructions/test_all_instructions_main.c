@@ -6,26 +6,8 @@ void generate_initial_values(){
     randomize_vector(OUT, N);
 }
 
-/*
-r1 = OUT[index + 0]
-r2 = OUT[index + 1 * EL_PER_BLOCK]
-r3 = OUT[index + 2 * EL_PER_BLOCK]
-
-rx1 = rx2 op1 rx3
-rx4 = rx5 op1 rx6
-rx7 = rx8 op1 rx9
-rx10 = rx11 op12 rx13
-
-r1 = OUT[index + 0]
-r2 = OUT[index + 1 * EL_PER_BLOCK]
-r3 = OUT[index + 2 * EL_PER_BLOCK]
-
-1 - picks 3 different registers
-2 - picks 4 operations
-3 - picks
-*/
 void generate_RIS(int op, int index){
-    load_init_values_scalar(&OUT[index], r);
+    load_init_values_scalar(&OUT[index], r, NUM_REGISTERS);
 
     ADDRESS_VECTOR[0] = add_instruction(op, rx[0], r);    
     
@@ -59,16 +41,15 @@ int test_for_ls32(){
     int res[repeat_instructions];
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
     for(int j = 0; j < repeat_instructions; j++){
-        int prev_error = error_count;
+        int prev_error = error_count;   
 
         if(PRINTS >= 3)printf("Executing instruction VLE32_V VSE32_V %d\n", j);
-        load_init_values_scalar(&OUT[j * inc], r);
-        set_vet_settings();
-        load_init_values_vector(&OUT[j * inc], r);
-        store_vet_values(r, &vet_res[0][0], EL_PER_BLOCK, NUM_REGISTERS);
+        load_init_values_scalar(&OUT[j * inc], r, NUM_REGISTERS);
+        load_init_values_vector(&OUT[j * inc], r, NUM_REGISTERS);
+        store_vet_values(r, &vet_res[0][0], NUM_REGISTERS);
 
-        if(PRINTS >= 3)print_regs(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK, r);
-        if(PRINTS >= 3)print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);
+        if(PRINTS >= 3)print_regs(&scalar_res[0][0], NUM_REGISTERS, r);
+        if(PRINTS >= 3)print_regs(&vet_res[0][0], NUM_REGISTERS, r);
         
         res[j] = compare_solutions(prev_error, r, &vet_res[0][0]);
     }
@@ -101,11 +82,11 @@ void single_test(int op){
 
         if(PRINTS >= 3)printf("Executing instruction %s\n", get_OP(op));
         generate_RIS(op, j * inc);
-        execute_RIS(&OUT[j * inc], r, ADDRESS_VECTOR);
+        execute_RIS(&OUT[j * inc], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
 
         if(PRINTS >= 3){printf("IN:\n");print_vector(&OUT[0], NUM_REGISTERS * EL_PER_BLOCK, EL_PER_BLOCK);}
-        if(PRINTS >= 3){printf("Scalar:\n");print_regs(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK, r);}
-        if(PRINTS >= 3){printf("Vetorial:\n");print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
+        if(PRINTS >= 3){printf("Scalar:\n");  print_regs(&scalar_res[0][0], NUM_REGISTERS, r);}
+        if(PRINTS >= 3){printf("Vetorial:\n");print_regs(&vet_res[0][0]   , NUM_REGISTERS, r);}
         
         if(prev_error < error_count){
             if(PRINTS >= 1) printf("Hardware error detected\n");
@@ -150,10 +131,10 @@ void all_test() {
             if(PRINTS >= 3)printf("Executing instruction %s\n", get_OP(z));
 
             generate_RIS(z, (z * repeat_instructions + j) * inc);
-            execute_RIS(&OUT[(z * repeat_instructions + j) * inc], r, ADDRESS_VECTOR);
+            execute_RIS(&OUT[(z * repeat_instructions + j) * inc], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
             
-            if(PRINTS >= 3){printf("Scalar:\n");print_regs(&scalar_res[0][0], NUM_REGISTERS, EL_PER_BLOCK, r);}
-            if(PRINTS >= 3){printf("Vetorial:\n");print_matrix(&vet_res[0][0], NUM_REGISTERS, EL_PER_BLOCK);}
+            if(PRINTS >= 3){printf("Scalar:\n");   print_regs(&scalar_res[0][0], NUM_REGISTERS, r);}
+            if(PRINTS >= 3){printf("Vetorial:\n"); print_regs(&vet_res[0][0],    NUM_REGISTERS, r);}
 
 
             if(prev_error < error_count){

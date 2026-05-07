@@ -2,7 +2,6 @@
 #include "config.h"
 #include "myutil.h"
 
-#define PRINTS 1
 
 #define QTD_TESTS 15
 

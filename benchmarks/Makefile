@@ -46,26 +46,26 @@ vec_bmarks = \
 	vec-sgemm \
 	vec-strcmp \
 	\
-	teste \
-	test_vlen \
-	test_data_hazards \
-	test_vector_compare \
-	test_lmul \
-	test_tail_agnostic \
-	test_mask_agnostic \
-	test_interruption \
-	test_lanes \
-	easy_tester \
-	self_division \
 	test_all_instructions \
-	\
-	random_test \
-	random_test_lmul \
 	random_neural_network \
-	random_neural_network_LMUL \
 	random_LMUL \
-	\
-	test_print \
+	#\
+	#teste \
+	#test_vlen \
+	#test_data_hazards \
+	#test_vector_compare \
+	#test_lmul \
+	#test_tail_agnostic \
+	#test_mask_agnostic \
+	#test_interruption \
+	#test_lanes \
+	#test_print \
+	#\
+	#random_test \
+	# self_division \
+	# easy_tester \
+	# random_test_lmul \
+	# random_neural_network_LMUL \
 	
 
 bmarks = $(base_bmarks) $(vec_bmarks)

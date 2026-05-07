@@ -1,7 +1,6 @@
 #include <util.h>
 #include "configs.h"
 #include "mysrand.h"
-#include "myutil.h"
 #include "permute.h"
 #include "parameters.h"
 #include "add_instruction.h"

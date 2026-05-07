@@ -26,7 +26,7 @@ void generate_initial_values(){
 void generate_RIS(int index){
     shuffle_registers(r, NUM_REGISTERS, LMUL);
     randomize_instructions();
-    load_init_values_scalar(&OUT[index], r);
+    load_init_values_scalar(&OUT[index], r, NUM_REGISTERS);
     printf("r = %d %d %d\n", r[0], r[1], r[2]);
 
     if(PRINTS >= 2)printf("STEP BY STEP RESULTS: \n");
@@ -93,9 +93,9 @@ void random_LMUL(int seed){
     
         generate_RIS(z);
         printf("Execute_RIS\n");
-        execute_RIS(&OUT[z], r, ADDRESS_VECTOR, &vet_res[0][0]);
+        execute_RIS(&OUT[z], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
 
-        if(compare_solutions(prev_error, r, vet_res) == 2){
+        if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
             printf("Convergence %d-%d\n", z, z + inc);
         }else{
             printf("Divergence %d-%d\n", z, z + inc);
@@ -135,6 +135,7 @@ void digest_parameters(){
 }
 
 int main(){
+    update_LMUL(8);
     digest_parameters();
     random_LMUL(SEED);    
     
