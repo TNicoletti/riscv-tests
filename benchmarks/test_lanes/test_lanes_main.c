@@ -40,15 +40,6 @@ void print_results(uint64_t cycles, uint64_t insts) {
     printf("\n");
 }
 
-void print_vector(int* vet, int LENGTH){
-    for(int i = 0; i < LENGTH; i++){
-        printf("%d ", vet[i]);
-        if((i % 15) == 14)
-            printf("\n");
-    }
-    printf("\n");
-}
-
 // ================= MACROS =================
 
 #define BENCH(NAME, FUNC, VEC, LEN, EXPECTED_FUNC) do { \

@@ -34,7 +34,7 @@ void store_to_vet(int* vet, int reg){
 void load_init_values_vector(int* vet, int* regs, int num_registers){    
     set_vet_settings();
     for(int i = 0; i < num_registers; i++){
-        load_to_vet(&vet[i * VLEN / SEW], regs[i]);
+        load_to_vet(&vet[i * VLEN / SEW * LMUL], regs[i]);
     }
 }
 
@@ -1631,6 +1631,7 @@ int compare_solutions(int prev_error, int r[3], int* vet_res){
 
 void execute_RIS(int* vet, int* r, int32_t address_vector[], int* vet_res, int num_registers){
     set_vet_settings();
+    printf("\nr: %d %d %d\n\n", r[0], r[1], r[2]);
     load_init_values_vector(vet, r, num_registers);
     set_vet_settings();
 

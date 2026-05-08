@@ -8,6 +8,7 @@
 
 #define N 1024
 
+#define NUM_REGISTERS 4
 int32_t ADDRESS_VECTOR[30];
 
 /* ===== EXTERNALS ===== */
@@ -16,6 +17,8 @@ extern void clean_vector_scalar(int* v1, int n);
 extern void STALL(int cycles);
 
 extern void jump_to_vet(int* vet);
+
+volatile int32_t vet_res[4][32];
 
 
 /* ===== NORMALS ===== */
@@ -99,7 +102,7 @@ void error_discoverer(int index){
     
         ADDRESS_VECTOR[4] = RET_INSTR;
 
-        execute_RIS(&OUT[index], r, ADDRESS_VECTOR);
+        execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
         if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
             printf("Convergence\n");
             passed[0]++;
@@ -126,7 +129,7 @@ void error_discoverer(int index){
     for(int i = 0; i < 5; i++) ADDRESS_VECTOR[i + 12] = add_instruction(NOP, rx[0], r);
     ADDRESS_VECTOR[16] = add_instruction(ops[3], rx[3], r);
     ADDRESS_VECTOR[17] = RET_INSTR;
-    execute_RIS(&OUT[index], r, ADDRESS_VECTOR);
+    execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
 
     if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
         printf("Convergence, probably data hazard problem\n");
@@ -144,7 +147,7 @@ void error_discoverer(int index){
         load_init_values_scalar(&OUT[index], r, NUM_REGISTERS);
         ADDRESS_VECTOR[0] = add_instruction(ops[i], rx[i], r);
         ADDRESS_VECTOR[1] = RET_INSTR;
-        execute_RIS(&OUT[index], r, ADDRESS_VECTOR);
+        execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
         if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
             printf("Convergence\n");
             passed[2]++;
@@ -170,7 +173,7 @@ void error_discoverer(int index){
                 ADDRESS_VECTOR[j - 1] = add_instruction(ops[j], rx[j], r);
         }
         ADDRESS_VECTOR[3] = RET_INSTR;
-        execute_RIS(&OUT[index], r, ADDRESS_VECTOR);
+        execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
         if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
             printf("Convergence\n\n");
             passed[3]++;
@@ -194,7 +197,7 @@ void error_discoverer(int index){
                 t++;
             }
             ADDRESS_VECTOR[2] = RET_INSTR;
-            execute_RIS(&OUT[index], r, ADDRESS_VECTOR);
+            execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
             if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
                 printf("Convergence\n\n");
                 passed[3]++;
@@ -211,7 +214,7 @@ void error_discoverer(int index){
     ADDRESS_VECTOR[2] = add_instruction(ops[2], rx[2], other_r);
     ADDRESS_VECTOR[3] = add_instruction(ops[3], rx[3], other_r);
     ADDRESS_VECTOR[4] = RET_INSTR;
-    execute_RIS(&OUT[index], other_r, ADDRESS_VECTOR);
+    execute_RIS(&OUT[index], other_r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
     if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
         printf("Convergence\n\n");
         passed[4]++;
@@ -234,7 +237,7 @@ void error_discoverer(int index){
         ADDRESS_VECTOR[2] = add_instruction(ops[perm[2]], rx[perm[2]], r);
         ADDRESS_VECTOR[3] = add_instruction(ops[perm[3]], rx[perm[3]], r);
         ADDRESS_VECTOR[4] = RET_INSTR;
-        execute_RIS(&OUT[index], r, ADDRESS_VECTOR);
+        execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
         if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
             printf("Convergence\n\n");
             passed[5]++;
@@ -292,7 +295,7 @@ void random_test(int seed) {
         printf("==== Begginning test  %d ======\n\n", z / inc);
 
         generate_RIS(z);
-        execute_RIS(&OUT[z], r, ADDRESS_VECTOR);
+        execute_RIS(&OUT[z], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
 
         if(is_divergent_matrix(&scalar_res[0][0], &vet_res[0][0], 3, EL_PER_BLOCK)){
             printf("Convergence %d-%d\n", z, z + inc);

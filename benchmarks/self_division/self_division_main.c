@@ -4,10 +4,11 @@
 #include "myutil.h"
 #include "asm_functions.h"
 #include "permute.h"
+#include "add_instruction.h"
 
 #define REPEAT_TESTS 4
 
-#define N 4 * REPEAT_TESTS * EL_PER_BLOCK * NUM_REGS
+#define N 4 * REPEAT_TESTS * VLEN / SEW * NUM_REGS
 
 int32_t ADDRESS_VECTOR[30];
 
@@ -23,18 +24,13 @@ extern int* load_OUT_t0_vet(int* address);
 
 /* ===== NORMALS ===== */
 
-volatile int A[N];
-volatile int B[N];
 volatile int32_t OUT[N];
-volatile int32_t scalar_res[NUM_REGS][EL_PER_BLOCK];
-volatile int32_t vet_res[NUM_REGS][EL_PER_BLOCK];
+volatile int32_t vet_res[NUM_REGS][32];
 
 
 /* ===== RANDOMIZERS ===== */
 void generate_initial_values(){
     for (int i = 0; i < N; i++) {
-        A[i] = mrand() % 0x7FF;
-        B[i] = mrand() % 0x7FF;
         OUT[i] = mrand() % 0x7FF;
     }
 }
@@ -57,99 +53,11 @@ void randomize_instructions(){
 
 /* ===== VECTOR LOADERS =====*/
 
-enum VEC_INSTRUCTIONS{
-    VADD_VV = 0,
-    VSUB_VV = 1,
-    VDIV_VV = 2,
-    VMUL_VV = 3,
-    NOP = 555
-};
-char* get_OP(int op){
-    switch(op){
-        case 0: return "+";
-        case 1: return "-";
-        case 2: return "/";
-        case 3: return "*";
-    }
-    return "ERROR";    
-}
-
-int add_instruction(int op, int rx[3], int r[3]){
-    int instr = 0;
-    switch (op){
-        case VADD_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] + scalar_res[rx[2]][j]);
-            }
-            if(PRINTS >= 2) printf("\n");
-            instr = VADD_VV_INSTR;
-            break;
-        case VSUB_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d - [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] - scalar_res[rx[2]][j]);
-            }
-            if(PRINTS >= 2) printf("\n");
-            instr = VSUB_VV_INSTR;
-            break;
-        case VDIV_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d / [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] / scalar_res[rx[2]][j]);
-            }
-            if(PRINTS >= 2) printf("\n");
-            instr = VDIV_VV_INSTR;
-            break;
-        case VMUL_VV:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d * [%d]%d;\n", rx[0], j, rx[1], scalar_res[rx[1]][j], rx[2], scalar_res[rx[2]][j]);
-                scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] * scalar_res[rx[2]][j]);
-            }
-            if(PRINTS >= 2) printf("\n");
-            instr = VMUL_VV_INSTR;
-            break;
-        case NOP:
-            return ADDI_ZZZ_INSTR;
-        default:
-            break;
-    }
-    instr = change_vet_rd(instr,  r[rx[0]]);
-    instr = change_vet_rs1(instr, r[rx[1]]);
-    instr = change_vet_rs2(instr, r[rx[2]]);
-    return instr;
-}
-
-load_init_values_scalar(int* vet){
-    for(int i = 0; i < EL_PER_BLOCK; i++)
-    {
-        scalar_res[0][i] = vet[i];
-        scalar_res[1][i] = vet[EL_PER_BLOCK + i];
-        scalar_res[2][i] = vet[2 * EL_PER_BLOCK + i];
-        scalar_res[3][i] = vet[3 * EL_PER_BLOCK + i];
-        scalar_res[4][i] = vet[4 * EL_PER_BLOCK + i];
-    }
-}
-
-load_init_values_vector(int* vet, int regs[NUM_REGS]){    
-    set_vet_settings();
-    for(int i = 0; i < NUM_REGS; i++)
-        load_to_vet(&vet[i * EL_PER_BLOCK], regs[i]);
-}
-
 load_random_values_registers(int* vet){
     set_vet_settings();
     for(int i = 0; i < 32; i++){
         load_to_vet(&vet[i * EL_PER_BLOCK], i);
     }
-}
-
-store_vet_values(int r[NUM_REGS]){
-    clean_vector_scalar(&vet_res[0][0], EL_PER_BLOCK * NUM_REGS);
-
-    set_vet_settings();
-    for(int i = 0; i < NUM_REGS; i++)
-        store_to_vet(&vet_res[i][0], r[i]);
 }
 
 /*
@@ -163,7 +71,7 @@ void execute_batch_tests(int index, int rx[NUM_REGS][3]){
     char operation_value[4] = {'+', '-', '/', '*'};
 
     for(int i = 0; i < REPEAT_TESTS; i++){
-        load_init_values_scalar(&OUT[index]);
+        load_init_values_scalar(&OUT[index], r, NUM_REGS);
         printf("Executing test of 4 operations (r%d = r%d %c r%d)\n", rx[0][0], rx[0][1], operation_value[i], rx[0][2]);
         for(int j = 0; j < 4; j++){
             ADDRESS_VECTOR[j] = add_instruction(i, rx[j], r);
@@ -171,9 +79,9 @@ void execute_batch_tests(int index, int rx[NUM_REGS][3]){
         ADDRESS_VECTOR[NUM_REGS] = RET_INSTR;
 
         set_vet_settings();
-        load_init_values_vector(&OUT[index], r);
+        load_init_values_vector(&OUT[index], r, NUM_REGS);
         jump_to_vet(ADDRESS_VECTOR);
-        store_vet_values(r);
+        store_vet_values(r, &vet_res[0][0], NUM_REGS);
         index += EL_PER_BLOCK * NUM_REGS;
         
         if (!is_divergent_matrix(&vet_res[0][0], &scalar_res[0][0], NUM_REGS, EL_PER_BLOCK) == 1){

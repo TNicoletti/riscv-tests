@@ -100,7 +100,7 @@ void random_LMUL(int seed){
         }else{
             printf("Divergence %d-%d\n", z, z + inc);
             
-            exit(0);
+            exit(1);
         }
         printf("==== End test  %d        ======\n\n", z / inc);
     }
