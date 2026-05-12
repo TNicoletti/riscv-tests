@@ -10,6 +10,6 @@ float bits_to_float(uint32_t bits);
 // Função auxiliar para reinterpretar Float como Uint32 (para guardar o resultado)
 uint32_t float_to_bits(float f);
 
-int is_nan(uint32_t bits);
+int is_nan(float bits);
 
 #endif

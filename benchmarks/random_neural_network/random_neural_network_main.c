@@ -24,9 +24,28 @@ void randomize_instructions(){
     }
 }
 
+int print_result(int qtd_tests, int passed[MAX_TESTS_PER_HEURISTIC], char label[255][MAX_TESTS_PER_HEURISTIC], 
+    int breakline){
+    int total_passed = 0;
+    for(int j = 0; j < qtd_tests; j++){
+        switch(passed[j]){
+            case  1: printf("%s: [%c]; ", label[j], 'X');break;
+            case -1: printf("%s: [%c]; ", label[j], 'I');break;
+            case  0: printf("%s: [%c]; ", label[j], '-');break;
+            default: printf("PROBLEM: %d\n", passed[j]);break;
+        }
+        if(passed[j])
+            total_passed++;
+        if((j + 1) % breakline == 0 && j != (qtd_tests - 1))
+            printf("\n");
+    }
+    printf("\n%d out of %d tests converged\n", total_passed, qtd_tests);
+    return total_passed;
+}
+
 
 /*===== RANDOM TEST FUNCTIONS =====*/
-void analyze_results(int passed[QTD_HEURISTICS], int qtd_tests[QTD_HEURISTICS]){
+void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qtd_tests[QTD_HEURISTICS]){
     printf("===== ERROR RESULTS ANALISIS =====\n");
     if(PRINTS >= 0){
         printf("Instructions: \n");
@@ -34,46 +53,89 @@ void analyze_results(int passed[QTD_HEURISTICS], int qtd_tests[QTD_HEURISTICS]){
             printf("%s; (%d, %d, %d)\n", get_OP(ops[i]), rx[i][0], rx[i][1], rx[i][2]);
         printf("t0: %d\n", t0_VALUE);
             printf("\n");
-
     }
-    int all_passed = 0;
-    for(int i = 0; i < QTD_HEURISTICS; i++){
-        all_passed += passed[i] / qtd_tests[i];
-        printf("RESULTS %d: %d out of %d tests converged\n", i, passed[i], qtd_tests[i]);
-    }
-
-    if(passed[0] == 0){
-        printf("ERROR IS COMPULSORY\n");
-    }
-    else
-        printf("ERROR IS NOT COMPULSORY\n");
+    int total_passed = 0;
+    printf("0: Repeat 5x\n");
+    char labels[255][MAX_TESTS_PER_HEURISTIC] = {"1", "2", "3", "4", "5"}; 
+    total_passed = print_result(qtd_tests[0], passed[0], labels, 4);
+    if(total_passed == qtd_tests[0])
+        printf("Error is not compulsory\n");
+    if(total_passed == 0)
+        printf("Error is compulsory\n");
     
-    if(all_passed >= QTD_HEURISTICS){
-        printf(" => could be cold start or random error\n");
-        printf("No further conclusions to be made as it passed all tests(including simply repeating the test)\n");
-        return;
-    }
-    
-    if (passed[1] == 1)
+    printf("\n");
+
+    printf("1: NOPS between instructiosn\n");
+    char labels1[255][MAX_TESTS_PER_HEURISTIC] = {"[NOPS]"};
+    total_passed = print_result(qtd_tests[1], passed[1], labels1, 4);
+
+    if(total_passed == qtd_tests[1])
         printf("Problem is probably related to data hazards, put nops between instructions solves the issue\n");
     
-    if (passed[4] == 1)
-        printf("Problem is probably related to registers, as changing them solves the problem\n");
+    printf("\n");
+    
+    printf("2: Single instruction execution\n");
+    char labels2[255][MAX_TESTS_PER_HEURISTIC] = {"[1]", "[2]", "[3]", "[4]"};
+    total_passed = print_result(qtd_tests[2], passed[2], labels2, 4);
 
-    if(passed[2] == NUM_RANDOM_OPS - 1){
+    if(total_passed == qtd_tests[2])
+        printf("Problem is probably related to multiple instructions interference\n");
+
+    if(total_passed == 3)
+    {
         printf("Problem is probably related to a single instruction\n");
         if(wrong_op != -1)
             printf("Probably problematic instruction: %s\n", get_OP(wrong_op));
         else
             printf("Problematic instruction could not be identified\n");
+
     }
+    printf("\n");
+    
+    printf("3: Delete 1 out of 4 operations\n");
+    printf("3.1: Delete 2 out of 4 operations\n");
+    char labels3[255][MAX_TESTS_PER_HEURISTIC] = {"[-   0]", "[-   1]", "[-   2]", "[-   3]", "[- 0 1]", "[- 0 2]",
+        "[- 0 3]", "[- 1 2]", "[- 1 3]", "[- 2 3]"};
+    total_passed = print_result(qtd_tests[3], passed[3], labels3, 4);
+
+    printf("\n");
+    printf("4: Registers change\n");
+    char labels4[255][MAX_TESTS_PER_HEURISTIC] = {"[r = 0 8 16]"};
+    total_passed = print_result(qtd_tests[4], passed[4], labels4, 4);
+    if(total_passed)
+        printf("Problem is related to registers, as changing them solves the problem\n");
+    printf("\n");
+
+    char labels5[255][MAX_TESTS_PER_HEURISTIC] = {"[0 1 2 3]", "[0 1 3 2]", "[0 2 1 3]", "[0 2 3 1]", "[0 3 1 2]", 
+        "[0 3 2 1]", "[1 0 2 3]", "[1 0 3 2]", "[1 2 0 3]", "[1 2 3 0]", "[1 3 0 2]", "[1 3 2 0]", "[2 0 1 3]", 
+        "[2 0 3 1]", "[2 1 0 3]", "[2 1 3 0]", "[2 3 0 1]", "[2 3 1 0]", "[3 0 1 2]", "[3 0 2 1]", "[3 1 0 2]", 
+        "[3 1 2 0]", "[3 2 0 1]", "[3 2 1 0]"
+    };
+    printf("5: Change order of instruction execution\n");
+    total_passed = print_result(qtd_tests[5], passed[5], labels5, 4);
+    printf("\n");
+
+    printf("6: Different signatures\n");
+    char labels6[255][MAX_TESTS_PER_HEURISTIC] = {
+        "[0-{0, 0, 0}]", "[0-{0, 0, 1}]", "[0-{0, 1, 0}]", "[0-{0, 1, 1}]", "[0-{0, 1, 2}]",
+        "[1-{0, 0, 0}]", "[1-{0, 0, 1}]", "[1-{0, 1, 0}]", "[1-{0, 1, 1}]", "[1-{0, 1, 2}]",
+        "[2-{0, 0, 0}]", "[2-{0, 0, 1}]", "[2-{0, 1, 0}]", "[2-{0, 1, 1}]", "[2-{0, 1, 2}]",
+        "[3-{0, 0, 0}]", "[3-{0, 0, 1}]", "[3-{0, 1, 0}]", "[3-{0, 1, 1}]", "[3-{0, 1, 2}]"
+    };
+    total_passed = print_result(qtd_tests[6], passed[6], labels6, 5);
+    printf("\n");
+
+    printf("7: first, first to second, first to third...\n");
+    char labels7[255][MAX_TESTS_PER_HEURISTIC] = {"[0..0]", "[0..1]", "[0..2]", "[0..3]"};
+    total_passed = print_result(qtd_tests[7], passed[7], labels7, 4);
+    printf("\n");
 }
 
 void error_discoverer(int index){
     int prev_error = error_count;
 
     int qtd_tests[QTD_HEURISTICS] = {0, 0, 0, 0, 0, 0, 0};
-    int passed[QTD_HEURISTICS]    = {0, 0, 0, 0, 0, 0, 0};
+    int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC];
     if(PRINTS >= 1) printf("\n===== Heuristic 0 ===== \n");
     for(int i = 0; i < 5; i++){
         qtd_tests[0]++;
@@ -88,8 +150,9 @@ void error_discoverer(int index){
         execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
         if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
             if(PRINTS >= 1) printf("Convergence\n");
-            passed[0]++;
+            passed[0][i] = 1;
         }else{
+            passed[0][i] = 0;
             if(PRINTS >= 1) printf("Divergence\n");
         }
         if(PRINTS >= 3){
@@ -114,8 +177,9 @@ void error_discoverer(int index){
 
     if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
         if(PRINTS >= 1) printf("Convergence, probably data hazard problem\n");
-        passed[1]++;
+        passed[1][0] = 1;
     }else{
+        passed[1][0] = 0;
         if(PRINTS >= 1) printf("Divergence => proceed to next test\n");
         if(PRINTS >= 3) print_regs(&scalar_res[0][0], NUM_REGISTERS, r);
         if(PRINTS >= 3) print_regs(&vet_res[0][0], NUM_REGISTERS, r);
@@ -131,9 +195,10 @@ void error_discoverer(int index){
         execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
         if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
             if(PRINTS >= 1) printf("Convergence\n");
-            passed[2]++;
+            passed[2][i] = 1;
         }
         else {
+            passed[2][i] = 0;
             if(PRINTS >= 1) printf("Divergence => problem single with instruction\n");
             if(PRINTS >= 3) printf("v = %d %s %d\n", rx[i][1], get_OP(ops[i]), rx[i][2]);
             wrong_op = ops[i];
@@ -141,7 +206,7 @@ void error_discoverer(int index){
     }
 
 
-    // Excluir 2
+    // Excluir 1
     if(PRINTS >= 1) printf("\n===== Heuristic 3 ===== \n\n");
     for(int i = 0; i < 4; i++){
         if(PRINTS >= 1) printf("Removed instruction %d\n", i);
@@ -159,14 +224,15 @@ void error_discoverer(int index){
         execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
         if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
             if(PRINTS >= 1) printf("Convergence\n");
-            passed[3]++;
+            passed[3][i] = 1;
         }
         else {
+            passed[3][i] = 0;
             if(PRINTS >= 1) printf("Divergence\n");
         }
     }
 
-    // Excluir 3
+    // Excluir 2
     if(PRINTS >= 1) printf("\n===== Heuristic 3.1 ===== \n\n");
     for(int i = 0; i < 4; i++)
         for(int j = i + 1; j < 4; j++){
@@ -184,9 +250,12 @@ void error_discoverer(int index){
             execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
             if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
                 if(PRINTS >= 1) printf("Convergence\n");
-                passed[3]++;
+                passed[3][qtd_tests[3] - 1] = 1;
             }
-            else if(PRINTS >= 1) printf("Divergence\n");
+            else {
+                if(PRINTS >= 1) printf("Divergence\n");
+                passed[3][qtd_tests[3] - 1] = 0;
+            }
         }
         
     // Registradores
@@ -203,9 +272,10 @@ void error_discoverer(int index){
     execute_RIS(&OUT[index], other_r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
     if(compare_solutions(prev_error, other_r, &vet_res[0][0]) == 2){
         if(PRINTS >= 1) printf("Convergence\n\n");
-        passed[4]++;
+        passed[4][0] = 1;
     }
     else{
+        passed[4][0] = 0;
         if(PRINTS >= 1) printf("Divergence\n\n");
         if(PRINTS >= 3) print_regs(&scalar_res[0][0], NUM_REGISTERS, other_r);;
         if(PRINTS >= 3) print_regs(&vet_res[0][0], 3, other_r);
@@ -227,9 +297,10 @@ void error_discoverer(int index){
         execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
         if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
             if(PRINTS >= 1) printf("Convergence\n\n");
-            passed[5]++;
+            passed[5][one] = 1;
         }
         else{
+            passed[5][one] = 0;
             if(PRINTS >= 1) printf("Divergence\n\n");
         } 
     }
@@ -250,58 +321,89 @@ void error_discoverer(int index){
 
             int invalid_instruction = 0;
             load_init_values_scalar(&OUT[index], r, NUM_REGISTERS);
-            for(int j = 0; j < 30; j++){
-                ADDRESS_VECTOR[j] = add_instruction(op, s, other_r);
-                if(ADDRESS_VECTOR[j] == -1){
+            for(int j = 0; j < 1; j++){
+                ADDRESS_VECTOR[j] = add_instruction(op, s, r);
+                if(ADDRESS_VECTOR[j] == NOP){
                     invalid_instruction = 1;
                     break;
                 }
             }
             if(invalid_instruction){
-                passed[6]++;
+                passed[6][qtd_tests[6] - 1] = 1;
                 break;
             }
-            ADDRESS_VECTOR[30] = RET_INSTR;
-            execute_RIS(&OUT[index], other_r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
+            ADDRESS_VECTOR[1] = RET_INSTR;
+            execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
             if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
-                if(PRINTS >= 1) printf("Convergence\n");
-                passed[6]++;
+                //if(PRINTS >= 1) printf("Convergence\n");
+                passed[6][qtd_tests[6] - 1] = 1;
             }
             else{
-                if(PRINTS >= 1) printf("Divergence\n");
-                if(PRINTS >= 1) printf("PROBLEMATIC OP: %s\n", get_OP(op));
-                wrong_op = op;  
+                passed[6][qtd_tests[6] - 1] = 0;
+                //if(PRINTS >= 1) printf("Divergence\n");
+                if(PRINTS >= 1) printf("PROBLEMATIC OP: %s\n", get_OP(op));  
+                printf("Scalar:\n");
+                print_regs(&scalar_res[0][0], EL_PER_BLOCK, r);
+                printf("Vector:\n");
+                print_regs(&vet_res[0][0], EL_PER_BLOCK, r);
             } 
+
         }
     }
     printf("\n");
 
     if(PRINTS >= 1) printf("\n===== Heuristic 7 ===== \n");
-    for(int i = 0; i < NUM_RANDOM_OPS; i++){
-       if(PRINTS >= 1) printf("Test %d\n\n", i);
-
-        qtd_tests[7]++;
-        load_init_values_scalar(&OUT[index], r, NUM_REGISTERS);
-
-        for(int j = 0; j <= i; j++){
-            ADDRESS_VECTOR[j] = add_instruction(ops[j], rx[j], r);
-        }
+    int order[4] = {0, 1, 2, 3};
     
-        ADDRESS_VECTOR[i + 1] = RET_INSTR;
+    for(int num_ops = 0; num_ops < NUM_RANDOM_OPS; num_ops++)
+    {
+        if(PRINTS >= 1) printf("Test %d\n\n", num_ops);
+        int changed = false;
+        int break_for = false;
+        qtd_tests[7]++;
+        while(true){
+            printf("ORDER:", order[0], order[1], order[2], order[3]);
+            for(int i = 0; i <= num_ops; i++)
+                printf("%d ", order[i]);
+            printf("\n");
+            load_init_values_scalar(&OUT[index], r, NUM_REGISTERS);
 
-        execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
-        if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
-            if(PRINTS >= 1) printf("Convergence\n");
-            passed[7]++;
-        }else{
-            if(PRINTS >= 1) printf("Divergence\n");
+            for(int j = 0; j <= num_ops; j++){
+                ADDRESS_VECTOR[j] = add_instruction(ops[order[j]], rx[order[j]], r);
+            }
+        
+            ADDRESS_VECTOR[num_ops + 1] = RET_INSTR;
+
+            execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
+            if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
+                if(PRINTS >= 1) printf("Convergence\n");
+                passed[7][num_ops] = 1;
+                break;
+            }else{
+                passed[7][num_ops] = 0;
+                if(PRINTS >= 1) printf("Divergence\n");
+                if(num_ops == NUM_RANDOM_OPS - 1)
+                    break;
+                if(changed){
+                    break_for = true;
+                    break;
+                }
+                else{
+                    changed = true;
+                    int aux = order[num_ops];
+                    order[num_ops] = order[num_ops + 1];
+                    order[num_ops + 1] = aux;
+                }
+                if(PRINTS >= 3){
+                    printf("SCALAR:\n");
+                    print_regs(&scalar_res[0][0], NUM_REGISTERS, r);
+                    printf("VETORIAL:\n");
+                    print_regs(&vet_res[0][0], NUM_REGISTERS, r);
+                }
+            }
         }
-        if(PRINTS >= 3){
-            printf("SCALAR:\n");
-            print_regs(&scalar_res[0][0], NUM_REGISTERS, r);
-            printf("VETORIAL:\n");
-            print_regs(&vet_res[0][0], NUM_REGISTERS, r);
-        }
+        if(break_for)
+            break;
     }
     printf("\n");
 
@@ -317,43 +419,43 @@ void generate_RIS(int index){
     if(PRINTS >= 2)printf("STEP BY STEP RESULTS: \n");
     for(int i = 0; i < NUM_RANDOM_OPS; i++){
         ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
-        if (ADDRESS_VECTOR[i] == -1){
+        if (ADDRESS_VECTOR[i] == NOP){
             rx[i][0] = 0;
             rx[i][1] = 1;
             rx[i][2] = 2;
             ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
         }
-        if (ADDRESS_VECTOR[i] == -1){
+        if (ADDRESS_VECTOR[i] == NOP){
             rx[i][0] = 0;
             rx[i][1] = 2;
             rx[i][2] = 1;
             ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
         }
-        if (ADDRESS_VECTOR[i] == -1){
+        if (ADDRESS_VECTOR[i] == NOP){
             rx[i][0] = 1;
             rx[i][1] = 0;
             rx[i][2] = 2;
             ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
         }
-        if (ADDRESS_VECTOR[i] == -1){
+        if (ADDRESS_VECTOR[i] == NOP){
             rx[i][0] = 1;
             rx[i][1] = 2;
             rx[i][2] = 0;
             ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
         }
-        if (ADDRESS_VECTOR[i] == -1){
+        if (ADDRESS_VECTOR[i] == NOP){
             rx[i][0] = 2;
             rx[i][1] = 1;
             rx[i][2] = 0;
             ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
         }
-        if (ADDRESS_VECTOR[i] == -1){
+        if (ADDRESS_VECTOR[i] == NOP){
             rx[i][0] = 2;
             rx[i][1] = 0;
             rx[i][2] = 1;
             ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
         }
-        if (ADDRESS_VECTOR[i] == -1){
+        if (ADDRESS_VECTOR[i] == NOP){
             ADDRESS_VECTOR[i] = RET_INSTR;
             return;
         }
@@ -435,6 +537,7 @@ void digest_parameters(){
 }
 
 int main(){
+    update_LMUL(1);
     digest_parameters();
 
     printf("Doing random batch tests with registers v0-v7 with seed %d\n", SEED);

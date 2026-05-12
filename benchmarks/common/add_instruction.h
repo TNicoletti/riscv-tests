@@ -9,7 +9,7 @@ extern int t0_VALUE;
 extern float f_vf;
 extern int imm;
 extern int compare_registers;
-extern int actual_t0;
+extern int actual_t1;
 extern int error_count;
 extern int last_hw_error;
 
@@ -18,6 +18,7 @@ extern int* load_OUT_t0_vet(int* address);
 extern void load_value_ft0(float f);
 
 extern void jump_to_vet(int* vet);
+extern int return_reg(int reg);
 
 
 /* ===== RES ===== */

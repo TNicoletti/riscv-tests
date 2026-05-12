@@ -32,43 +32,43 @@ void generate_RIS(int index){
     if(PRINTS >= 2)printf("STEP BY STEP RESULTS: \n");
     for(int i = 0; i < NUM_RANDOM_OPS; i++){
         ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
-        if (ADDRESS_VECTOR[i] == -1){
+        if (ADDRESS_VECTOR[i] == NOP){
             rx[i][0] = 0;
             rx[i][1] = 1;
             rx[i][2] = 2;
             ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
         }
-        if (ADDRESS_VECTOR[i] == -1){
+        if (ADDRESS_VECTOR[i] == NOP){
             rx[i][0] = 0;
             rx[i][1] = 2;
             rx[i][2] = 1;
             ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
         }
-        if (ADDRESS_VECTOR[i] == -1){
+        if (ADDRESS_VECTOR[i] == NOP){
             rx[i][0] = 1;
             rx[i][1] = 0;
             rx[i][2] = 2;
             ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
         }
-        if (ADDRESS_VECTOR[i] == -1){
+        if (ADDRESS_VECTOR[i] == NOP){
             rx[i][0] = 1;
             rx[i][1] = 2;
             rx[i][2] = 0;
             ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
         }
-        if (ADDRESS_VECTOR[i] == -1){
+        if (ADDRESS_VECTOR[i] == NOP){
             rx[i][0] = 2;
             rx[i][1] = 1;
             rx[i][2] = 0;
             ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
         }
-        if (ADDRESS_VECTOR[i] == -1){
+        if (ADDRESS_VECTOR[i] == NOP){
             rx[i][0] = 2;
             rx[i][1] = 0;
             rx[i][2] = 1;
             ADDRESS_VECTOR[i] = add_instruction(ops[i], rx[i], r);
         }
-        if (ADDRESS_VECTOR[i] == -1){
+        if (ADDRESS_VECTOR[i] == NOP){
             ADDRESS_VECTOR[i] = RET_INSTR;
             return;
         }
@@ -98,6 +98,12 @@ void random_LMUL(int seed){
         if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
             printf("Convergence %d-%d\n", z, z + inc);
         }else{
+            printf("===== 1 =====\n");
+            print_vector(&scalar_res[0][0], 32 * VLEN / SEW, VLEN / SEW);
+            printf("===== 2 =====\n");
+            print_vector(&vet_res[0][0], 32 * VLEN / SEW, VLEN / SEW);
+            printf("===== 3 =====\n");
+
             printf("Divergence %d-%d\n", z, z + inc);
             
             exit(1);
@@ -135,7 +141,7 @@ void digest_parameters(){
 }
 
 int main(){
-    update_LMUL(8);
+    update_LMUL(1);
     digest_parameters();
     random_LMUL(SEED);    
     

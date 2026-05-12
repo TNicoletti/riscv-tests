@@ -24,8 +24,6 @@ extern void STALL(int cycles);
 
 extern void jump_to_vet(int* vet);
 
-extern int return_t0();
-
 extern void new_trap_handler(void);
 
 
