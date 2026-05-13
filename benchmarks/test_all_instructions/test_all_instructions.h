@@ -4,7 +4,7 @@
 #include "parameters.h"
 #include "add_instruction.h"
 
-#define MAX_REPEAT_INSTRUCTIONS 10
+#define MAX_REPEAT_INSTRUCTIONS 16
 int repeat_instructions = 6;
 #define MAX_N MAX_EL_PER_BLOCK * MAX_REPEAT_INSTRUCTIONS * SUPORTED_INSTRUCTIONS * NUM_REGISTERS
 

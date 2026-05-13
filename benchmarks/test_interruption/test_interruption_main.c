@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+
 // ================= HELPER FUNCTIONS =================
 
 static inline uint64_t read_cycles() {
@@ -91,19 +92,25 @@ int compare_vectors(int* received, int* expected, int len){
 
 extern int vector_sum_interrupt(int* vector,int LENGTH);
 
-extern int vector_sum_interrupt(int* vector,int LENGTH);
+extern void new_trap_handler(void);
+extern void vector_limit(void);
 
 // ================= MAIN =================
 
 #define LENGTH 1024
+int vet[LENGTH];
+int guard_padding[LENGTH];
+int error_count_2 = 0;
 
 int main(int argc, char* argv[]) {
-
-    int vet[LENGTH];
-    
+    asm volatile("csrw mtvec, %0" : : "r" (new_trap_handler));
+    vector_limit();
     init_vector_seq(vet, LENGTH, 127);
     vector_sum_interrupt(vet, LENGTH);
-    printf("%d %d\n",vet[LENGTH], vet[LENGTH + 1024]);
-
+    printf("Deu certo\n");
+    printf("Error_count: %d\n", error_count_2);
+    vet[0] = vet[1024];
+    printf("Error_count: %d\n", error_count_2);
+    printf("[0]%d [1]%d\n", vet[0], vet[1]);
     exit(0);
 }

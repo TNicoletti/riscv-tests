@@ -49,8 +49,8 @@ void store_vet_values(int* r, int* vet_res, int num_registers){
 
 
 void load_init_values_scalar(int* vet, int* r, int num_registers){
-    
-    imm      = ((int32_t)vet[2 * EL_PER_BLOCK] << 27) >> 27;
+    //clean_vector_scalar(&scalar_res[0][0], VLEN / SEW * 32);
+    imm      = (int32_t)vet[2 * EL_PER_BLOCK] & 0x1F;
     if(imm >= 16)
         imm = imm - 32;
     t0_VALUE =  vet[2 * EL_PER_BLOCK];
@@ -58,9 +58,8 @@ void load_init_values_scalar(int* vet, int* r, int num_registers){
     
     for(int i = 0; i < EL_PER_BLOCK; i++)
     {
-        scalar_res[r[0]][i] = vet[i];
-        scalar_res[r[1]][i] = vet[EL_PER_BLOCK + i];
-        scalar_res[r[2]][i] = vet[2 * EL_PER_BLOCK + i];
+        for(int j = 0; j < num_registers; j++)
+            scalar_res[r[j]][i] = vet[j * EL_PER_BLOCK + i];
     }
 }
 
@@ -236,6 +235,7 @@ int add_instruction(int op, int rxa[3], int r[3]){
             instr_type = VI;
             break;
         case VXOR_VI:
+            require_imm_normal();
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d ^ imm(%d);\n", rx[0], j, rx[1], scalar_res[rx[1]][j], imm);
                 scalar_res[rx[0]][j] = (int32_t)(scalar_res[rx[1]][j] ^ imm);
@@ -408,21 +408,20 @@ int add_instruction(int op, int rxa[3], int r[3]){
             instr = VFMACC_VV_INSTR;
             break;
         case VSLIDEUP_VI:
-            imm = (imm<0)?-imm:imm;
+            require_imm_positive();
             if(slideup_forbid(rx[0], rx[1], LMUL)) { printf("FORBIDDEN\n"); return NOP; }
-            int el_per_reg = VLEN / SEW;
-            for(int j = 0; j <= EL_PER_BLOCK; j++){
+            for(int j = 0; j < EL_PER_BLOCK; j++){
                 int dest_idx = imm + j;
     
-                int idx  = rx[0] + dest_idx / el_per_reg;
-                printf("%d %d %d\n", rx[0], dest_idx, el_per_reg);
+                int idx  = rx[0] + dest_idx / (VLEN / SEW);
+                printf("%d %d %d\n", rx[0], dest_idx, (VLEN / SEW));
                 
-                if (dest_idx >= idx) break;
+                if (dest_idx >= EL_PER_BLOCK) break;
 
-                int idx2 = dest_idx % el_per_reg;
+                int idx2 = dest_idx % (VLEN / SEW);
                 
-                int src_reg = rx[1] + j / el_per_reg;
-                int src_idx = j % el_per_reg;
+                int src_reg = rx[1] + j / (VLEN / SEW);
+                int src_idx = j % (VLEN / SEW);
                 
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d;\n", idx, idx2, src_reg, scalar_res[idx][idx2]);
                 scalar_res[idx][idx2] = (int32_t)(scalar_res[src_reg][src_idx]);
@@ -433,19 +432,18 @@ int add_instruction(int op, int rxa[3], int r[3]){
             break;
         case VSLIDEUP_VX:
             if(slideup_forbid(rx[0], rx[1], LMUL)) {printf("FORBIDDEN\n"); return NOP;}
-            if(rx[0] == rx[1]) return NOP;
-            for(int j = 0; j <= EL_PER_BLOCK; j++){
+            for(int j = 0; j < EL_PER_BLOCK; j++){
                 uint32_t dest_idx = ut0 + j;
-                uint32_t idx  = rx[0] + dest_idx / el_per_reg;
-                printf("%d %d %d\n", rx[0], dest_idx, el_per_reg);
+                uint32_t idx  = rx[0] + dest_idx / (VLEN / SEW);
+                printf("%d %d %d\n", rx[0], dest_idx, (VLEN / SEW));
 
     
-                if (idx >= 32) break;
+                if (idx >= EL_PER_BLOCK) break;
 
-                uint32_t idx2 = dest_idx % el_per_reg;
+                uint32_t idx2 = dest_idx % (VLEN / SEW);
                 
-                uint32_t src_reg = rx[1] + j / el_per_reg;
-                uint32_t src_idx = j % el_per_reg;
+                uint32_t src_reg = rx[1] + j / (VLEN / SEW);
+                uint32_t src_idx = j % (VLEN / SEW);
                 
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d;\n", rx[0], j, rx[1], scalar_res[idx][idx2]);
                 scalar_res[idx][idx2] = (int32_t)(scalar_res[src_reg][src_idx]);
@@ -455,20 +453,21 @@ int add_instruction(int op, int rxa[3], int r[3]){
             instr_type = VX;
             break;
         case VSLIDEDOWN_VI:
-            if(rx[0] == rx[1]) return NOP;
-            imm = (imm<0)?-imm:imm;
+            require_imm_positive();
             for(int j = 0; j < EL_PER_BLOCK; j++){
-                uint32_t dest_idx = j;
+                
                 uint32_t src_idx  = j + imm;
                 
-                uint32_t dest_reg  = rx[0] + dest_idx / el_per_reg;
-                uint32_t dest_elem = dest_idx % el_per_reg;
+                uint32_t dest_reg  = rx[0] + j / (VLEN / SEW);
+                uint32_t dest_elem = j % (VLEN / SEW);
 
-                if (src_idx >= 32) {
+                if (src_idx >= EL_PER_BLOCK) {
                     scalar_res[dest_reg][dest_elem] = 0;
                 } else {
-                    uint32_t src_reg  = rx[1] + src_idx / el_per_reg;
-                    uint32_t src_elem = src_idx % el_per_reg;
+                    uint32_t src_reg  = rx[1] + src_idx / (VLEN / SEW);
+                    uint32_t src_elem = src_idx % (VLEN / SEW);
+
+                    printf("[%d][%d] = [%d][%d]\n", dest_reg, dest_elem, src_reg, src_elem);
                     
                     scalar_res[dest_reg][dest_elem] = (int32_t)(scalar_res[src_reg][src_elem]);
                 }
@@ -483,14 +482,16 @@ int add_instruction(int op, int rxa[3], int r[3]){
                 uint32_t dest_idx = j;
                 uint32_t src_idx  = j + ut0;
                 
-                uint32_t dest_reg  = rx[0] + dest_idx / el_per_reg;
-                uint32_t dest_elem = dest_idx % el_per_reg;
+                uint32_t dest_reg  = rx[0] + dest_idx / (VLEN / SEW);
+                uint32_t dest_elem = dest_idx % (VLEN / SEW);
+                //printf("dest_reg: %d\n", dest_reg);
+                //printf("dest_elem: %d\n", dest_elem);
 
                 if (src_idx >= 32) {
                     scalar_res[dest_reg][dest_elem] = 0;
                 } else {
-                    uint32_t src_reg  = rx[1] + src_idx / el_per_reg;
-                    uint32_t src_elem = src_idx % el_per_reg;
+                    uint32_t src_reg  = rx[1] + src_idx / (VLEN / SEW);
+                    uint32_t src_elem = src_idx % (VLEN / SEW);
                     
                     scalar_res[dest_reg][dest_elem] = (int32_t)(scalar_res[src_reg][src_elem]);
                 }
@@ -979,6 +980,7 @@ int add_instruction(int op, int rxa[3], int r[3]){
             break;
 
         case VMSLE_VI:
+            require_imm_normal();
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d <= %d) ? 1 : 0;\n", rx[0], j,
                     rx[1], scalar_res[rx[1]][j], imm);
@@ -1070,7 +1072,9 @@ int add_instruction(int op, int rxa[3], int r[3]){
         case VFIRST_M: {
             // Encontra o primeiro bit setado na máscara. Retorna índice, ou -1 se não encontrar.
             int first_idx = -1;
-            for(int j = 0; j < VLEN * LMUL; j++){
+            printf("AAAAA: %d %d %d %d\n", scalar_res[rx[1]][0], scalar_res[rx[1]][1], 
+                scalar_res[rx[1]][2], scalar_res[rx[1]][3]);
+            for(int j = 0; j < EL_PER_BLOCK; j++){
                 if((scalar_res[rx[1]][j / SEW] & i) != 0){
                     first_idx = j;
                     break;
@@ -1082,7 +1086,7 @@ int add_instruction(int op, int rxa[3], int r[3]){
             instr = VFIRST_M_INSTR;
             compare_registers = first_idx;
             instr = change_vet_rd(instr, 6);
-            instr = change_vet_rs1(instr, 16);
+            instr = change_vet_rs1(instr, rx[1]);
             instr_type = NO_TYPE;
             break;
         }
@@ -1376,7 +1380,6 @@ int add_instruction(int op, int rxa[3], int r[3]){
             instr_type = VX;
             break;
             case VMIN_VV:
-            printf("%d\n", 0);
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) {
                     printf("VMIN_VV: [%d][%d](%d) = (min)(%d, %d)\n",
@@ -1544,15 +1547,11 @@ int compare_solutions(int prev_error, int r[3], int* vet_res){
     compare_registers = -1;
     if(PRINTS >= 3) printf("r: %d %d %d\n", r[0], r[1], r[2]);
 
-    printf("%d\n", cmr);
-
     if(cmr != -1){
         if(actual_t1 == cmr){
-            if(PRINTS >= 1)printf("Convergence \n");
-            if(PRINTS >= 2)printf("registers compared\n");
+            if(PRINTS >= 1)printf("Convergence on t1 comparison \n");
         }else{
-            if(PRINTS >= 1)printf("Divergence on t0\n");
-            if(PRINTS >= 2)printf("t0: %d\n", actual_t1);
+            if(PRINTS >= 1)printf("Divergence on t1: (actual)%d != %d\n", actual_t1, cmr);
             return 1;
         }
     }
@@ -1569,7 +1568,6 @@ int compare_solutions(int prev_error, int r[3], int* vet_res){
 
 void execute_RIS(int* vet, int* r, int32_t address_vector[], int* vet_res, int num_registers){
     set_vet_settings();
-    printf("\nr: %d %d %d\n\n", r[0], r[1], r[2]);
     load_init_values_vector(vet, r, num_registers);
     set_vet_settings();
 
@@ -1578,7 +1576,6 @@ void execute_RIS(int* vet, int* r, int32_t address_vector[], int* vet_res, int n
     
     jump_to_vet(&address_vector[0]);
     actual_t1 = return_t1();
-    printf("ACTUAL_t1: %d\n", actual_t1);
     if(PRINTS >= 2 && compare_registers != -1) 
         printf("Compare_registers: %d, actual_t1: %d \n", compare_registers, actual_t1);
     store_vet_values(r, vet_res, num_registers);

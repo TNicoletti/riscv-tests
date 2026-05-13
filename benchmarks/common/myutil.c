@@ -60,7 +60,7 @@ void print_matrix(int* vet, int N, int M){
 
 void print_regs(int* vet, int N, int r[3]){
 
-  for(int i = 0; i < 3; i++){
+  for(int i = 0; i < N; i++){
     int idx = r[i];
     for(int j = 0; j < EL_PER_BLOCK; j++){
       printf("v[%d][%d] = %d;", idx, j, vet[idx * EL_PER_BLOCK + j]);

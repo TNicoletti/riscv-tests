@@ -57,7 +57,7 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     int total_passed = 0;
     printf("0: Repeat 5x\n");
     char labels[255][MAX_TESTS_PER_HEURISTIC] = {"1", "2", "3", "4", "5"}; 
-    total_passed = print_result(qtd_tests[0], passed[0], labels, 4);
+    total_passed = print_result(qtd_tests[0], passed[0], labels, 5);
     if(total_passed == qtd_tests[0])
         printf("Error is not compulsory\n");
     if(total_passed == 0)
@@ -93,10 +93,12 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     printf("\n");
     
     printf("3: Delete 1 out of 4 operations\n");
+    char labels3[255][MAX_TESTS_PER_HEURISTIC] = {"[- 0]", "[- 1]", "[- 2]", "[- 3]"};
+    total_passed = print_result(4, passed[3], labels3, 4);
     printf("3.1: Delete 2 out of 4 operations\n");
-    char labels3[255][MAX_TESTS_PER_HEURISTIC] = {"[-   0]", "[-   1]", "[-   2]", "[-   3]", "[- 0 1]", "[- 0 2]",
-        "[- 0 3]", "[- 1 2]", "[- 1 3]", "[- 2 3]"};
-    total_passed = print_result(qtd_tests[3], passed[3], labels3, 4);
+    char labels31[255][MAX_TESTS_PER_HEURISTIC] = {"[- 0 1]", "[- 0 2]", "[- 0 3]", "[- 1 2]", "[- 1 3]", "[- 2 3]"};
+    total_passed = print_result(6, &passed[3][4], labels31, 6);
+    
 
     printf("\n");
     printf("4: Registers change\n");

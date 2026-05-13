@@ -25,7 +25,7 @@ extern int* load_OUT_t0_vet(int* address);
 /* ===== NORMALS ===== */
 
 volatile int32_t OUT[N];
-volatile int32_t vet_res[NUM_REGS][32];
+volatile int32_t vet_res[32][4];
 
 
 /* ===== RANDOMIZERS ===== */
@@ -45,10 +45,6 @@ void randomize_instructions(){
     ops[4] = -1;
     ops[5] = -1;
 
-    /*rx[0][0] = mrand() % 3; rx[0][1] = mrand() % 3; rx[0][2] = mrand() % 3;
-    rx[1][0] = mrand() % 3; rx[1][1] = mrand() % 3; rx[1][2] = mrand() % 3;
-    rx[2][0] = mrand() % 3; rx[2][1] = mrand() % 3; rx[2][2] = mrand() % 3;
-    rx[3][0] = mrand() % 3; rx[3][1] = mrand() % 3; rx[3][2] = mrand() % 3;*/
 }
 
 /* ===== VECTOR LOADERS =====*/
@@ -67,6 +63,8 @@ load_random_values_registers(int* vet){
 */
 void execute_batch_tests(int index, int rx[NUM_REGS][3]){
     int r[NUM_REGS] = {0, 8, 16, 24};
+    int prev_error = error_count;
+
 
     char operation_value[4] = {'+', '-', '/', '*'};
 
@@ -78,21 +76,23 @@ void execute_batch_tests(int index, int rx[NUM_REGS][3]){
         }
         ADDRESS_VECTOR[NUM_REGS] = RET_INSTR;
 
-        set_vet_settings();
-        load_init_values_vector(&OUT[index], r, NUM_REGS);
-        jump_to_vet(ADDRESS_VECTOR);
-        store_vet_values(r, &vet_res[0][0], NUM_REGS);
-        index += EL_PER_BLOCK * NUM_REGS;
-        
-        if (!is_divergent_matrix(&vet_res[0][0], &scalar_res[0][0], NUM_REGS, EL_PER_BLOCK) == 1){
-            printf("Error on test of operation %c\n", operation_value[i]);
-            printf("VET MATRIX:\n");
-            print_matrix(&vet_res[0][0], NUM_REGS, EL_PER_BLOCK);
+        execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGS);
+        if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2)
+            printf("Convergence %d-%d\n", index, index + 4 * EL_PER_BLOCK);
+        else
+            printf("Divergence\n");
+        if(PRINTS > 3){
             printf("SCALAR MATRIX:\n");
-            print_matrix(&scalar_res[0][0], NUM_REGS, EL_PER_BLOCK);
-            //exit(0);
+            print_regs(&scalar_res[0][0], NUM_REGS, r);
+        
+            printf("OUTPUT from vector:\n");
+            print_regs(&vet_res[0][0], NUM_REGS, r);
+            printf("\n");
         }
-    }    
+        index +=  NUM_REGS * EL_PER_BLOCK;
+    }
+
+
 }
 
 void test(int seed) {
