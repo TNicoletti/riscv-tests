@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <util.h>
+#include "benchmarks.h"
 
 //V1.2 - Com Macro
 
@@ -15,25 +16,6 @@ void print_fixed_point(uint64_t n, uint64_t d) {
     uint64_t fractional_part = ((n % d) * 1000) / d;
 
     printf("%llu.%03llu", integer_part, fractional_part);
-}
-
-static inline int read_cycles() {
-    unsigned long int cycles_lo;
-    asm volatile ("csrr %0, cycle" : "=r" (cycles_lo));
-    int ret = (unsigned long int)cycles_lo;
-    return ret;
-}
-
-static inline int read_instret() {
-    int instret;
-    asm volatile ("csrr %0, instret" : "=r" (instret));
-    return instret;
-}
-
-long read_vlenb() {
-    long vlenb;
-    asm volatile("csrr %0, vlenb" : "=r"(vlenb));
-    return vlenb;
 }
 
 void print_results(uint64_t cycles, uint64_t insts) {

@@ -1,27 +1,9 @@
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include "benchmarks.h"
 
 // ================= HELPER FUNCTIONS =================
-
-static inline uint64_t read_cycles() {
-    uint64_t cycles;
-    asm volatile ("csrr %0, cycle" : "=r" (cycles));
-    return cycles;
-}
-
-static inline uint64_t read_instret() {
-    uint64_t instret;
-    asm volatile ("csrr %0, instret" : "=r" (instret));
-    return instret;
-}
-
-long read_vlenb() {
-    long vlenb;
-    asm volatile("csrr %0, vlenb" : "=r"(vlenb));
-    return vlenb;
-}
 
 void print_fixed_point(uint64_t n, uint64_t d) {
     if (d == 0) {

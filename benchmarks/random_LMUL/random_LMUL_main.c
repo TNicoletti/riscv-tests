@@ -141,9 +141,19 @@ void digest_parameters(){
 }
 
 int main(){
-    update_LMUL(1);
     digest_parameters();
-    random_LMUL(SEED);    
     
+    update_LMUL(1);
+    random_LMUL(SEED);    
+    printf("LMUL: %d\n", LMUL);
+    update_LMUL(2);
+    random_LMUL(SEED);    
+    printf("LMUL: %d\n", LMUL);
+    update_LMUL(4);
+    random_LMUL(SEED);    
+    printf("LMUL: %d\n", LMUL);
+    update_LMUL(8);
+    random_LMUL(SEED);    
+    printf("LMUL: %d\n", LMUL);    
     exit(0);
 }

@@ -1,4 +1,5 @@
 #include "util.h"
+#include "benchmarks.h"
 
 //asm(".include \"critical_vetorization.S\"");
 
@@ -18,27 +19,6 @@ void print_fixed_point(uint64_t n, uint64_t d) {
 // Declare os protótipos para o C não reclamar que a função não existe
 extern void vetorized();
 extern void non_vetorized();
-
-// Função inline para ler o contador de ciclos
-static inline int read_cycles() {
-    unsigned long int cycles_lo;
-    asm volatile ("csrr %0, cycle" : "=r" (cycles_lo));
-    int ret = (unsigned long int)cycles_lo;
-    return ret;
-}
-
-// Função inline para ler instruções retiradas
-static inline int read_instret() {
-    int instret;
-    asm volatile ("csrr %0, instret" : "=r" (instret));
-    return instret;
-}
-
-long read_vlenb() {
-    long vlenb;
-    asm volatile("csrr %0, vlenb" : "=r"(vlenb));
-    return vlenb;
-}
 
 void print_results(uint64_t cycles, uint64_t insts) {
     if (cycles == 0) return; // Evita divisão por zero
