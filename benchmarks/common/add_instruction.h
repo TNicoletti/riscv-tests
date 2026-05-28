@@ -4,6 +4,7 @@
 #include "float_operator.h"
 #include "asm_functions.h"
 #include "myutil.h"
+#include "benchmarks.h"
 
 extern int t0_VALUE;
 extern float f_vf;

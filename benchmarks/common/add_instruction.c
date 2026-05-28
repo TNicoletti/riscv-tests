@@ -50,11 +50,11 @@ void store_vet_values(int* r, int* vet_res, int num_registers){
 
 void load_init_values_scalar(int* vet, int* r, int num_registers){
     //clean_vector_scalar(&scalar_res[0][0], VLEN / SEW * 32);
-    imm      = (int32_t)vet[2 * EL_PER_BLOCK] & 0x1F;
+    imm      = (int32_t)vet[2 * VLEN / SEW] & 0x1F;
     if(imm >= 16)
         imm = imm - 32;
-    t0_VALUE =  vet[2 * EL_PER_BLOCK];
-    f_vf     =  vet[2 * EL_PER_BLOCK];
+    t0_VALUE =  vet[2 * VLEN / SEW];
+    f_vf     =  vet[2 * VLEN / SEW];
     
     for(int i = 0; i < EL_PER_BLOCK; i++)
     {
@@ -1031,7 +1031,6 @@ int add_instruction(int op, int rxa[3], int r[3]){
             break;
 
         case VCOMPRESS_VM: {
-            printf("r = %d %d %d\n", rx[0], rx[1], rx[2]);
             if(compress_forbid(rx[0], rx[1], rx[2])){
                 return NOP;
             }
@@ -1070,8 +1069,6 @@ int add_instruction(int op, int rxa[3], int r[3]){
         case VFIRST_M: {
             // Encontra o primeiro bit setado na máscara. Retorna índice, ou -1 se não encontrar.
             int first_idx = -1;
-            printf("AAAAA: %d %d %d %d\n", scalar_res[rx[1]][0], scalar_res[rx[1]][1], 
-                scalar_res[rx[1]][2], scalar_res[rx[1]][3]);
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if((scalar_res[rx[1]][j / SEW] & i) != 0){
                     first_idx = j;
@@ -1573,6 +1570,27 @@ void execute_RIS(int* vet, int* r, int32_t address_vector[], int* vet_res, int n
     load_value_ft0(f_vf);
     
     jump_to_vet(&address_vector[0]);
+    actual_t1 = return_t1();
+    if(PRINTS >= 2 && compare_registers != -1) 
+        printf("Compare_registers: %d, actual_t1: %d \n", compare_registers, actual_t1);
+    store_vet_values(r, vet_res, num_registers);
+}
+
+void execute_RIS_capture_benchmarks(int* vet, int* r, int32_t address_vector[], int* vet_res, int num_registers,
+int* delta_cyc, int* delta_inst){
+    set_vet_settings();
+    load_init_values_vector(vet, r, num_registers);
+    set_vet_settings();
+
+    load_OUT_t0_vet((int*)t0_VALUE);// Gambiarra simples para ter t0 com t0_VALUE
+    load_value_ft0(f_vf);
+    
+    uint64_t start_cyc = read_cycles();
+    uint64_t start_inst = read_instret();
+    jump_to_vet(&address_vector[0]);
+    *delta_cyc = read_cycles() - start_cyc;
+    *delta_inst = read_instret() - start_inst;
+
     actual_t1 = return_t1();
     if(PRINTS >= 2 && compare_registers != -1) 
         printf("Compare_registers: %d, actual_t1: %d \n", compare_registers, actual_t1);

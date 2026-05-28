@@ -66,6 +66,9 @@ vec_bmarks = \
 	easy_tester \
 	random_test_lmul \
 	random_neural_network_LMUL \
+	\
+	benchmark_LMUL \
+
 	
 
 bmarks = $(base_bmarks) $(vec_bmarks)

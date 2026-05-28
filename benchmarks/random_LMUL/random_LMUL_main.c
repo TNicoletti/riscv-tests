@@ -27,7 +27,6 @@ void generate_RIS(int index){
     shuffle_registers(r, NUM_REGISTERS, LMUL);
     randomize_instructions();
     load_init_values_scalar(&OUT[index], r, NUM_REGISTERS);
-    printf("r = %d %d %d\n", r[0], r[1], r[2]);
 
     if(PRINTS >= 2)printf("STEP BY STEP RESULTS: \n");
     for(int i = 0; i < NUM_RANDOM_OPS; i++){

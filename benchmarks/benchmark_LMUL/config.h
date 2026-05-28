@@ -1,2 +1,6 @@
 #define NUM_REGISTERS 3
 #define SUPORTED_INSTRUCTIONS 111
+
+#define NUM_RANDOM_OPS 4
+
+int N = 4096;
