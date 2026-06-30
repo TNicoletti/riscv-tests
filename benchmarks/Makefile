@@ -69,8 +69,10 @@ vec_bmarks = \
 	\
 	\
 	benchmark_LMUL \
-	#gemm \
-	#3mm \
+	gemm \
+	3mm \
+	trisolv \
+	trmm \
 	
 
 bmarks = $(base_bmarks) $(vec_bmarks)
@@ -89,7 +91,7 @@ RISCV_MARCH ?= rv$(XLEN)gc
 RISCV_VMARCH ?= rv$(XLEN)gcv
 RISCV_SIM ?= spike --isa=rv$(XLEN)gcv
 
-incs  += -I$(src_dir)/../env -I$(src_dir)/common $(addprefix -I$(src_dir)/, $(bmarks))
+incs  += -I$(src_dir)/../env -I$(src_dir)/common -I$(src_dir)/common/polybench $(addprefix -I$(src_dir)/, $(bmarks))
 objs  :=
 
 define compile_template
