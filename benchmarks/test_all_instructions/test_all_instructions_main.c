@@ -6,12 +6,16 @@ void generate_initial_values(){
     randomize_vector(OUT, N);
 }
 
-void generate_RIS(int op, int index){
+int generate_RIS(int op, int index){
     load_init_values_scalar(&OUT[index], r, NUM_REGISTERS);
 
-    ADDRESS_VECTOR[0] = add_instruction(op, rx[0], r);    
+    int32_t instr = add_instruction(op, rx[0], r);
+    if(instr == NOP)
+        return 0;
+    ADDRESS_VECTOR[0] = instr;    
     
     ADDRESS_VECTOR[1] = RET_INSTR;
+    return 1;
 }
 
 void eval_results(){
@@ -130,7 +134,10 @@ void all_test() {
 
             if(PRINTS >= 3)printf("Executing instruction %s\n", get_OP(z));
 
-            generate_RIS(z, (z * repeat_instructions + j) * inc);
+            if(generate_RIS(z, (z * repeat_instructions + j) * inc) == 0){
+                allowed_instructions[z] = 0;
+                continue;
+            }
             execute_RIS(&OUT[(z * repeat_instructions + j) * inc], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
             
             if(PRINTS >= 3){printf("Scalar:\n");   print_regs(&scalar_res[0][0], NUM_REGISTERS, r);}

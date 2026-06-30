@@ -2,7 +2,7 @@
 
 int LMUL = 1;
 int PRINTS = 0;
-int EL_PER_BLOCK = 4;
+int EL_PER_BLOCK = VLEN / SEW * 1;
 
 void update_LMUL(int new_LMUL){
     if(LMUL == new_LMUL)

@@ -9,24 +9,24 @@ extern int get_max_vl_4();
 extern int get_max_vl_2();
 extern int get_max_vl_1();
 
-extern void vet_vv_sum(int* vet1, int* vet2, int* vetd);
-extern void vet_vv_sub(int* vet1, int* vet2, int* vetd);
-extern void vet_vv_div(int* vet1, int* vet2, int* vetd);
-extern void vet_vv_mul(int* vet1, int* vet2, int* vetd);
+extern void vet_vv_sum(intSEW* vet1, intSEW* vet2, intSEW* vetd);
+extern void vet_vv_sub(intSEW* vet1, intSEW* vet2, intSEW* vetd);
+extern void vet_vv_div(intSEW* vet1, intSEW* vet2, intSEW* vetd);
+extern void vet_vv_mul(intSEW* vet1, intSEW* vet2, intSEW* vetd);
 
-extern void vet_vx_sum(int* vet1, int op2, int* vetd);
-extern void vet_vx_sub(int* vet1, int op2, int* vetd);
-extern void vet_vx_div(int* vet1, int op2, int* vetd);
-extern void vet_vx_mul(int* vet1, int op2, int* vetd);
+extern void vet_vx_sum(intSEW* vet1, int op2, intSEW* vetd);
+extern void vet_vx_sub(intSEW* vet1, int op2, intSEW* vetd);
+extern void vet_vx_div(intSEW* vet1, int op2, intSEW* vetd);
+extern void vet_vx_mul(intSEW* vet1, int op2, intSEW* vetd);
 
-extern void vet_vi_sum(int* vet1, int* vetd);
+extern void vet_vi_sum(intSEW* vet1, intSEW* vetd);
 
 /* NORMALS */
 
-volatile int A[N_VECTOR];
-volatile int B[N_VECTOR];
-volatile int OUT[N_VECTOR];
-volatile int OUT_SCALAR[N_VECTOR];
+volatile intSEW A[N_VECTOR];
+volatile intSEW B[N_VECTOR];
+volatile intSEW OUT[N_VECTOR];
+volatile intSEW OUT_SCALAR[N_VECTOR];
 
 void random_test(int seed) {
     msrand(seed);

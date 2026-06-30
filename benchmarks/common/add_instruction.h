@@ -6,42 +6,41 @@
 #include "myutil.h"
 #include "benchmarks.h"
 
-extern int t0_VALUE;
-extern float f_vf;
+extern intSEW t0_VALUE;
+extern floaSEW f_vf;
 extern int imm;
 extern int compare_registers;
-extern int actual_t1;
+extern intSEW actual_t1;
 extern int error_count;
 extern int last_hw_error;
 
 /* ===== EXTERNALS ===== */
-extern int* load_OUT_t0_vet(int* address);
-extern void load_value_ft0(float f);
+extern int* load_OUT_t0_vet(void* address);
 
-extern void jump_to_vet(int* vet);
+extern void jump_to_vet(void* vet);
 extern int return_reg(int reg);
 
 
 /* ===== RES ===== */
-extern volatile int32_t scalar_res[32][VLEN / SEW];
+extern volatile intSEW scalar_res[32][VLEN / SEW];
 
 /* ===== STORE LOAD VECTOR ===== */
-extern int32_t SL_A_VECTOR[2];
+extern INTXLEN SL_A_VECTOR[2];
 
-void load_to_vet(int* vet, int reg);
-void store_to_vet(int* vet, int reg);
-void load_init_values_vector(int* vet, int* regs, int num_registers);
-void store_vet_values(int* r, int* vet_res, int num_registers);
-void load_init_values_scalar(int* vet, int* r, int num_registers);
+void load_to_vet(intSEW* vet, int reg);
+void store_to_vet(intSEW* vet, int reg);
+void load_init_values_vector(intSEW* vet, int* regs, int num_registers);
+void store_vet_values(INTXLEN* r, intSEW* vet_res, int num_registers);
+void load_init_values_scalar(intSEW* vet, int* r, int num_registers);
 
-int widening_forbid(int rx[3]);
+int widening_forbid(INTXLEN rx[3]);
 int slideup_forbid(int vd, int vs2, int lmul);
 void require_imm_positive();
 
 int add_instruction(int op, int rxa[3], int r[3]);
 
-int compare_solutions(int prev_error, int r[3], int* vet_res);
-void execute_RIS(int* vet, int* r, int32_t address_vector[], int* vet_res, int num_registers);
+int compare_solutions(int prev_error, int r[3], intSEW* vet_res);
+void execute_RIS(intSEW* vet, INTXLEN* r, INT_INST address_vector[], intSEW* vet_res, int num_registers);
 
 
 /* ===== ENUMS ===== */

@@ -25,8 +25,8 @@ extern void STALL(int cycles);
 
 /* ===== NORMALS ===== */
 
-volatile int32_t OUT[MAX_N];
-volatile int32_t vet_res[32][VLEN / SEW];
+volatile intSEW OUT[MAX_N];
+volatile intSEW vet_res[32][VLEN / SEW];
 
 int r[NUM_REGISTERS];
 int rx[NUM_RANDOM_OPS][3];

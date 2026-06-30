@@ -1,4 +1,4 @@
-#define N_VECTOR    1024 * 1024
+#define N_VECTOR    1024 * 512
 #define SEED 0x12345678
 //#define SEW  32
 //#define VLEN 128

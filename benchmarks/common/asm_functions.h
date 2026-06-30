@@ -62,8 +62,18 @@
 // Memory
 // (la a0, data_array é pseudo-instrução e não possui opcode fixo vetorizado direto)
 #define VMV_V_X_T0_INSTR    0x5e02c057 // vmv.v.x v0, t0
+
+#define VLE8_V_INSTR        0x02028007 // vle32.v v0, (t0) / (a0)
+#define VSE8_V_INSTR        0x02028027 // vse32.v v0, (t0) / (a0)
+
+#define VLE16_V_INSTR       0x0202d007 // vle32.v v0, (t0) / (a0)
+#define VSE16_V_INSTR       0x0202d007 // vse32.v v0, (t0) / (a0)
+
 #define VLE32_V_INSTR       0x0202e007 // vle32.v v0, (t0) / (a0)
 #define VSE32_V_INSTR       0x0202e027 // vse32.v v0, (t0) / (a0)
+
+#define VLE64_V_INSTR       0x0202f007 // vle64.v v0, (t0) / (a0)
+#define VSE64_V_INSTR       0x0202f027 // vse64.v v0, (t0) / (a0)
 
 // STRIDED (Espaçado)
 #define LI_T0_4_INSTR       0x00400293 // li t0, 4 (escalar associado)

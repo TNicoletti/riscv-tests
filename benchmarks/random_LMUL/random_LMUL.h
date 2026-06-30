@@ -9,8 +9,8 @@ int SEED = 0x1123456;
 
 /* ===== NORMALS ===== */
 #define MAX_N 1024 * 16
-volatile int32_t OUT[MAX_N];
-volatile int32_t vet_res[NUM_REGISTERS][VLEN / SEW * 8];
+volatile intSEW OUT[MAX_N];
+volatile intSEW vet_res[NUM_REGISTERS][VLEN / SEW * 8];
 
 int r[NUM_REGISTERS];
 int rx[NUM_RANDOM_OPS][3];

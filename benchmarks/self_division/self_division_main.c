@@ -17,15 +17,15 @@ int32_t ADDRESS_VECTOR[30];
 extern void clean_vector_scalar(int* v1, int n);
 extern void STALL(int cycles);
 
-extern void jump_to_vet(int* vet);
+extern void jump_to_vet(void* vet);
 
-extern int* load_OUT_t0_vet(int* address);
+extern int* load_OUT_t0_vet(void* address);
 
 
 /* ===== NORMALS ===== */
 
-volatile int32_t OUT[N];
-volatile int32_t vet_res[32][4];
+volatile intSEW OUT[N];
+volatile intSEW vet_res[32][4];
 
 
 /* ===== RANDOMIZERS ===== */
@@ -49,7 +49,7 @@ void randomize_instructions(){
 
 /* ===== VECTOR LOADERS =====*/
 
-load_random_values_registers(int* vet){
+load_random_values_registers(intSEW* vet){
     set_vet_settings();
     for(int i = 0; i < 32; i++){
         load_to_vet(&vet[i * EL_PER_BLOCK], i);
@@ -61,7 +61,7 @@ load_random_values_registers(int* vet){
 2 - picks 4 operations
 3 - picks
 */
-void execute_batch_tests(int index, int rx[NUM_REGS][3]){
+void execute_batch_tests(int index, int32_t rx[NUM_REGS][3]){
     int r[NUM_REGS] = {0, 8, 16, 24};
     int prev_error = error_count;
 

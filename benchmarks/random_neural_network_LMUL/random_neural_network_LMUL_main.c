@@ -16,23 +16,23 @@ int32_t ADDRESS_VECTOR[30];
 extern void clean_vector_scalar(int* v1, int n);
 extern void STALL(int cycles);
 
-extern void jump_to_vet(int* vet);
+extern void jump_to_vet(void* vet);
 
-volatile int32_t vet_res[4][32];
+volatile intSEW vet_res[4][32];
 
 
 /* ===== NORMALS ===== */
 
-volatile int A[N];
-volatile int B[N];
-volatile int32_t OUT[N];
+//volatile int A[N];
+//volatile int B[N];
+volatile intSEW OUT[N];
 
 
 /* ===== RANDOMIZERS ===== */
 void generate_initial_values(){
     for (int i = 0; i < N; i++) {
-        A[i] = mrand() % 0x7FF;
-        B[i] = mrand() % 0x7FF;
+        //A[i] = mrand() % 0x7FF;
+        //B[i] = mrand() % 0x7FF;
         OUT[i] = mrand() % 0x7FF;
     }
 }

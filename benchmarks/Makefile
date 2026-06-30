@@ -67,8 +67,10 @@ vec_bmarks = \
 	random_test_lmul \
 	random_neural_network_LMUL \
 	\
+	\
 	benchmark_LMUL \
-
+	#gemm \
+	#3mm \
 	
 
 bmarks = $(base_bmarks) $(vec_bmarks)

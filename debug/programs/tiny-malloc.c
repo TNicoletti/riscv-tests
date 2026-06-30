@@ -571,13 +571,13 @@ malloc_stats(void)
   
   fp = stderr;
   i = mallinfo();
-  fprintf (fp, "malloc has reserved %u bytes between %p and %p\n",
+  printf ("malloc has reserved %u bytes between %p and %p\n",
 	   i.arena, &__malloc_start, __malloc_end);
-  fprintf (fp, "there are %u bytes free in %u chunks\n",
+  printf ("there are %u bytes free in %u chunks\n",
 	   i.fordblks, i.ordblks);
-  fprintf (fp, "of which %u bytes are at the end of the reserved space\n",
+  printf ("of which %u bytes are at the end of the reserved space\n",
 	   i.keepcost);
-  fprintf (fp, "and %u bytes are in use.\n", i.uordblks);
+  printf ("and %u bytes are in use.\n", i.uordblks);
 }
 #endif
 

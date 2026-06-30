@@ -22,15 +22,15 @@ int32_t ADDRESS_VECTOR[255];
 extern void clean_vector_scalar(int* v1, int n);
 extern void STALL(int cycles);
 
-extern void jump_to_vet(int* vet);
+extern void jump_to_vet(void* vet);
 
 extern void new_trap_handler(void);
 
 
 /* ===== NORMALS ===== */
 
-volatile int32_t OUT[MAX_N];
-volatile int32_t vet_res[32][VLEN / SEW];
+volatile intSEW OUT[MAX_N];
+volatile intSEW vet_res[32][VLEN / SEW];
 
 /* ===== Registers ===== */
 int r[3] = {0, 8, 16};
@@ -57,7 +57,7 @@ r3 = OUT[index + 2 * EL_PER_BLOCK]
 2 - picks 4 operations
 3 - picks
 */
-void generate_RIS(int op, int index);
+int generate_RIS(int op, int index);
 
 /* ===== Test Results ===== */
 int res[SUPORTED_INSTRUCTIONS][MAX_REPEAT_INSTRUCTIONS];
