@@ -73,6 +73,8 @@ vec_bmarks = \
 	3mm \
 	trisolv \
 	trmm \
+	template \
+	gemm_JIT \
 	
 
 bmarks = $(base_bmarks) $(vec_bmarks)

@@ -39,7 +39,7 @@ void load_init_values_vector(intSEW* vet, INTXLEN* regs, int num_registers){
 }
 
 void store_vet_values(INTXLEN* r, intSEW* vet_res, int num_registers){
-    clean_vector_scalar(&vet_res[0], VLEN / SEW * 32);
+    clean_vector_scalar(&vet_res[0], VLEN / SEW * num_registers);
 
     set_vet_settings();
     for(int i = 0; i < num_registers; i++){
@@ -62,8 +62,6 @@ void load_init_values_scalar(intSEW* vet, int* r, int num_registers){
             scalar_res[r[j]][i] = vet[j * EL_PER_BLOCK + i];
     }
 
-    printf("Printing initial_values:\n");
-    print_regs(vet, 3, r);
 }
 
 // r[0] = rd; r[1] = rs1; r[2] = rs2
@@ -1600,11 +1598,11 @@ int compare_solutions(int prev_error, int32_t r[3], intSEW* vet_res){
         return 2;
 }
 
-void execute_RIS(intSEW* vet, INTXLEN* r, INT_INST address_vector[], intSEW* vet_res, int num_registers){
+void execute_RIS(intSEW* vet_init, INTXLEN* r, INT_INST address_vector[], intSEW* vet_res, int num_registers){
     set_vet_settings();
-    load_init_values_vector(vet, r, num_registers);
+    load_init_values_vector(vet_init, r, num_registers);
     set_vet_settings();
-
+    
     load_OUT_t0_vet((int32_t*)t0_VALUE);// Gambiarra simples para ter t0 com t0_VALUE
     load_value_ft0(f_vf);
     
@@ -1801,8 +1799,9 @@ char* get_OP(int op){
         case 109: return "VSRA_VI      ";
         case 110: return "VSRA_VX      ";
         //FP?
-        case 511: return "VLUXEI32_V  ";
-        case 555: return "NOP         ";
+        case 511: return "VLUXEI32_V   ";
+        case 512: return "VLE32_V      ";
+        case 555: return "NOP          ";
     }
     return "ERROR";    
 };

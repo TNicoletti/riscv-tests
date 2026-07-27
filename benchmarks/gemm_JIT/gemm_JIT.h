@@ -7,7 +7,10 @@
  *
  * Web address: http://polybench.sourceforge.net
  */
-#ifndef _GEMM_H
+#include "global_configs.h"  // Global configs like LMUL, SEW, etc
+#include "add_instruction.h" // Add instruction and related
+
+ #ifndef _GEMM_H
 # define _GEMM_H
 
 /* Default to LARGE_DATASET. */

@@ -78,6 +78,9 @@ void kernel_gemm(int ni, int nj, int nk,
 		 DATA_TYPE POLYBENCH_2D(B,NK,NJ,nk,nj))
 {
   int i, j, k;
+  for (i = 0; i < ni; i++)
+        for (j = 0; j < nj; j++)
+            printf("C[%d][%d]: %f\n", i, j, C[i][j]);
 
 //BLAS PARAMS
 //TRANSA = 'N'
@@ -88,8 +91,9 @@ void kernel_gemm(int ni, int nj, int nk,
 //C is NIxNJ
 #pragma scop
   for (i = 0; i < _PB_NI; i++) {
-    for (j = 0; j < _PB_NJ; j++)
-	C[i][j] *= beta;
+    for (j = 0; j < _PB_NJ; j++){
+	    C[i][j] *= beta;
+    }
     for (k = 0; k < _PB_NK; k++) {
        for (j = 0; j < _PB_NJ; j++)
 	  C[i][j] += alpha * A[i][k] * B[k][j];
@@ -102,6 +106,10 @@ void kernel_gemm(int ni, int nj, int nk,
 POLYBENCH_2D_ARRAY_DECL(C,DATA_TYPE,NI,NJ,NI,NJ);
 POLYBENCH_2D_ARRAY_DECL(A,DATA_TYPE,NI,NK,NI,NK);
 POLYBENCH_2D_ARRAY_DECL(B,DATA_TYPE,NK,NJ,NK,NJ);
+
+POLYBENCH_2D_ARRAY_DECL(VET_C,DATA_TYPE,NI,NJ,NI,NJ);
+POLYBENCH_2D_ARRAY_DECL(VET_A,DATA_TYPE,NI,NK,NI,NK);
+POLYBENCH_2D_ARRAY_DECL(VET_B,DATA_TYPE,NK,NJ,NK,NJ);
 
 int main(int argc, char** argv)
 {
@@ -119,8 +127,7 @@ int main(int argc, char** argv)
 	      POLYBENCH_ARRAY(C),
 	      POLYBENCH_ARRAY(A),
 	      POLYBENCH_ARRAY(B));
-  print_array(ni, nj, POLYBENCH_ARRAY(C));
-
+  
   /* Start timer. */
   polybench_start_instruments;
 

@@ -40,7 +40,7 @@ void require_imm_positive();
 int add_instruction(int op, int rxa[3], int r[3]);
 
 int compare_solutions(int prev_error, int r[3], intSEW* vet_res);
-void execute_RIS(intSEW* vet, INTXLEN* r, INT_INST address_vector[], intSEW* vet_res, int num_registers);
+void execute_RIS(intSEW* vet_init, INTXLEN* r, INT_INST address_vector[], intSEW* vet_res, int num_registers);
 
 
 /* ===== ENUMS ===== */
@@ -156,7 +156,9 @@ enum VEC_INSTRUCTIONS{
     VSRA_VV      = 108,
     VSRA_VI      = 109,
     VSRA_VX      = 110,
-    VLUXEI32_V    = 511,
+    VLUXEI32_V   = 511,
+    VLE32_V      = 512,
+    VSE32_V      = 513,
     NOP = 555
 };
 
