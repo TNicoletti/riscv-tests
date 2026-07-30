@@ -156,6 +156,7 @@ enum VEC_INSTRUCTIONS{
     VSRA_VV      = 108,
     VSRA_VI      = 109,
     VSRA_VX      = 110,
+    VMACC_VV     = 111,
     VLUXEI32_V   = 511,
     VLE32_V      = 512,
     VSE32_V      = 513,

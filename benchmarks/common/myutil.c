@@ -112,7 +112,7 @@ int manual_convergence(intSEW* vec, intSEW* vec2, int n, int m){
   for(int i = 0;i < n; i++)
     for(int j = 0; j < m; j++){
       if(vec[i * m + j] != vec2[i * m + j]){
-        printf("WRONG: %d %d, %d != %d\n", i, j, vec[i * m + j], vec2[i * m + j]);
+        if(PRINTS >=2) printf("WRONG: %d %d, %d != %d\n", i, j, vec[i * m + j], vec2[i * m + j]);
         return false;
       }
     }

@@ -75,6 +75,7 @@ vec_bmarks = \
 	trmm \
 	template \
 	gemm_JIT \
+	gemm_JIT_int \
 	
 
 bmarks = $(base_bmarks) $(vec_bmarks)

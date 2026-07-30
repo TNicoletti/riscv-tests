@@ -10,6 +10,9 @@ int repeat_instructions = 6;
 
 int allowed_instructions[SUPORTED_INSTRUCTIONS];
 
+int correct_instructions = 0;
+int wrong_instructions   = 0;
+
 /* PARAMETERS */
 int SEED = 0;
 int sole_execution = -1;

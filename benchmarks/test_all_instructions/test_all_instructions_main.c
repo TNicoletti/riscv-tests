@@ -26,11 +26,22 @@ void eval_results(){
     for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++){
         if(allowed_instructions[i] == 0)
             continue;
+        int correct_instruction = 1;
         printf("%d - %s\t ", i, get_OP(i));
         for(int j = 0; j < repeat_instructions; j++){
             printf("[%s] ", get_err(res[i][j]));
-            if(res[i][j] != 2)
+            if(res[i][j] != 2){
                 qtt_errors++;
+                correct_instruction = 0;
+            }
+        }
+        if(correct_instruction){
+            printf("PASS");
+            correct_instructions++;
+        }
+        else{
+            printf("ERR");
+            wrong_instructions++;
         }
         printf("\n");
     }
@@ -38,6 +49,8 @@ void eval_results(){
     printf("\nErrors: %d\n", qtt_errors);
     printf("Hardware errors: %d\n", error_count);
     printf("Wrong answers: %d\n", qtt_errors - error_count);
+    printf("Correct instructions / total: %d / %d\n", correct_instructions, correct_instructions + wrong_instructions);
+
 }
 
 int test_for_ls32(){

@@ -143,6 +143,7 @@
 #define VFSQRT_V_INSTR      0x4e101057 // vfsqrt.v v0, v1
 
 #define VFMACC_VV_INSTR     0xb2209057 // vfmacc.vv v0, v1, v2
+#define VMACC_VV_INSTR      0xb620a057 // vfmacc.vv v0, v1, v2
 
 // Float compare
 #define VMFEQ_VV_INSTR      0x62111057 // vmfeq.vv v0, v1, v2
