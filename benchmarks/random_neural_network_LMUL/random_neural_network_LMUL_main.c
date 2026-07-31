@@ -154,7 +154,7 @@ void error_discoverer(int index){
         }
         else {
             printf("Divergence => problem single with instruction\n");
-            printf("v = %d %s %d\n", rx[i][1], get_OP(ops[i]), rx[i][2]);
+            printf("v = %d %s %d\n", rx[i][1], get_OP_name(ops[i]), rx[i][2]);
         }
     }
 

@@ -50,7 +50,7 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     if(PRINTS >= 0){
         printf("Instructions: \n");
         for(int i = 0; i < NUM_RANDOM_OPS; i++)
-            printf("%s; (%d, %d, %d)\n", get_OP(ops[i]), rx[i][0], rx[i][1], rx[i][2]);
+            printf("%s; (%d, %d, %d)\n", get_OP_name(ops[i]), rx[i][0], rx[i][1], rx[i][2]);
         printf("t0: %d\n", t0_VALUE);
             printf("\n");
     }
@@ -85,7 +85,7 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     {
         printf("Problem is probably related to a single instruction\n");
         if(wrong_op != -1)
-            printf("Probably problematic instruction: %s\n", get_OP(wrong_op));
+            printf("Probably problematic instruction: %s\n", get_OP_name(wrong_op));
         else
             printf("Problematic instruction could not be identified\n");
 
@@ -202,7 +202,7 @@ void error_discoverer(int index){
         else {
             passed[2][i] = 0;
             if(PRINTS >= 1) printf("Divergence => problem single with instruction\n");
-            if(PRINTS >= 3) printf("v = %d %s %d\n", rx[i][1], get_OP(ops[i]), rx[i][2]);
+            if(PRINTS >= 3) printf("v = %d %s %d\n", rx[i][1], get_OP_name(ops[i]), rx[i][2]);
             wrong_op = ops[i];
         }
     }
@@ -343,7 +343,7 @@ void error_discoverer(int index){
             else{
                 passed[6][qtd_tests[6] - 1] = 0;
                 //if(PRINTS >= 1) printf("Divergence\n");
-                if(PRINTS >= 1) printf("PROBLEMATIC OP: %s\n", get_OP(op));  
+                if(PRINTS >= 1) printf("PROBLEMATIC OP: %s\n", get_OP_name(op));  
                 printf("Scalar:\n");
                 print_regs(&scalar_res[0][0], EL_PER_BLOCK, r);
                 printf("Vector:\n");

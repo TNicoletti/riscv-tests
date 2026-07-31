@@ -22,12 +22,18 @@ void eval_results(){
     int qtt_errors = 0;
     if(PRINTS >= 4) help_errors();
 
+    int merge_inst_count = 0;
+    int mask_inst_count = 0;
+    int float_inst_count = 0;
+    int widening_inst_count = 0;
+
+
     printf("\nRESULTS\n");
     for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++){
         if(allowed_instructions[i] == 0)
             continue;
         int correct_instruction = 1;
-        printf("%d - %s\t ", i, get_OP(i));
+        printf("%d - %s\t ", i, get_OP_name(i));
         for(int j = 0; j < repeat_instructions; j++){
             printf("[%s] ", get_err(res[i][j]));
             if(res[i][j] != 2){
@@ -36,6 +42,11 @@ void eval_results(){
             }
         }
         if(correct_instruction){
+            if(is_mask_instruction(i))     mask_inst_count++;
+            if(is_float_instruction(i))    float_inst_count++;
+            if(is_widening_instruction(i)) widening_inst_count++;
+            if(is_merge_instruction(i)) merge_inst_count++;
+
             printf("PASS");
             correct_instructions++;
         }
@@ -51,6 +62,33 @@ void eval_results(){
     printf("Wrong answers: %d\n", qtt_errors - error_count);
     printf("Correct instructions / total: %d / %d\n", correct_instructions, correct_instructions + wrong_instructions);
 
+    if(mask_inst_count == QUANTITY_MASK_INSTRUCTIONS)
+        printf("MASK instructions PASSED\n");
+    else if(mask_inst_count > 0)
+        printf("MASK instructions PARTIAL\n");
+    else
+        printf("MASK instructions NOT COVERED\n");
+    
+    if(float_inst_count == QUANTITY_FLOAT_INSTRUCTIONS)
+        printf("FLOAT instructions PASSED\n");
+    else if(float_inst_count > 0)
+        printf("FLOAT instructions PARTIAL\n");
+    else
+        printf("FLOAT instructions NOT COVERED\n");
+    
+    if(widening_inst_count == QUANTITY_WIDENING_INSTRUCTIONS)
+        printf("WIDENING instructions PASSED\n");
+    else if(widening_inst_count > 0)
+        printf("WIDENING instructions PARTIAL\n");
+    else
+        printf("WIDENING instructions NOT COVERED\n");
+
+    if(merge_inst_count == QUANTITY_MERGE_INSTRUCTIONS)
+        printf("MERGE instructions PASSED\n");
+    else if(merge_inst_count > 0)
+        printf("MERGE instructions PARTIAL\n");
+    else
+        printf("MERGE instructions NOT COVERED\n");
 }
 
 int test_for_ls32(){
@@ -97,7 +135,7 @@ void single_test(int op){
         int prev_error = error_count;
         if(PRINTS >= 3)printf("==== Begginning test ======\n\n");
 
-        if(PRINTS >= 3)printf("Executing instruction %s\n", get_OP(op));
+        if(PRINTS >= 3)printf("Executing instruction %s\n", get_OP_name(op));
         generate_RIS(op, j * inc);
         execute_RIS(&OUT[j * inc], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
 
@@ -113,7 +151,7 @@ void single_test(int op){
         } 
     }
 
-    printf("Results: - %s\t ", get_OP(op));
+    printf("Results: - %s\t ", get_OP_name(op));
     for(int j = 0; j < repeat_instructions; j++){
         printf("[%s] ", get_err(res[0][j]));
     }
@@ -145,7 +183,7 @@ void all_test() {
             int prev_error = error_count;
             if(PRINTS >= 3)printf("==== Begginning test  %d ======\n\n", z * repeat_instructions + j);
 
-            if(PRINTS >= 3)printf("Executing instruction %s\n", get_OP(z));
+            if(PRINTS >= 3)printf("Executing instruction %s\n", get_OP_name(z));
 
             if(generate_RIS(z, (z * repeat_instructions + j) * inc) == 0){
                 allowed_instructions[z] = 0;

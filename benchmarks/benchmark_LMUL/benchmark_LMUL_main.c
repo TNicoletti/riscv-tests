@@ -162,7 +162,7 @@ void generate_and_execute_RIS(int index){
         printf("Convergence %d-%d\n", index, index + VLEN / SEW * 8 * NUM_REGISTERS);
     }else{
         for(int i = 0; i < NUM_RANDOM_OPS; i++)
-            printf("%s; (%d, %d, %d)\n", get_OP(ops[i]), r[rx[i][0]], r[rx[i][1]], r[rx[i][2]]);
+            printf("%s; (%d, %d, %d)\n", get_OP_name(ops[i]), r[rx[i][0]], r[rx[i][1]], r[rx[i][2]]);
         printf("===== Scalar =====\n");
         print_vector(&scalar_res[0][0], 32 * VLEN / SEW, VLEN / SEW);
         printf("===== Vector 2 =====\n");
