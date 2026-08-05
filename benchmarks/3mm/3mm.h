@@ -12,7 +12,7 @@
 
 /* Default to LARGE_DATASET. */
 # if !defined(MINI_DATASET) && !defined(SMALL_DATASET) && !defined(MEDIUM_DATASET) && !defined(LARGE_DATASET) && !defined(EXTRALARGE_DATASET)
-#  define MEDIUM_DATASET
+#  define CUSTOM_DATASET
 # endif
 
 # if !defined(NI) && !defined(NJ) && !defined(NK) && !defined(NL) && !defined(NM)
@@ -22,6 +22,14 @@
 #   define NJ 18
 #   define NK 20
 #   define NL 22
+#   define NM 24
+#  endif
+
+#  ifdef CUSTOM_DATASET // 1m 34s
+#   define NI 24
+#   define NJ 24
+#   define NK 24
+#   define NL 24
 #   define NM 24
 #  endif
 
@@ -69,7 +77,7 @@
 
 /* Default data type */
 # if !defined(DATA_TYPE_IS_INT) && !defined(DATA_TYPE_IS_FLOAT) && !defined(DATA_TYPE_IS_DOUBLE)
-#  define DATA_TYPE_IS_DOUBLE
+#  define DATA_TYPE_IS_INT
 # endif
 
 #ifdef DATA_TYPE_IS_INT
@@ -94,5 +102,8 @@
 #  define EXP_FUN(x) exp(x)
 #  define POW_FUN(x,y) pow(x,y)
 # endif
+
+#include "global_configs.h"  // Global configs like LMUL, SEW, etc
+#include "add_instruction.h" // Add instruction and related
 
 #endif /* !_3MM_H */

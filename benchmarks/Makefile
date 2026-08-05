@@ -71,6 +71,7 @@ vec_bmarks = \
 	benchmark_LMUL \
 	gemm \
 	3mm \
+	2mm \
 	trisolv \
 	trmm \
 	template \

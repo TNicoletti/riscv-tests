@@ -41,43 +41,34 @@ void init_array(int ni, int nj, int nk,
   *alpha = 2;
   *beta = 3;
   for (i = 0; i < ni; i++){
-    for (j = 0; j < nj; j+=4){
-        C[i][j]   = (DATA_TYPE) ((i* j   +1) % ni);// / ni;
+    for (j = 0; j < nj; j++){
+        /*C[i][j]   = (DATA_TYPE) ((i* j   +1) % ni);// / ni;
         C[i][j+1] = (DATA_TYPE) ((i*(j+1)+1) % ni);// / ni;
         C[i][j+2] = (DATA_TYPE) ((i*(j+2)+1) % ni);// / ni;
-        C[i][j+3] = (DATA_TYPE) ((i*(j+3)+1) % ni);// / ni;
+        C[i][j+3] = (DATA_TYPE) ((i*(j+3)+1) % ni);// / ni;*/
 
         VET_C[i][j]   = (DATA_TYPE) ((i* j   +1) % ni);// / ni;
-        VET_C[i][j+1] = (DATA_TYPE) ((i*(j+1)+1) % ni);// / ni;
-        VET_C[i][j+2] = (DATA_TYPE) ((i*(j+2)+1) % ni);// / ni;
-        VET_C[i][j+3] = (DATA_TYPE) ((i*(j+3)+1) % ni);// / ni;
         //ADDRESS_VECTOR[1] = add_instruction(DIV);
     }
   }
 
   for (i = 0; i < ni; i++)
-    for (j = 0; j < nk; j+=4){
-        A[i][j]   = (DATA_TYPE) (i*(j+1) % nk);// / nk;
+    for (j = 0; j < nk; j++){
+        /*A[i][j]   = (DATA_TYPE) (i*(j+1) % nk);// / nk;
         A[i][j+1] = (DATA_TYPE) (i*(j+2) % nk);// / nk;
         A[i][j+2] = (DATA_TYPE) (i*(j+3) % nk);// / nk;
-        A[i][j+3] = (DATA_TYPE) (i*(j+4) % nk);// / nk;
+        A[i][j+3] = (DATA_TYPE) (i*(j+4) % nk);// / nk;*/
 
         VET_A[i][j]   = (DATA_TYPE) (i*(j+1) % nk);// / nk;
-        VET_A[i][j+1] = (DATA_TYPE) (i*(j+2) % nk);// / nk;
-        VET_A[i][j+2] = (DATA_TYPE) (i*(j+3) % nk);// / nk;
-        VET_A[i][j+3] = (DATA_TYPE) (i*(j+4) % nk);// / nk;
     }
   for (i = 0; i < nk; i++)
-    for (j = 0; j < nj; j+=4){
-        B[i][j]   = (DATA_TYPE) (i*(j+2) % nj);// / nj;
+    for (j = 0; j < nj; j++){
+       /*B[i][j]   = (DATA_TYPE) (i*(j+2) % nj);// / nj;
         B[i][j+1] = (DATA_TYPE) (i*(j+3) % nj);// / nj;
         B[i][j+2] = (DATA_TYPE) (i*(j+4) % nj);// / nj;
-        B[i][j+3] = (DATA_TYPE) (i*(j+5) % nj);// / nj;
+        B[i][j+3] = (DATA_TYPE) (i*(j+5) % nj);// / nj;*/
 
         VET_B[i][j]   = (DATA_TYPE) (i*(j+2) % nj);// / nj;
-        VET_B[i][j+1] = (DATA_TYPE) (i*(j+3) % nj);// / nj;
-        VET_B[i][j+2] = (DATA_TYPE) (i*(j+4) % nj);// / nj;
-        VET_B[i][j+3] = (DATA_TYPE) (i*(j+5) % nj);// / nj;
     }
 }
 
@@ -135,36 +126,38 @@ int rx3[3]   = {0, 1, 2};
 for (i = 0; i < _PB_NI; i++) {
     ADDRESS_VECTOR[1] = RET_INSTR;
     for (j = 0; j < _PB_NJ; j+=4){
-        load_init_values_scalar((int32_t*)&C[i][j], regs, 3);
+        load_init_values_scalar((int32_t*)&VET_C[i][j], regs, 3);
         
-        C[i][j]   *= beta;
+        /*C[i][j]   *= beta;
         C[i][j+1] *= beta;
         C[i][j+2] *= beta;
-        C[i][j+3] *= beta;
+        C[i][j+3] *= beta;*/
 
         t0_VALUE = beta;
         ADDRESS_VECTOR[0] = add_instruction(VMUL_VX, rx1, regs);
         execute_RIS((int32_t*)&VET_C[i][j], regs, ADDRESS_VECTOR, (int32_t*)&VET_C[i][j], 1);
         
-        if(!manual_convergence((int32_t*)&scalar_res[0][0], (int32_t*)&VET_C[i][j], 1, VLEN / SEW))
+        if(!manual_convergence((int32_t*)&scalar_res[0][0], (int32_t*)&VET_C[i][j], 1, VLEN / SEW)){
             printf("Divergence\n");
-        
-        if(!manual_convergence((int32_t*)&C[i][j], (int32_t*)&VET_C[i][j], 1, VLEN / SEW)){
-            printf("Divergence\n");
+            exit(0);
         }
+        
+        /*if(!manual_convergence((int32_t*)&C[i][j], (int32_t*)&VET_C[i][j], 1, VLEN / SEW)){
+            printf("Divergence\n");
+        }*/
     }
 
     ADDRESS_VECTOR[2] = RET_INSTR;
     for (k = 0; k < _PB_NK; k++) {
         for (j = 0; j < _PB_NJ; j+= 4){
-            int32_t VA[4] = {A[i][k], A[i][k], A[i][k], A[i][k]};
-            load_init_values_scalar((int32_t*)&C[i][j], &regs[0], 1);
+            int32_t VA[4] = {VET_A[i][k], VET_A[i][k], VET_A[i][k], VET_A[i][k]};
+            load_init_values_scalar((int32_t*)&VET_C[i][j], &regs[0], 1);
             load_init_values_scalar((int32_t*)&VA[0],   &regs[1], 1);
-            load_init_values_scalar((int32_t*)&B[k][j], &regs[2], 1);
-            C[i][j]   = ((alpha * A[i][k]) * B[k][j]  ) + C[i][j]    ;
+            load_init_values_scalar((int32_t*)&VET_B[k][j], &regs[2], 1);
+            /*C[i][j]   = ((alpha * A[i][k]) * B[k][j]  ) + C[i][j]    ;
             C[i][j+1] = ((alpha * A[i][k]) * B[k][j+1]) + C[i][j + 1];
             C[i][j+2] = ((alpha * A[i][k]) * B[k][j+2]) + C[i][j + 2];
-            C[i][j+3] = ((alpha * A[i][k]) * B[k][j+3]) + C[i][j + 3];
+            C[i][j+3] = ((alpha * A[i][k]) * B[k][j+3]) + C[i][j + 3];*/
             t0_VALUE = alpha;
             ADDRESS_VECTOR[0] = add_instruction(VMUL_VX,  rx2, regs);// A' = A * alpha
             ADDRESS_VECTOR[1] = add_instruction(VMACC_VV, rx3, regs);// C += A' * B 
@@ -177,12 +170,12 @@ for (i = 0; i < _PB_NI; i++) {
                 printf("Divergence\n");
                 exit(0);
             }
-            if(!manual_convergence((int32_t*)&C[i][j], (int32_t*)&VET_C[i][j], 1, VLEN / SEW * LMUL)){
+            /*if(!manual_convergence((int32_t*)&C[i][j], (int32_t*)&VET_C[i][j], 1, VLEN / SEW * LMUL)){
                 printf("Divergence\n");
                 print_matrix((int32_t*)&VET_C[i][j], 4, 1);
                 print_matrix((int32_t*)&C[i][j], 4, 1);
                 exit(0);
-            }
+            }*/
         }
 
     }

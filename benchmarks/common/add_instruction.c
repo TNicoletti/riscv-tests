@@ -371,6 +371,12 @@ int add_instruction(int op, int rxa[3], int r[3]){
                 scalar_res[rx[0]][j] = scalar_res[rx[1]][j] * scalar_res[rx[2]][j] + scalar_res[rx[0]][j];
             }
             break;
+        case VMACC_VX: // TODO: fix very big numbers issue
+            for(int j = 0; j < EL_PER_BLOCK; j++){
+                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ((t0)%d * [%d]%d) + [%d]%d;\n", rx[0], t0_VALUE, j, rx[1], rx[0], scalar_res[rx[0]][j]);
+                scalar_res[rx[0]][j] = scalar_res[rx[1]][j] * t0_VALUE + scalar_res[rx[0]][j];
+            }
+            break;
         case VSLIDEUP_VI:
             require_imm_positive();
             if(slideup_forbid(rx[0], rx[1], LMUL)) { printf("FORBIDDEN\n"); return NOP; }
@@ -1484,6 +1490,10 @@ int add_instruction_no_mirror(int op, int rxa[3], int r[3]){
             break;
         case VMACC_VV: // TODO: fix very big numbers issue
             instr = VMACC_VV_INSTR;
+            break;
+        case VMACC_VX: // TODO: fix very big numbers issue
+            instr = VMACC_VX_INSTR;
+            instr_type = VX;
             break;
         case VSLIDEUP_VI:
             //require_imm_positive();
