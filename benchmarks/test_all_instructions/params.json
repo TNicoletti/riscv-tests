@@ -13,13 +13,13 @@
     {
       "name": "PRINTS",
       "type": "int",
-      "value": 3
+      "value": 0
     },
     {
       "name" : "repeat_instruction",
       "type" : "int",
       "max"  : 16,
-      "value": 16
+      "value": 10
     },
     {
       "name": "instruction_set",
@@ -135,7 +135,16 @@
         { "name": "VMAXU_VX",      "value": true },
         { "name": "VSRA_VV",       "value": true },
         { "name": "VSRA_VI",       "value": true },
+        { "name": "VSRA_VX",       "value": true },
+        { "name": "VMACC_VV",      "value": true },
         { "name": "VSRA_VX",       "value": true }
+        ]
+    },
+    {
+      "name": "init",
+      "type": "int_array",
+      "value": [
+        { "name": "VADD_VV",       "value": true }
         ]
     }
   ]

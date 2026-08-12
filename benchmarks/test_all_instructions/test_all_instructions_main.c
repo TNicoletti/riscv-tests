@@ -124,7 +124,7 @@ void single_test(int op){
     set_vet_settings();
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
     N = inc * repeat_instructions;
-    generate_initial_values();
+    //generate_initial_values();
     printf("Done init values\n");
     
     for(int i = 0; i < repeat_instructions; i++)
@@ -162,7 +162,7 @@ void all_test() {
     set_vet_settings();
     N = EL_PER_BLOCK * repeat_instructions * SUPORTED_INSTRUCTIONS * NUM_REGISTERS;
     printf("N: %d\n", N);
-    generate_initial_values();
+    //generate_initial_values();
     printf("Done init values\n");
 
     if(!test_for_ls32()){
@@ -213,7 +213,8 @@ int digest_parameters(){
     if(parameter.argc > 1) sole_execution      = parameter.argv[1];
     if(parameter.argc > 2) PRINTS              = parameter.argv[2];
     if(parameter.argc > 3) repeat_instructions = parameter.argv[3];
-    if(parameter.argc >= 4 + SUPORTED_INSTRUCTIONS){
+    int NUM_disable_instructions = 4 + SUPORTED_INSTRUCTIONS;
+    if(parameter.argc >= NUM_disable_instructions){
         for(int i = 0; i < SUPORTED_INSTRUCTIONS; i++){
             allowed_instructions[i] = parameter.argv[4 + i];
         }
@@ -234,6 +235,7 @@ int main(){
     else{
         printf("Executing all instructions once\n");
         all_test();
+        printf("PRINTS: %d\n", PRINTS);
     } 
     exit(0);
 }

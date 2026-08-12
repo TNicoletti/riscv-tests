@@ -121,6 +121,7 @@ char* get_OP_name(int op){
         case 109: return "VSRA_VI     ";
         case 110: return "VSRA_VX     ";
         case 111: return "VMACC_VV    ";
+        case 112: return "VMACC_VX    ";
         //FP?
         case 511: return "VLUXEI32_V  ";
         case 512: return "VLE32_V     ";

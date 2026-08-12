@@ -197,4 +197,7 @@
 #define VSRA_VI_INSTR       0xa6113057 // vsra.vi v0, v1, 2
 #define VSRA_VX_INSTR       0xa613c057 // vsra.vx v0, v1, t2
 
+#define VNCLIP_INSTR  0
+#define VNCLIPU_INSTR 1
+
 #endif

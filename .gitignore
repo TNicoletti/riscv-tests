@@ -19,3 +19,5 @@ mem.*.bin
 *.mem
 
 /resps/*
+
+*.in

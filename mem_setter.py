@@ -1,79 +1,111 @@
 import sys
 import struct
+import json
 import os
 
+def number_entries_precalc(variables):
+    total_elements = 0
+    for var in variables:
+        if var.get("type") == "bool_array":
+            val = var.get("value", [])
+            if isinstance(val, list):
+                total_elements += len(val)
+        else:
+            total_elements += 1
+            
+    print(f"Writting {total_elements} elements")
+    return total_elements
+
 def main():
-    # Ensure the user provided a file name as a parameter
+    # Verifica se o usuário passou o arquivo JSON como parâmetro
     if len(sys.argv) != 2:
-        print("Usage: python mem_setter.py <output_filename>")
+        print("Uso: python mem_setter.py <arquivo_config.json>")
         sys.exit(1)
 
-    filename = sys.argv[1]
+    json_filepath = sys.argv[1]
 
+    # Carrega o JSON
     try:
-        # Ask for the total number of integers to be written
-        count_input = input("How many integers will be set? ")
-        count = int(count_input, 0) # The '0' base allows both hex (0x...) and decimal inputs
-    except ValueError:
-        print("Error: Please enter a valid integer.")
+        with open(json_filepath, 'r', encoding='utf-8') as f:
+            config = json.load(f)
+    except Exception as e:
+        print(f"Erro ao ler o arquivo JSON: {e}")
         sys.exit(1)
 
-    # Use 'r+b' (read/write binary) if the file exists so we don't truncate it.
-    # Use 'w+b' (write/read binary) if it's a brand-new file.
+    
+    json_dir = os.path.dirname(os.path.abspath(json_filepath))
+    filename = os.path.join(json_dir, "params.mem")
+
+    variables = config.get("variables", [])
+
+    total_elements = number_entries_precalc(variables)
+
+    # 'r+b' (read/write binary) se existir, 'w+b' se for um arquivo novo
     file_mode = 'r+b' if os.path.exists(filename) else 'w+b'
 
     try:
         with open(filename, file_mode) as f:
+            # Garante que estamos escrevendo do início (ou sobrescrevendo sequencialmente)
+            f.seek(0)
+
+            f.write(struct.pack('<i', total_elements))
             
-            # '<i' means: little-endian (<), 32-bit signed integer (i)
-            # This overwrites the very first 4 bytes with the new count
-            f.write(struct.pack('<i', count))
-            
-            for i in range(count):
-                # Remember our position in the file before we read
-                current_pos = f.tell()
-                
-                # Attempt to read the next 4 bytes to see if an integer already exists here
-                existing_bytes = f.read(4)
-                
-                while True:
-                    if len(existing_bytes) == 4:
-                        # An integer exists here. Unpack and show it.
-                        existing_val = struct.unpack('<i', existing_bytes)[0]
-                        prompt = f"Value {i + 1} is {existing_val} (0x{existing_val:x}). Enter new value, or press Enter to keep: "
-                        val_input = input(prompt)
-                        
-                        # If the user just presses Enter, keep the old value
-                        if val_input.strip() == "":
-                            val = existing_val
-                            break
-                    else:
-                        # No existing integer here (we hit the end of the file)
-                        val_input = input(f"Enter number {i + 1}: ")
-                        if val_input.strip() == "":
-                            print("Error: No existing value here. You must enter a number.")
-                            continue
-                            
+            for var in variables:
+                name = var.get("name")
+                v_type = var.get("type")
+                val = var.get("value")
+
+                if v_type == "int":
                     try:
-                        val = int(val_input, 0)
-                        break
-                    except ValueError:
-                        print(f"Error: '{val_input}' is not a valid integer.")
-
-                # Move the file pointer back to the start of this specific integer's slot
-                f.seek(current_pos)
+                        # '<i': little-endian, inteiro com sinal de 32 bits (4 bytes)
+                        f.write(struct.pack('<i', int(val)))
+                        print(f"[{name}] Written integer: {val}")
+                    except struct.error:
+                        print(f"Error: Value '{val}' out of limits for 32bit integer.")
+                        sys.exit(1)
                 
-                try:
-                    # Overwrite (or append) the new or kept value
-                    f.write(struct.pack('<i', val))
-                except struct.error:
-                    print("Error: Number out of bounds for a 32-bit integer.")
-                    sys.exit(1)
+                elif v_type == "bool":
+                    # '<B': little-endian, unsigned char (1 byte)
+                    b_val = 1 if val else 0
+                    f.write(struct.pack('<i', int(b_val)))
+                    #f.write(struct.pack('<B', b_val))
 
-        print(f"\nSuccess! Wrote the count ({count}) and processed numbers in '{filename}'.")
+                    print(f"[{name}] Written bool: {b_val}")
+
+                elif v_type == "bool_array":
+                    if not isinstance(val, list):
+                        print(f"Error: variable '{name}' should be a list.")
+                        continue
+                    
+                    #packed_data = bytearray()
+                    element_names = []
+                    
+                    # Itera sobre os elementos do array
+                    for item in val:
+                        # Se o item for um objeto nomeado (dicionário)
+                        if isinstance(item, dict):
+                            item_val = item.get("value", False)
+                            item_name = item.get("name", "unnamed")
+                        # Se for apenas um booleano puro (para manter compatibilidade)
+                        else:
+                            item_val = item
+                            item_name = "unnamed"
+
+                        b_val = 1 if item_val else 0
+                        f.write(struct.pack('<i', b_val))
+                        #packed_data.append(b_val)
+                        element_names.append(item_name)
+                    
+                    #f.write(packed_data)
+                    print(f"[{name}] Written bool_array with {len(val)} elements. ({', '.join(element_names)})")
+
+                else:
+                    print(f"Error: type '{v_type}' not recognized as a variable type '{name}'.")
+
+        print(f"\nSuccess!")
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"Record error ocorred: {e}")
 
 if __name__ == "__main__":
     main()

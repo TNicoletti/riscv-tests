@@ -442,20 +442,21 @@ int add_instruction(int op, int rxa[3], int r[3]){
             break;
         case VSLIDEDOWN_VX:
             if(rx[0] == rx[1]) return NOP;
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                uint dest_idx = j;
-                uint src_idx  = j + ut0;
+            int maior = 0; // prevents overflow problems
+            for(uint32_t j = 0; j < EL_PER_BLOCK; j++){
+                uintSEW dest_idx = j;
+                uintSEW src_idx  = j + t0_VALUE;
                 
-                uint dest_reg  = rx[0] + dest_idx / (VLEN / SEW);
-                uint dest_elem = dest_idx % (VLEN / SEW);
-                //printf("dest_reg: %d\n", dest_reg);
-                //printf("dest_elem: %d\n", dest_elem);
+                uintSEW dest_reg  = (uintSEW)rx[0] + dest_idx / (uintSEW)(VLEN / SEW);
+                uintSEW dest_elem = dest_idx % (uintSEW)(VLEN / SEW);
 
-                if (src_idx >= 32) {
+                if (src_idx >= (uintDSEW)(VLEN / SEW) * (uintDSEW)LMUL || maior == 1) {
+                    maior = 1;
+                    
                     scalar_res[dest_reg][dest_elem] = 0;
                 } else {
-                    uint src_reg  = rx[1] + src_idx / (VLEN / SEW);
-                    uint src_elem = src_idx % (VLEN / SEW);
+                    uintSEW src_reg  = rx[1] + src_idx / (VLEN / SEW);
+                    uintSEW src_elem = src_idx % (VLEN / SEW);
                     
                     scalar_res[dest_reg][dest_elem] = (intSEW)(scalar_res[src_reg][src_elem]);
                 }

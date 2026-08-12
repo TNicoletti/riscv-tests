@@ -31,8 +31,7 @@ extern void new_trap_handler(void);
 
 
 /* ===== NORMALS ===== */
-
-volatile intSEW OUT[MAX_N];
+__attribute__((section(".OUT_SECTION"))) volatile intSEW OUT[MAX_N];
 volatile intSEW vet_res[32][VLEN / SEW];
 
 /* ===== Registers ===== */
