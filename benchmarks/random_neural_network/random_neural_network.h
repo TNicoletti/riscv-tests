@@ -23,9 +23,11 @@ int fixed_suported_instructions = SUPORTED_INSTRUCTIONS;
 extern void clean_vector_scalar(int* v1, int n);
 extern void STALL(int cycles);
 
+extern void new_trap_handler(void);
+
 /* ===== NORMALS ===== */
 
-volatile intSEW OUT[MAX_N];
+__attribute__((section(".OUT_SECTION"))) volatile intSEW OUT[MAX_N];
 volatile intSEW vet_res[32][VLEN / SEW];
 
 int r[NUM_REGISTERS];
@@ -105,7 +107,7 @@ r3 = OUT[index + 2 * EL_PER_BLOCK]
 */
 void generate_RIS(int index);
 
-void random_test(int seed);
+void random_test();
 
 void digest_parameters();
 int main();

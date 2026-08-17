@@ -51,8 +51,9 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
         printf("Instructions: \n");
         for(int i = 0; i < NUM_RANDOM_OPS; i++)
             printf("%s; (%d, %d, %d)\n", get_OP_name(ops[i]), rx[i][0], rx[i][1], rx[i][2]);
+        printf("r: %d %d %d\n", r[0], r[1], r[2]);
         printf("t0: %d\n", t0_VALUE);
-            printf("\n");
+        printf("\n");
     }
     int total_passed = 0;
     printf("0: Repeat 5x\n");
@@ -65,7 +66,7 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     
     printf("\n");
 
-    printf("1: NOPS between instructiosn\n");
+    printf("1: NOPS between instructions\n");
     char labels1[255][MAX_TESTS_PER_HEURISTIC] = {"[NOPS]"};
     total_passed = print_result(qtd_tests[1], passed[1], labels1, 4);
 
@@ -410,7 +411,6 @@ void error_discoverer(int index){
     printf("\n");
 
     analyze_results(passed, qtd_tests);
-    
 }
 
 void generate_RIS(int index){
@@ -466,14 +466,7 @@ void generate_RIS(int index){
     ADDRESS_VECTOR[NUM_RANDOM_OPS] = RET_INSTR;
 }
 
-void random_test(int seed) {
-    set_vet_settings();
-
-    msrand(seed);
-    generate_initial_values();
-    printf("Done init values\n");
-    
-    msrand(seed); // Length of the values should not alter significantly the operations
+void random_test() {    
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
     for(int z = 0; z + inc <= N; z+= inc){
         int prev_error = error_count;
@@ -503,6 +496,7 @@ void random_test(int seed) {
             }
             
             error_discoverer(z);
+            printf("==== Failed on test %d ====\n", z / inc);
             exit(0);
         }
         printf("==== End test  %d        ======\n\n", z / inc);
@@ -535,14 +529,23 @@ void digest_parameters(){
             allowed_instructions[i] = 1;
         }
     }
+
+    if(OUT[0] == 0){
+        msrand(SEED);
+        generate_initial_values();
+        printf("Done init values\n");
+        msrand(SEED); // Length of the values should not alter significantly the operations
+
+    }
     
 }
 
 int main(){
     update_LMUL(1);
     digest_parameters();
+    asm volatile("csrw mtvec, %0" : : "r" (new_trap_handler));
 
     printf("Doing random batch tests with registers v0-v7 with seed %d\n", SEED);
-    random_test(SEED);
+    random_test();
     exit(0);
 }

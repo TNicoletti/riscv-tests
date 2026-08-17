@@ -108,11 +108,11 @@ void require_imm_normal(){
 }
 
 int add_instruction(int op, int rxa[3], int r[3]){
+    require_imm_normal();
     
 
     intSEW i = 1;
 
-    INTXLEN ut0 = t0_VALUE;
 
     int rx[3] = {r[rxa[0]], r[rxa[1]], r[rxa[2]]};
 
@@ -182,7 +182,6 @@ int add_instruction(int op, int rxa[3], int r[3]){
             if(PRINTS >= 2) printf("\n");
             break;
         case VADD_VI:
-            require_imm_normal(imm);
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d + imm(%d);\n", rx[0], j, rx[1], scalar_res[rx[1]][j], imm);
                 scalar_res[rx[0]][j] = (intSEW)(scalar_res[rx[1]][j] + imm);
@@ -221,7 +220,6 @@ int add_instruction(int op, int rxa[3], int r[3]){
             if(PRINTS >= 2) printf("\n");
             break;
         case VXOR_VI:
-            require_imm_normal();
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d ^ imm(%d);\n", rx[0], j, rx[1], scalar_res[rx[1]][j], imm);
                 scalar_res[rx[0]][j] = (intSEW)(scalar_res[rx[1]][j] ^ imm);
@@ -398,26 +396,45 @@ int add_instruction(int op, int rxa[3], int r[3]){
             }
             if(PRINTS >= 2) printf("\n");
             break;
-        case VSLIDEUP_VX:
+        case VSLIDEUP_VX:{
+            int vl = LMUL * (VLEN/SEW);
             if(slideup_forbid(rx[0], rx[1], LMUL)) {printf("FORBIDDEN\n"); return NOP;}
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                uint dest_idx = ut0 + j;
-                uint idx  = rx[0] + dest_idx / (VLEN / SEW);
-                //printf("%d %d %d\n", rx[0], dest_idx, (VLEN / SEW));
+            uint elements_per_reg = VLEN / SEW;
+            uint offset = t0_VALUE;
 
-    
-                if (idx >= EL_PER_BLOCK) break;
+            // Buffer to handle possible in-place/overlap hazard safely
+            intSEW temp_res[LMUL * elements_per_reg];
 
-                uint idx2 = dest_idx % (VLEN / SEW);
-                
-                uint src_reg = rx[1] + j / (VLEN / SEW);
-                uint src_idx = j % (VLEN / SEW);
-                
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d;\n", rx[0], j, rx[1], scalar_res[idx][idx2]);
-                scalar_res[idx][idx2] = (intSEW)(scalar_res[src_reg][src_idx]);
+            for (uint i = 0; i < vl; i++) {
+                if (i < offset) {
+                    // Keep original elements from destination register group (vd)
+                    uint vd_reg = rx[0] + (i / elements_per_reg);
+                    uint vd_idx = i % elements_per_reg;
+                    temp_res[i] = scalar_res[vd_reg][vd_idx];
+                } else {
+                    // Slide up from source register group (vs2)
+                    uint src_i = i - offset;
+                    uint vs2_reg = rx[1] + (src_i / elements_per_reg);
+                    uint vs2_idx = src_i % elements_per_reg;
+                    temp_res[i] = scalar_res[vs2_reg][vs2_idx];
+                }
             }
-            if(PRINTS >= 2) printf("\n");
+
+            // Write back the active elements
+            for (uint i = 0; i < vl; i++) {
+                uint dest_reg = rx[0] + (i / elements_per_reg);
+                uint dest_idx = i % elements_per_reg;
+                scalar_res[dest_reg][dest_idx] = temp_res[i];
+
+                if (PRINTS >= 2) {
+                    printf("SCALAR_RESULT:[%d][%d] = 0x%lx;\n", 
+                        dest_reg, dest_idx, (uint64_t)temp_res[i]);
+                }
+            }
+
+            if (PRINTS >= 2) printf("\n");
             break;
+        }
         case VSLIDEDOWN_VI:
             require_imm_positive();
             for(int j = 0; j < EL_PER_BLOCK; j++){
@@ -890,7 +907,6 @@ int add_instruction(int op, int rxa[3], int r[3]){
             break;
 
         case VMSLE_VI:
-            require_imm_normal();
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = ([%d]%d <= %d) ? 1 : 0;\n", rx[0], j,
                     rx[1], scalar_res[rx[1]][j], imm);
@@ -1107,10 +1123,11 @@ int add_instruction(int op, int rxa[3], int r[3]){
             if(PRINTS >= 2) printf("\n");
             break;
         case VMSLEU_VX:
-            for(int j = 0; j < EL_PER_BLOCK; j++){
-                if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d <= [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+        for(int j = 0; j < EL_PER_BLOCK; j++){
+            if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d <= [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j / SEW], rx[2], scalar_res[rx[2]][j / SEW]);
+                uintSEW shifted = scalar_res[rx[1]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= ((uintSEW)scalar_res[rx[1]][j] <= (uintSEW)t0_VALUE)?i:0;
+                scalar_res[rx[0]][j / SEW] |= (shifted <= (uintSEW)t0_VALUE)?i:0;
                 i = (i == (1 << SEW - 1))?1:i << 1;
             }
             if(PRINTS >= 2) printf("\n");
@@ -1390,17 +1407,14 @@ int add_instruction_no_mirror(int op, int rxa[3], int r[3]){
             instr = VXOR_VV_INSTR;
             break;
         case VADD_VI:
-            //require_imm_normal(imm);
             instr = VADD_VI_INSTR;
             instr_type = VI;
             break;
         case VSLL_VI:
-            //require_imm_positive();
             instr = VSLL_VI_INSTR;
             instr_type = VI;
             break;
         case VSRL_VI:
-            //require_imm_positive();
             instr = VSRL_VI_INSTR;
             instr_type = VI;
             break;
@@ -1414,7 +1428,6 @@ int add_instruction_no_mirror(int op, int rxa[3], int r[3]){
             instr_type = VI;
             break;
         case VXOR_VI:
-            //require_imm_normal();
             instr = VXOR_VI_INSTR;
             instr_type = VI;
             break;
@@ -1676,7 +1689,6 @@ int add_instruction_no_mirror(int op, int rxa[3], int r[3]){
             break;
 
         case VMSLE_VI:
-            //require_imm_normal();
             instr = VMSLE_VI_INSTR;
             instr_type = VI;
             break;

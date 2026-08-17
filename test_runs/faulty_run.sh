@@ -1,22 +1,20 @@
 #!/bin/bash
 
-BENCH=test_all_instructions
+BENCH=$1
 
-cd ../../../
-pwd
 make -j$(nproc) benchmarks
-python3 ./mem_setter.py ./benchmarks/$BENCH/params.json
+python3 ../mem_setter.py ../benchmarks/$BENCH/params.json
 
 riscv64-unknown-elf-objcopy --update-section \
-.PARAMETERS_SECTION=./benchmarks/$BENCH/params.mem ./benchmarks/$BENCH.riscv
+.PARAMETERS_SECTION=../benchmarks/$BENCH/params.mem ../benchmarks/$BENCH.riscv
 
 # Função auxiliar para iterar dinamicamente sobre todos os arquivos .in da pasta
 run_distribution() {
     local folder=$1
     echo "$folder"
     
-    local input_dir="./benchmarks/$BENCH/test_runs/$folder/inputs"
-    local output_dir="./benchmarks/$BENCH/test_runs/$folder/outputs"
+    local input_dir="./$folder/inputs"
+    local output_dir="../benchmarks/$BENCH/test_runs/$folder/faulty_outputs"
 
     if [ ! -d "$input_dir" ]; then
         echo "Aviso: Diretório $input_dir não encontrado. Pulando..."
@@ -34,7 +32,7 @@ run_distribution() {
         riscv64-unknown-elf-objcopy --update-section \
         .OUT_SECTION="$input_file" ./benchmarks/$BENCH.riscv
 
-        spike --isa=rv64gcv_zvl128b_zicntr_zba_zbb ./benchmarks/$BENCH.riscv > "$output_file"
+        spike --faulty_instruction 0x0a110057 --isa=rv64gcv_zvl128b_zicntr_zba_zbb ./benchmarks/$BENCH.riscv > "$output_file"
     done
 }
 
