@@ -2,16 +2,40 @@
 
 int32_t _SRAND_SEED = 0;
 
+typedef enum random_methods{
+    RM_SEED = 0,
+    RM_SET = 1
+};
+
+int random_method = RM_SEED;
+int* set_input_variable;
+
 void msrand(int32_t seed){
     _SRAND_SEED = seed % MAX_INTSEW;
     _SRAND_SEED = (_SRAND_SEED + 11239) % MAX_INTSEW;
     _SRAND_SEED = (_SRAND_SEED * 13)    % MAX_INTSEW;
 }
 
-intSEW mrand_signed(){
+void mrand_set_vector(intSEW* i) {
+    set_input_variable = i;
+    random_method = RM_SET; // Ativa automaticamente o modo de leitura do vetor
+}
+
+intSEW _mrand_signed_get(){
+    int ret = set_input_variable[0];
+    set_input_variable--;
+    return ret;
+}
+
+intSEW _mrand_signed_seed(){
     _SRAND_SEED = (_SRAND_SEED + 11239) % MAX_INTSEW;
     _SRAND_SEED = (_SRAND_SEED * 13)    % MAX_INTSEW;
     return (_SRAND_SEED / 7 + 44351)    % MAX_INTSEW;
+}
+
+intSEW mrand_signed(){
+    intSEW ret =  (random_method == RM_SEED)? _mrand_signed_seed(): _mrand_signed_get();
+    return ret;
 }
 
 intSEW mrand(){
@@ -34,6 +58,7 @@ int get_random_reg(){
         return mrand() % 8  * 4;
     else if(LMUL == 8)
         return mrand() % 4  * 8;
+    return 0;
 }
 
 void shuffle_registers(INTXLEN* r, int num_registers, int lmul) {

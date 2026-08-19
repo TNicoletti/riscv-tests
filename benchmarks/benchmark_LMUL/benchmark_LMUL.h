@@ -13,7 +13,7 @@ intSEW ADDRESS_VECTOR8[255];
 int SEED = 0x1123456;
 
 /* ===== NORMALS ===== */
-#define MAX_N 1024 * 16
+#define MAX_N 1024 * 16 * 2
 volatile intSEW OUT[MAX_N];
 volatile intSEW vet_res1[32][VLEN / SEW];
 volatile intSEW vet_res2[32][VLEN / SEW];

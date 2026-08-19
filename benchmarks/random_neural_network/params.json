@@ -13,7 +13,7 @@
     {
       "name": "PRINTS",
       "type": "int",
-      "value": 1
+      "value": 0
     },
     {
       "name": "instruction_set",

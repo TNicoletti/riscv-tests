@@ -5,14 +5,14 @@
 #include "parameters.h"
 #include "add_instruction.h"
 
-#define MAX_N 1024 * 16
+#define MAX_N 1024 * 16 * 2
 
 #define NUM_RANDOM_OPS 4
 #define QTD_HEURISTICS 8
 #define MAX_TESTS_PER_HEURISTIC 24
 
 int N = 8192;
-int SEED = 0x1123456;
+//int SEED = 0x1123456;
 
 int32_t ADDRESS_VECTOR[255];
 int allowed_instructions[SUPORTED_INSTRUCTIONS];

@@ -1,20 +1,25 @@
 #!/bin/bash
 
+[[ "${PWD##*/}" == "test_runs" ]] && cd ..
+
 BENCH=$1
 
 make -j$(nproc) benchmarks
-python3 ../mem_setter.py ../benchmarks/$BENCH/params.json
+python3 ./mem_setter.py ./benchmarks/$BENCH/params.json
 
+cp ./benchmarks/$BENCH.riscv ./benchmarks/faulty_$BENCH.riscv
 riscv64-unknown-elf-objcopy --update-section \
-.PARAMETERS_SECTION=../benchmarks/$BENCH/params.mem ../benchmarks/$BENCH.riscv
+.PARAMETERS_SECTION=./benchmarks/$BENCH/params.mem ./benchmarks/faulty_$BENCH.riscv
+
+rm ./benchmarks/$TEST_NAME/test_runs/*/faulty_outputs/* -f
 
 # Função auxiliar para iterar dinamicamente sobre todos os arquivos .in da pasta
 run_distribution() {
     local folder=$1
     echo "$folder"
     
-    local input_dir="./$folder/inputs"
-    local output_dir="../benchmarks/$BENCH/test_runs/$folder/faulty_outputs"
+    local input_dir="./test_runs/$folder/inputs"
+    local output_dir="./benchmarks/$BENCH/test_runs/$folder/faulty_outputs"
 
     if [ ! -d "$input_dir" ]; then
         echo "Aviso: Diretório $input_dir não encontrado. Pulando..."
@@ -30,9 +35,9 @@ run_distribution() {
         local output_file="$output_dir/${filename%.in}.out" # Ex: 1.int32.out
 
         riscv64-unknown-elf-objcopy --update-section \
-        .OUT_SECTION="$input_file" ./benchmarks/$BENCH.riscv
+        .OUT_SECTION="$input_file" ./benchmarks/faulty_$BENCH.riscv
 
-        spike --faulty_instruction 0x0a110057 --isa=rv64gcv_zvl128b_zicntr_zba_zbb ./benchmarks/$BENCH.riscv > "$output_file"
+        spike --faulty-instruction 0x0a110057 --isa=rv64gcv_zvl128b_zicntr_zba_zbb ./benchmarks/faulty_$BENCH.riscv > "$output_file"
     done
 }
 

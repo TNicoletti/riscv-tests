@@ -1,5 +1,8 @@
 #!/bin/bash
 
+[[ "${PWD##*/}" == "test_runs" ]] && cd ..
+cd test_runs
+
 REGENERATE=false
 
 # Parse command line flags
@@ -13,7 +16,7 @@ for arg in "$@"; do
 done
 
 folder=$PWD
-n_elements=16384
+n_elements=32768
 
 # Helper function to generate file only if needed
 generate_data() {
@@ -45,21 +48,21 @@ do
     generate_data "$folder/uniform/inputs/$seed.int32.in"   -n $n_elements -s $seed -d uniform -t int32   \
      --low -32 --high 32
 done
-for seed in {201..1000}
+for seed in {201..400}
 do
     generate_data "$folder/uniform/inputs/$seed.float32.in" -n $n_elements -s $seed -d uniform -t float32 \
      --low -256 --high 256
     generate_data "$folder/uniform/inputs/$seed.int32.in"   -n $n_elements -s $seed -d uniform -t int32   \
      --low -256 --high 256
 done
-for seed in {1001..1100}
+for seed in {401..500}
 do
     generate_data "$folder/uniform/inputs/$seed.float32.in" -n $n_elements -s $seed -d uniform -t float32 \
      --low -32768 --high 32768
     generate_data "$folder/uniform/inputs/$seed.int32.in"   -n $n_elements -s $seed -d uniform -t int32   \
      --low -32768 --high 32768
 done
-for seed in {1101..1200}
+for seed in {501..600}
 do
     generate_data "$folder/uniform/inputs/$seed.float32.in" -n $n_elements -s $seed -d uniform -t float32 \
      --low -1048576 --high 1048576
@@ -80,9 +83,9 @@ done
 for seed in {1..100}
 do
     generate_data "$folder/log_normal/inputs/$seed.float32.in" -n $n_elements -s $seed -d lognormal -t float32 \
-     --mean 1024 --std 16
+     --mean 6.9315 --std 0.5
     generate_data "$folder/log_normal/inputs/$seed.int32.in"   -n $n_elements -s $seed -d lognormal -t int32   \
-     --mean 1024 --std 16
+     --mean 6.9315 --std 0.5
 done
 
 # all zeros

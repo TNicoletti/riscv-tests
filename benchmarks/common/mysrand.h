@@ -30,6 +30,7 @@ extern int32_t _SRAND_SEED;
 
 
 void msrand(int32_t seed);
+void mrand_set_vector(intSEW* i);
 
 intSEW mrand_signed();
 

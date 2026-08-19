@@ -8,7 +8,7 @@ int32_t ADDRESS_VECTOR[255];
 int SEED = 0x1123456;
 
 /* ===== NORMALS ===== */
-#define MAX_N 1024 * 16
+#define MAX_N 1024 * 16 * 32
 volatile intSEW OUT[MAX_N];
 volatile intSEW vet_res[NUM_REGISTERS][VLEN / SEW * 8];
 

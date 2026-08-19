@@ -2,4 +2,4 @@ BENCH=$1
 
 [[ "${PWD##*/}" == "test_runs" ]] && cd ..
 cd ./benchmarks/$BENCH/test_runs
-./error_finder.sh
+./error_finder_RAW.sh

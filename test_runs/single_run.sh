@@ -2,9 +2,7 @@
 
 BENCH=$1
 
-
-
-cd ..
+[[ "${PWD##*/}" == "test_runs" ]] && cd ..
 make -j$(nproc) benchmarks
 python3 ./mem_setter.py ./benchmarks/$BENCH/params.json
 

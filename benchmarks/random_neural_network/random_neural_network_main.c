@@ -20,6 +20,7 @@ void randomize_instructions(){
     for(int i = 0; i < NUM_RANDOM_OPS; i++){
         ops[i] = mrand() % fixed_suported_instructions;
         ops[i] = fix_op(ops[i]);
+        
         rx[i][0] = mrand() % NUM_REGISTERS; rx[i][1] = mrand() % NUM_REGISTERS; rx[i][2] = mrand() % NUM_REGISTERS;
     }
 }
@@ -506,9 +507,15 @@ void random_test() {
 
 void digest_parameters(){
     //print_params();
-    if (parameter.argc > 0){
-        SEED = parameter.argv[0];
-    }
+    //if (parameter.argc > 0){
+        //SEED = parameter.argv[0];
+    //}
+    //if(OUT[0] != 0){
+        //SEED = OUT[0];
+        //printf("SEED: %d\n", SEED);
+        //mrand_set_vector(&OUT[MAX_N - 1]);
+    //}
+    mrand_set_vector(&OUT[MAX_N - 1]);
 
     if(parameter.argc > 1)
         N = parameter.argv[1];
@@ -530,13 +537,12 @@ void digest_parameters(){
         }
     }
 
-    if(OUT[0] == 0){
+    /*if(OUT[0] == 0){
         msrand(SEED);
         generate_initial_values();
         printf("Done init values\n");
         msrand(SEED); // Length of the values should not alter significantly the operations
-
-    }
+    }*/
     
 }
 
@@ -545,7 +551,7 @@ int main(){
     digest_parameters();
     asm volatile("csrw mtvec, %0" : : "r" (new_trap_handler));
 
-    printf("Doing random batch tests with registers v0-v7 with seed %d\n", SEED);
+    //printf("Doing random batch tests with registers v0-v7 with seed %d\n", SEED);
     random_test();
     exit(0);
 }

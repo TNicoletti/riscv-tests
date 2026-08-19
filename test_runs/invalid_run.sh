@@ -1,13 +1,16 @@
 #!/bin/bash
 
+[[ "${PWD##*/}" == "test_runs" ]] && cd ..
+
 BENCH=$1
 
-[[ "${PWD##*/}" == "test_runs" ]] && cd ..
-make -j$(nproc) benchmarks
+#make -j$(nproc) benchmarks
 python3 ./mem_setter.py ./benchmarks/$BENCH/params.json
 
+cp ./benchmarks/$BENCH.riscv ./benchmarks/illegal_$BENCH.riscv
+
 riscv64-unknown-elf-objcopy --update-section \
-.PARAMETERS_SECTION=./benchmarks/$BENCH/params.mem ./benchmarks/$BENCH.riscv
+.PARAMETERS_SECTION=./benchmarks/$BENCH/params.mem ./benchmarks/illegal_$BENCH.riscv
 
 # Função auxiliar para iterar dinamicamente sobre todos os arquivos .in da pasta
 run_distribution() {
@@ -15,7 +18,7 @@ run_distribution() {
     echo "$folder"
     
     local input_dir="./test_runs/$folder/inputs"
-    local output_dir="./benchmarks/$BENCH/test_runs/$folder/outputs"
+    local output_dir="./benchmarks/$BENCH/test_runs/$folder/invalid_outputs"
 
     if [ ! -d "$input_dir" ]; then
         echo "Aviso: Diretório $input_dir não encontrado. Pulando..."
@@ -23,7 +26,6 @@ run_distribution() {
     fi
 
     # Busca todos os arquivos .in dentro de inputs/ de forma dinâmica
-    cont=100
     for input_file in "$input_dir"/*.in; do
         # Verifica se o arquivo realmente existe (evita falha se a pasta estiver vazia)
         [ -e "$input_file" ] || continue
@@ -32,15 +34,9 @@ run_distribution() {
         local output_file="$output_dir/${filename%.in}.out" # Ex: 1.int32.out
 
         riscv64-unknown-elf-objcopy --update-section \
-        .OUT_SECTION="$input_file" ./benchmarks/$BENCH.riscv
+        .OUT_SECTION="$input_file" ./benchmarks/illegal_$BENCH.riscv
 
-        spike --isa=rv64gcv_zvl128b_zicntr_zba_zbb ./benchmarks/$BENCH.riscv > "$output_file"
-        
-        ((cont--))
-        if (( cont == 0 )); then
-            cont=100
-            echo "100"
-        fi
+        spike --illegal-instruction 0x86112057 --isa=rv64gcv_zvl128b_zicntr_zba_zbb ./benchmarks/illegal_$BENCH.riscv > "$output_file"
     done
 }
 

@@ -14,5 +14,5 @@ echo "Running setup for test: ${TEST_NAME}"
 
 # ./gen_files.sh
 rm ./benchmarks/$TEST_NAME/test_runs/*/outputs/* -f
-./test_runs/multi_run.sh "$TEST_NAME"
-./test_runs/error_finder.sh "$TEST_NAME"
+./test_runs/RAW_run.sh "$TEST_NAME"
+./test_runs/error_finder_RAW.sh "$TEST_NAME"
