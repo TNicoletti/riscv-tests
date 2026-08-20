@@ -4,7 +4,7 @@
 
 BENCH=$1
 
-#make -j$(nproc) benchmarks
+make -j$(nproc) benchmarks
 python3 ./mem_setter.py ./benchmarks/$BENCH/params.json
 
 cp ./benchmarks/$BENCH.riscv ./benchmarks/illegal_$BENCH.riscv

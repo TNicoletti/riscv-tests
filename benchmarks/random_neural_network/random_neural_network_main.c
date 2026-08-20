@@ -44,9 +44,15 @@ int print_result(int qtd_tests, int passed[MAX_TESTS_PER_HEURISTIC], char label[
     return total_passed;
 }
 
+void print_complete_instruction(int op, int reg1, int reg2, int reg3){
+    char* str = get_OP_name(op);
+    printf("%s v%d, v%d, v%d\n", str, reg1, reg2, reg3);
+}
 
 /*===== RANDOM TEST FUNCTIONS =====*/
 void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qtd_tests[QTD_HEURISTICS]){
+    int minimum_sequence[3] = {-1, -1, -1};
+    
     printf("===== ERROR RESULTS ANALISIS =====\n");
     if(PRINTS >= 0){
         printf("Instructions: \n");
@@ -83,24 +89,80 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     if(total_passed == qtd_tests[2])
         printf("Problem is probably related to multiple instructions interference\n");
 
-    if(total_passed == 3)
+    int single_instruction_fail = total_passed == 3;
+    if(total_passed < 3){
+        int previous = wrong_op[0];
+        single_instruction_fail = 1;
+        for(int i = 1; wrong_op[i] != -1 && i < 4; i++){
+            if(previous != wrong_op[i])
+                single_instruction_fail = 0;
+            break;
+        }
+    }
+    
+    if(total_passed < 4){
+        minimum_sequence[0] = wrong_op[0];
+        minimum_sequence[1] = -1;
+        minimum_sequence[2] = -1;
+    }
+
+    if(single_instruction_fail)
     {
         printf("Problem is probably related to a single instruction\n");
-        if(wrong_op != -1)
-            printf("Probably problematic instruction: %s\n", get_OP_name(wrong_op));
-        else
-            printf("Problematic instruction could not be identified\n");
+        printf("2.0\n");
+        printf("Probably problematic instruction: %s\n", get_OP_name(ops[wrong_op[0]]));
+    }else
+        if(total_passed < 3){
+            printf("Problem with multiple instructions \n Problematic instructions:\n");
+            for(int i = 1; wrong_op[i] != NOP && i < 4; i++){
+                printf("Instruction %s\n", get_OP_name(wrong_op[i]));
+            }
+        }
 
-    }
     printf("\n");
     
     printf("3: Delete 1 out of 4 operations\n");
     char labels3[255][MAX_TESTS_PER_HEURISTIC] = {"[- 0]", "[- 1]", "[- 2]", "[- 3]"};
     total_passed = print_result(4, passed[3], labels3, 4);
+    if(minimum_sequence[0] == -1 && minimum_sequence[1] == -1 \
+    && minimum_sequence[2] == -1){
+        for(int i = 0; i < 4; i++){
+            if(!passed[3][i]){
+                printf("3.0\n");
+                minimum_sequence[0] = (i == 0)? 1: 0;
+                minimum_sequence[1] = (i > 1)?  1: 2;
+                minimum_sequence[2] = (i > 2)?  2: 3;
+                break;
+            }
+        }
+    }
     printf("3.1: Delete 2 out of 4 operations\n");
     char labels31[255][MAX_TESTS_PER_HEURISTIC] = {"[- 0 1]", "[- 0 2]", "[- 0 3]", "[- 1 2]", "[- 1 3]", "[- 2 3]"};
     total_passed = print_result(6, &passed[3][4], labels31, 6);
-    
+    if((minimum_sequence[0] == -1 && minimum_sequence[1] == -1 && minimum_sequence[2] == -1) || \
+    minimum_sequence[2] != -1){
+        for(int i = 0; i < 6; i++){
+            minimum_sequence[2] = -1;
+
+            if(!passed[3][4 + i]){
+                printf("3.1\n");
+                if (i < 3){
+                    minimum_sequence[0] = 1;
+                    if(i == 0)
+                        minimum_sequence[0] = 2;
+                }
+                else
+                    minimum_sequence[0] = 0;
+                minimum_sequence[1] = 3;
+                if(i == 6)
+                    minimum_sequence[1] = 1;
+                if(i == 2 || i == 3)
+                    minimum_sequence[1] = 2;
+                break;
+            }
+        }
+    }
+
 
     printf("\n");
     printf("4: Registers change\n");
@@ -133,6 +195,27 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     char labels7[255][MAX_TESTS_PER_HEURISTIC] = {"[0..0]", "[0..1]", "[0..2]", "[0..3]"};
     total_passed = print_result(qtd_tests[7], passed[7], labels7, 4);
     printf("\n");
+    
+    int a1 = minimum_sequence[0], a2 = minimum_sequence[1], a3 = minimum_sequence[2];
+    if(a3 != -1){
+        printf("Minimum error sequence is a 3 instruction sequence: \n");
+        print_complete_instruction(ops[a1], r[rx[a1][0]], r[rx[a1][1]], r[rx[a1][2]]);
+        print_complete_instruction(ops[a2], r[rx[a2][0]], r[rx[a2][1]], r[rx[a2][2]]);
+        print_complete_instruction(ops[a3], r[rx[a3][0]], r[rx[a3][1]], r[rx[a3][2]]);
+    } else if (a2 != -1){
+        printf("Minimum error sequence is a 2 instruction sequence:\n");
+        print_complete_instruction(ops[a1], r[rx[a1][0]], r[rx[a1][1]], r[rx[a1][2]]);
+        print_complete_instruction(ops[a2], r[rx[a2][0]], r[rx[a2][1]], r[rx[a2][2]]);
+    } else if (a1 != -1){
+        printf("Minimum error sequence is a single instruction: \n");
+        print_complete_instruction(ops[a1], r[rx[a1][0]], r[rx[a1][1]], r[rx[a1][2]]);
+    } else {
+        printf("Minimum error sequence is the entire sequence: \n");
+        print_complete_instruction(ops[0], r[rx[0][0]], r[rx[0][1]], r[rx[0][2]]);
+        print_complete_instruction(ops[1], r[rx[1][0]], r[rx[1][1]], r[rx[1][2]]);
+        print_complete_instruction(ops[2], r[rx[2][0]], r[rx[2][1]], r[rx[2][2]]);
+        print_complete_instruction(ops[3], r[rx[3][0]], r[rx[3][1]], r[rx[3][2]]);
+    }
 }
 
 void error_discoverer(int index){
@@ -205,7 +288,9 @@ void error_discoverer(int index){
             passed[2][i] = 0;
             if(PRINTS >= 1) printf("Divergence => problem single with instruction\n");
             if(PRINTS >= 3) printf("v = %d %s %d\n", rx[i][1], get_OP_name(ops[i]), rx[i][2]);
-            wrong_op = ops[i];
+            int i = 0;
+            for(; wrong_op[i] != -1; i++);
+            wrong_op[i] = i;
         }
     }
 

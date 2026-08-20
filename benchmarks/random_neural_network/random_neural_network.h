@@ -40,7 +40,7 @@ void randomize_instructions();
 
 
 /*===== RANDOM TEST FUNCTIONS =====*/
-int wrong_op = -1;
+int wrong_op[4] = {-1, -1, -1, -1};
 void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qtd_tests[QTD_HEURISTICS]);
 
 /*
