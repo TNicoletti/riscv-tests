@@ -109,7 +109,6 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     if(single_instruction_fail)
     {
         printf("Problem is probably related to a single instruction\n");
-        printf("2.0\n");
         printf("Probably problematic instruction: %s\n", get_OP_name(ops[wrong_op[0]]));
     }else
         if(total_passed < 3){
@@ -128,7 +127,6 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     && minimum_sequence[2] == -1){
         for(int i = 0; i < 4; i++){
             if(!passed[3][i]){
-                printf("3.0\n");
                 minimum_sequence[0] = (i == 0)? 1: 0;
                 minimum_sequence[1] = (i > 1)?  1: 2;
                 minimum_sequence[2] = (i > 2)?  2: 3;
@@ -145,7 +143,6 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
             minimum_sequence[2] = -1;
 
             if(!passed[3][4 + i]){
-                printf("3.1\n");
                 if (i < 3){
                     minimum_sequence[0] = 1;
                     if(i == 0)
@@ -202,19 +199,38 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
         print_complete_instruction(ops[a1], r[rx[a1][0]], r[rx[a1][1]], r[rx[a1][2]]);
         print_complete_instruction(ops[a2], r[rx[a2][0]], r[rx[a2][1]], r[rx[a2][2]]);
         print_complete_instruction(ops[a3], r[rx[a3][0]], r[rx[a3][1]], r[rx[a3][2]]);
+    
+        if(check_for_RAW_2(rx[a1], rx[a2]) || check_for_RAW_2(rx[a1], rx[a3]) || check_for_RAW_2(rx[a2], rx[a3]))
+            printf("Possible Read after Write data hazard detected\n");
+        if(check_for_WAW_2(rx[a1], rx[a2]) || check_for_WAW_2(rx[a1], rx[a3]) || check_for_WAW_2(rx[a2], rx[a3]))
+            printf("Possible Write after Write data hazard detected\n");
     } else if (a2 != -1){
         printf("Minimum error sequence is a 2 instruction sequence:\n");
         print_complete_instruction(ops[a1], r[rx[a1][0]], r[rx[a1][1]], r[rx[a1][2]]);
         print_complete_instruction(ops[a2], r[rx[a2][0]], r[rx[a2][1]], r[rx[a2][2]]);
+
+        if(check_for_RAW_2(rx[a1], rx[a2]))
+            printf("Possible Read after Write data hazard detected\n");
+        if(check_for_WAW_2(rx[a1], rx[a2]))
+            printf("Possible Write after Write data hazard detected\n");
     } else if (a1 != -1){
         printf("Minimum error sequence is a single instruction: \n");
         print_complete_instruction(ops[a1], r[rx[a1][0]], r[rx[a1][1]], r[rx[a1][2]]);
     } else {
+        a1 = ops[0];a2 = ops[1]; a3 = ops[2]; int a4 = ops[3];
         printf("Minimum error sequence is the entire sequence: \n");
         print_complete_instruction(ops[0], r[rx[0][0]], r[rx[0][1]], r[rx[0][2]]);
         print_complete_instruction(ops[1], r[rx[1][0]], r[rx[1][1]], r[rx[1][2]]);
         print_complete_instruction(ops[2], r[rx[2][0]], r[rx[2][1]], r[rx[2][2]]);
         print_complete_instruction(ops[3], r[rx[3][0]], r[rx[3][1]], r[rx[3][2]]);
+
+        if(check_for_RAW_2(rx[a1], rx[a2]) || check_for_RAW_2(rx[a1], rx[a3]) || check_for_RAW_2(rx[a1], rx[a4]) \
+        //|| check_for_RAW_2(rx[a2], rx[a3]) || check_for_RAW_2(rx[a2], rx[a4]) || check_for_RAW_2(rx[a3], rx[a4])
+    )
+            printf("Possible Read after Write data hazard detected\n");
+        if(check_for_WAW_2(rx[a1], rx[a2]) || check_for_WAW_2(rx[a1], rx[a3]) || check_for_WAW_2(rx[a1], rx[a4])) \
+        //|| check_for_WAW_2(rx[a2], rx[a3]) || check_for_WAW_2(rx[a2], rx[a4]) || check_for_WAW_2(rx[a3], rx[a4])
+            printf("Possible Write after Write data hazard detected\n");
     }
 }
 
@@ -326,8 +342,9 @@ void error_discoverer(int index){
     for(int i = 0; i < 4; i++)
         for(int j = i + 1; j < 4; j++){
             qtd_tests[3]++;
-            if(PRINTS >= 1) printf("Removed instruction %d %d\n", i, j);        
+            if(PRINTS >= 1) printf("Removed instruction %d %d\n", i, j);
             load_init_values_scalar(&OUT[index], r, NUM_REGISTERS);
+            print_regs(&scalar_res[0][0], NUM_REGISTERS, r);
             int t = 0;
             for(int z = 0; z < 4; z++){
                 if(z == i || z == j)
@@ -336,7 +353,9 @@ void error_discoverer(int index){
                 t++;
             }
             ADDRESS_VECTOR[2] = RET_INSTR;
+            print_regs(&scalar_res[0][0], NUM_REGISTERS, r);
             execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
+            print_regs(&vet_res[0][0], NUM_REGISTERS, r);
             if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
                 if(PRINTS >= 1) printf("Convergence\n");
                 passed[3][qtd_tests[3] - 1] = 1;

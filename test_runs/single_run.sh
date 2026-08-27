@@ -9,7 +9,7 @@ python3 ./mem_setter.py ./benchmarks/$BENCH/params.json
 riscv64-unknown-elf-objcopy --update-section \
 .PARAMETERS_SECTION=./benchmarks/$BENCH/params.mem ./benchmarks/$BENCH.riscv
 
-input_file=./test_runs/uniform/inputs/$2.int32.in
+input_file=./test_runs/log_normal/inputs/$2.int32.in
 riscv64-unknown-elf-objcopy --update-section \
     .OUT_SECTION="$input_file" ./benchmarks/$BENCH.riscv
 

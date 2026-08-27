@@ -4,6 +4,7 @@
 #include "permute.h"
 #include "parameters.h"
 #include "add_instruction.h"
+#include "issue_finder.h"
 
 #define MAX_N 1024 * 16 * 2
 
