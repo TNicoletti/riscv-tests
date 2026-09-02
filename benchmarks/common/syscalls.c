@@ -1,4 +1,6 @@
 // See LICENSE for license details.
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 
 #include <stdint.h>
 #include <string.h>
@@ -528,3 +530,5 @@ long atol(const char* str)
 
   return sign ? -res : res;
 }
+
+#pragma GCC pop_options

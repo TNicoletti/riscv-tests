@@ -8,8 +8,8 @@ void generate_initial_values(){
 
 int generate_RIS(int op, int index){
     load_init_values_scalar(&OUT[index], r, NUM_REGISTERS);
-
     int32_t instr = add_instruction(op, rx[0], r);
+
     if(instr == NOP)
         return 0;
     ADDRESS_VECTOR[0] = instr;    
@@ -18,6 +18,7 @@ int generate_RIS(int op, int index){
     return 1;
 }
 
+__attribute__((optimize("O0")))
 void eval_results(){
     int qtt_errors = 0;
     if(PRINTS >= 4) help_errors();
@@ -57,9 +58,8 @@ void eval_results(){
         printf("\n");
     }
 
-    printf("\nErrors: %d\n", qtt_errors);
-    printf("Hardware errors: %d\n", error_count);
-    printf("Wrong answers: %d\n", qtt_errors - error_count);
+    printf("Total Errors: %d\n", qtt_errors);
+    printf("Hardware errors thrown: %d\n", error_count);
     printf("Correct instructions / total: %d / %d\n", correct_instructions, correct_instructions + wrong_instructions);
 
     if(mask_inst_count == QUANTITY_MASK_INSTRUCTIONS)
@@ -208,6 +208,8 @@ void all_test() {
     eval_results(res);
 }
 
+
+__attribute__((optimize("O0")))
 int digest_parameters(){
     if(parameter.argc > 0) SEED                = parameter.argv[0];
     if(parameter.argc > 1) sole_execution      = parameter.argv[1];

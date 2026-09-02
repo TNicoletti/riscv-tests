@@ -47,7 +47,8 @@ void store_vet_values(INTXLEN* r, intSEW* vet_res, int num_registers){
     }
 }
 
-
+#pragma GCC push_options
+#pragma GCC optimize ("O0")
 void load_init_values_scalar(intSEW* vet, int* r, int num_registers){
     //clean_vector_scalar(&scalar_res[0][0], VLEN / SEW * 32);
     imm      = (intSEW)vet[2 * VLEN / SEW] & 0x1F;
@@ -63,6 +64,7 @@ void load_init_values_scalar(intSEW* vet, int* r, int num_registers){
     }
 
 }
+#pragma GCC pop_options
 
 // r[0] = rd; r[1] = rs1; r[2] = rs2
 int widening_forbid(int rx[3]){
@@ -1898,6 +1900,9 @@ int add_instruction_no_mirror(int op, int rxa[3], int r[3]){
     }
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("no-tree-vectorize")
+#pragma GCC optimize ("no-slp-vectorize")
 int compare_solutions(int prev_error, int32_t r[3], intSEW* vet_res){
     int cmr = compare_registers;
     compare_registers = -1;
@@ -1918,12 +1923,12 @@ int compare_solutions(int prev_error, int32_t r[3], intSEW* vet_res){
         }
     }
 
-        if(PRINTS >= 1)printf("Convergence \n");
-        return 2;
+    if(PRINTS >= 1) printf("Convergence \n");
+    return 2;
 }
+#pragma GCC pop_options
 
 void execute_RIS(intSEW* vet_init, INTXLEN* r, INT_INST address_vector[], intSEW* vet_res, int num_registers){
-    set_vet_settings();
     load_init_values_vector(vet_init, r, num_registers);
     set_vet_settings();
     
@@ -1931,6 +1936,7 @@ void execute_RIS(intSEW* vet_init, INTXLEN* r, INT_INST address_vector[], intSEW
     load_value_ft0(f_vf);
     
     jump_to_vet(&address_vector[0]);
+
     actual_t1 = return_t1();
     if(PRINTS >= 2 && compare_registers != -1) 
         printf("Compare_registers: %d, actual_t1: %d \n", compare_registers, actual_t1);

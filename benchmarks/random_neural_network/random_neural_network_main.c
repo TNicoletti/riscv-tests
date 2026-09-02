@@ -25,6 +25,9 @@ void randomize_instructions(){
     }
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("no-tree-vectorize")
+#pragma GCC optimize ("no-slp-vectorize")
 int print_result(int qtd_tests, int passed[MAX_TESTS_PER_HEURISTIC], char label[255][MAX_TESTS_PER_HEURISTIC], 
     int breakline){
     int total_passed = 0;
@@ -43,6 +46,7 @@ int print_result(int qtd_tests, int passed[MAX_TESTS_PER_HEURISTIC], char label[
     printf("\n%d out of %d tests converged\n", total_passed, qtd_tests);
     return total_passed;
 }
+#pragma GCC pop_options
 
 void print_complete_instruction(int op, int reg1, int reg2, int reg3){
     char* str = get_OP_name(op);
@@ -50,6 +54,7 @@ void print_complete_instruction(int op, int reg1, int reg2, int reg3){
 }
 
 /*===== RANDOM TEST FUNCTIONS =====*/
+#pragma GCC optimize ("no-tree-vectorize")
 void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qtd_tests[QTD_HEURISTICS]){
     int minimum_sequence[3] = {-1, -1, -1};
     
@@ -93,7 +98,7 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     if(total_passed < 3){
         int previous = wrong_op[0];
         single_instruction_fail = 1;
-        for(int i = 1; wrong_op[i] != -1 && i < 4; i++){
+        for(int i = 1; i < 4 && wrong_op[i] != -1; i++){
             if(previous != wrong_op[i])
                 single_instruction_fail = 0;
             break;
@@ -112,16 +117,16 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
         printf("Probably problematic instruction: %s\n", get_OP_name(ops[wrong_op[0]]));
     }else
         if(total_passed < 3){
-            printf("Problem with multiple instructions \n Problematic instructions:\n");
-            for(int i = 1; wrong_op[i] != NOP && i < 4; i++){
-                printf("Instruction %s\n", get_OP_name(wrong_op[i]));
+            printf("Problem with multiple instructions \nProblematic instructions:\n");
+            for(int i = 0; i < 4 && wrong_op[i] != -1; i++){
+                printf("Instruction %s;\n", get_OP_name(ops[wrong_op[i]]));
             }
         }
 
     printf("\n");
     
     printf("3: Delete 1 out of 4 operations\n");
-    char labels3[255][MAX_TESTS_PER_HEURISTIC] = {"[- 0]", "[- 1]", "[- 2]", "[- 3]"};
+    static const char labels3[255][MAX_TESTS_PER_HEURISTIC] = {"[- 0]", "[- 1]", "[- 2]", "[- 3]"};
     total_passed = print_result(4, passed[3], labels3, 4);
     if(minimum_sequence[0] == -1 && minimum_sequence[1] == -1 \
     && minimum_sequence[2] == -1){
@@ -135,7 +140,7 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
         }
     }
     printf("3.1: Delete 2 out of 4 operations\n");
-    char labels31[255][MAX_TESTS_PER_HEURISTIC] = {"[- 0 1]", "[- 0 2]", "[- 0 3]", "[- 1 2]", "[- 1 3]", "[- 2 3]"};
+    static const char labels31[255][MAX_TESTS_PER_HEURISTIC] = {"[- 0 1]", "[- 0 2]", "[- 0 3]", "[- 1 2]", "[- 1 3]", "[- 2 3]"};
     total_passed = print_result(6, &passed[3][4], labels31, 6);
     if((minimum_sequence[0] == -1 && minimum_sequence[1] == -1 && minimum_sequence[2] == -1) || \
     minimum_sequence[2] != -1){
@@ -163,13 +168,13 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
 
     printf("\n");
     printf("4: Registers change\n");
-    char labels4[255][MAX_TESTS_PER_HEURISTIC] = {"[r = 0 8 16]"};
+    static const char labels4[255][MAX_TESTS_PER_HEURISTIC] = {"[r = 0 8 16]"};
     total_passed = print_result(qtd_tests[4], passed[4], labels4, 4);
     if(total_passed)
         printf("Problem is related to registers, as changing them solves the problem\n");
     printf("\n");
 
-    char labels5[255][MAX_TESTS_PER_HEURISTIC] = {"[0 1 2 3]", "[0 1 3 2]", "[0 2 1 3]", "[0 2 3 1]", "[0 3 1 2]", 
+    static const char labels5[255][MAX_TESTS_PER_HEURISTIC] = {"[0 1 2 3]", "[0 1 3 2]", "[0 2 1 3]", "[0 2 3 1]", "[0 3 1 2]", 
         "[0 3 2 1]", "[1 0 2 3]", "[1 0 3 2]", "[1 2 0 3]", "[1 2 3 0]", "[1 3 0 2]", "[1 3 2 0]", "[2 0 1 3]", 
         "[2 0 3 1]", "[2 1 0 3]", "[2 1 3 0]", "[2 3 0 1]", "[2 3 1 0]", "[3 0 1 2]", "[3 0 2 1]", "[3 1 0 2]", 
         "[3 1 2 0]", "[3 2 0 1]", "[3 2 1 0]"
@@ -179,7 +184,7 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     printf("\n");
 
     printf("6: Different signatures\n");
-    char labels6[255][MAX_TESTS_PER_HEURISTIC] = {
+    static const char labels6[255][MAX_TESTS_PER_HEURISTIC] = {
         "[0-{0, 0, 0}]", "[0-{0, 0, 1}]", "[0-{0, 1, 0}]", "[0-{0, 1, 1}]", "[0-{0, 1, 2}]",
         "[1-{0, 0, 0}]", "[1-{0, 0, 1}]", "[1-{0, 1, 0}]", "[1-{0, 1, 1}]", "[1-{0, 1, 2}]",
         "[2-{0, 0, 0}]", "[2-{0, 0, 1}]", "[2-{0, 1, 0}]", "[2-{0, 1, 1}]", "[2-{0, 1, 2}]",
@@ -189,7 +194,7 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     printf("\n");
 
     printf("7: first, first to second, first to third...\n");
-    char labels7[255][MAX_TESTS_PER_HEURISTIC] = {"[0..0]", "[0..1]", "[0..2]", "[0..3]"};
+    static const char labels7[255][MAX_TESTS_PER_HEURISTIC] = {"[0..0]", "[0..1]", "[0..2]", "[0..3]"};
     total_passed = print_result(qtd_tests[7], passed[7], labels7, 4);
     printf("\n");
     
@@ -234,6 +239,9 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     }
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("no-tree-vectorize")
+#pragma GCC optimize ("no-slp-vectorize")
 void error_discoverer(int index){
     int prev_error = error_count;
 
@@ -304,9 +312,9 @@ void error_discoverer(int index){
             passed[2][i] = 0;
             if(PRINTS >= 1) printf("Divergence => problem single with instruction\n");
             if(PRINTS >= 3) printf("v = %d %s %d\n", rx[i][1], get_OP_name(ops[i]), rx[i][2]);
-            int i = 0;
-            for(; wrong_op[i] != -1; i++);
-            wrong_op[i] = i;
+            int j = 0;
+            for(; wrong_op[j] != -1; j++);
+            wrong_op[j] = i;
         }
     }
 
@@ -344,7 +352,6 @@ void error_discoverer(int index){
             qtd_tests[3]++;
             if(PRINTS >= 1) printf("Removed instruction %d %d\n", i, j);
             load_init_values_scalar(&OUT[index], r, NUM_REGISTERS);
-            print_regs(&scalar_res[0][0], NUM_REGISTERS, r);
             int t = 0;
             for(int z = 0; z < 4; z++){
                 if(z == i || z == j)
@@ -353,9 +360,7 @@ void error_discoverer(int index){
                 t++;
             }
             ADDRESS_VECTOR[2] = RET_INSTR;
-            print_regs(&scalar_res[0][0], NUM_REGISTERS, r);
             execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
-            print_regs(&vet_res[0][0], NUM_REGISTERS, r);
             if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
                 if(PRINTS >= 1) printf("Convergence\n");
                 passed[3][qtd_tests[3] - 1] = 1;
@@ -415,13 +420,14 @@ void error_discoverer(int index){
 
     if(PRINTS >= 1) printf("\n===== Heuristic 6 ===== \n");
     for(int i = 0; i < NUM_RANDOM_OPS; i++){
-        int signatures[5][3] = {
+        static const int signatures[5][3] = {
             {0, 0, 0},
             {0, 0, 1},
             {0, 1, 0},
             {0, 1, 1},
             {0, 1, 2}
         };
+
         for(int z = 0; z < 5; z++){
             qtd_tests[6]++;
             int* s = &signatures[z][0];
@@ -442,6 +448,7 @@ void error_discoverer(int index){
             }
             ADDRESS_VECTOR[1] = RET_INSTR;
             execute_RIS(&OUT[index], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
+
             if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
                 //if(PRINTS >= 1) printf("Convergence\n");
                 passed[6][qtd_tests[6] - 1] = 1;
@@ -449,11 +456,13 @@ void error_discoverer(int index){
             else{
                 passed[6][qtd_tests[6] - 1] = 0;
                 //if(PRINTS >= 1) printf("Divergence\n");
-                if(PRINTS >= 1) printf("PROBLEMATIC OP: %s\n", get_OP_name(op));  
-                printf("Scalar:\n");
-                print_regs(&scalar_res[0][0], EL_PER_BLOCK, r);
-                printf("Vector:\n");
-                print_regs(&vet_res[0][0], EL_PER_BLOCK, r);
+                if(PRINTS >= 1) {
+                    printf("PROBLEMATIC OP: %s\n", get_OP_name(op));  
+                    printf("Scalar:\n");
+                    print_regs(&scalar_res[0][0], EL_PER_BLOCK, r);
+                    printf("Vector:\n");
+                    print_regs(&vet_res[0][0], EL_PER_BLOCK, r);
+                }
             } 
 
         }
@@ -470,7 +479,6 @@ void error_discoverer(int index){
         int break_for = false;
         qtd_tests[7]++;
         while(true){
-            printf("ORDER:", order[0], order[1], order[2], order[3]);
             for(int i = 0; i <= num_ops; i++)
                 printf("%d ", order[i]);
             printf("\n");
@@ -517,6 +525,7 @@ void error_discoverer(int index){
 
     analyze_results(passed, qtd_tests);
 }
+#pragma GCC pop_options
 
 void generate_RIS(int index){
     shuffle_registers(r, NUM_REGISTERS, LMUL);

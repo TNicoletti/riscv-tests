@@ -58,6 +58,9 @@ void print_matrix(intSEW* vet, int N, int M){
     printf("\n");
 }
 
+#pragma GCC push_options
+#pragma GCC optimize ("no-tree-vectorize")
+#pragma GCC optimize ("no-slp-vectorize")
 void print_regs(intSEW* vet, int num_regs, INTXLEN r[3]){
 
   for(int i = 0; i < num_regs; i++){
@@ -69,6 +72,8 @@ void print_regs(intSEW* vet, int num_regs, INTXLEN r[3]){
   }
   printf("\n");
 }
+#pragma GCC pop_options
+
 
 #pragma GCC optimize ("no-tree-vectorize")
 void clean_matrix(intSEW vet[5][4], int N, int M){
