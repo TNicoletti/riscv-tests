@@ -71,10 +71,12 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     printf("0: Repeat 5x\n");
     char labels[255][MAX_TESTS_PER_HEURISTIC] = {"1", "2", "3", "4", "5"}; 
     total_passed = print_result(qtd_tests[0], passed[0], labels, 5);
-    if(total_passed == qtd_tests[0])
-        printf("Error is not compulsory\n");
     if(total_passed == 0)
         printf("Error is compulsory\n");
+    else{
+        printf("Error is not compulsory\n");
+        printf("Could be cold start problem\n");
+    }
     
     printf("\n");
 
@@ -145,9 +147,8 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     if((minimum_sequence[0] == -1 && minimum_sequence[1] == -1 && minimum_sequence[2] == -1) || \
     minimum_sequence[2] != -1){
         for(int i = 0; i < 6; i++){
-            minimum_sequence[2] = -1;
-
             if(!passed[3][4 + i]){
+                minimum_sequence[2] = -1;
                 if (i < 3){
                     minimum_sequence[0] = 1;
                     if(i == 0)
@@ -613,6 +614,8 @@ void random_test() {
             printf("==== Failed on test %d ====\n", z / inc);
             exit(0);
         }
+        printf("%s %s %s %s \n", get_OP_name(ops[0]), get_OP_name(ops[1]),
+    get_OP_name(ops[2]), get_OP_name(ops[3]));
         printf("==== End test  %d        ======\n\n", z / inc);
     }
 
