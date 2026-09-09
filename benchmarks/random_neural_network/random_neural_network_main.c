@@ -585,13 +585,13 @@ void random_test() {
     int inc = NUM_REGISTERS * EL_PER_BLOCK;
     for(int z = 0; z + inc <= N; z+= inc){
         int prev_error = error_count;
-        printf("==== Begginning test  %d ======\n", z / inc);
+        if (PRINTS >= 0) printf("==== Begginning test  %d ======\n", z / inc);
 
         generate_RIS(z);
         execute_RIS(&OUT[z], r, ADDRESS_VECTOR, &vet_res[0][0], NUM_REGISTERS);
 
         if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
-            printf("Convergence %d-%d\n", z, z + inc);
+            if (PRINTS >= 0) printf("Convergence %d-%d\n", z, z + inc);
         }else{
             printf("Divergence %d-%d\n", z, z + inc);
             printf("Going to error discoverer\n");
@@ -614,9 +614,9 @@ void random_test() {
             printf("==== Failed on test %d ====\n", z / inc);
             exit(0);
         }
-        printf("%s %s %s %s \n", get_OP_name(ops[0]), get_OP_name(ops[1]),
+        if (PRINTS >= 0) printf("%s %s %s %s \n", get_OP_name(ops[0]), get_OP_name(ops[1]),
     get_OP_name(ops[2]), get_OP_name(ops[3]));
-        printf("==== End test  %d        ======\n\n", z / inc);
+        if (PRINTS >= 0) printf("==== End test  %d        ======\n\n", z / inc);
     }
 
 }

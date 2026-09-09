@@ -14,4 +14,4 @@ riscv64-unknown-elf-objcopy --update-section \
     .OUT_SECTION="$input_file" ./benchmarks/$BENCH.riscv
 
 
-spike --isa=rv64gcv_zvl128b_zicntr_zba_zbb ./benchmarks/$BENCH.riscv
+spike --four-instruction-err=0x02840457,0x02840457,0x02840457,0x02840457 --isa=rv64gcv_zvl128b_zicntr_zba_zbb ./benchmarks/$BENCH.riscv

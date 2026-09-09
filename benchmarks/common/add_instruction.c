@@ -379,7 +379,7 @@ int add_instruction(int op, int rxa[3], int r[3]){
             break;
         case VSLIDEUP_VI:
             require_imm_positive();
-            if(slideup_forbid(rx[0], rx[1], LMUL)) { printf("FORBIDDEN\n"); return NOP; }
+            if(slideup_forbid(rx[0], rx[1], LMUL)) { if (PRINTS >= 1) printf("FORBIDDEN\n"); return NOP; }
             for(int j = 0; j < EL_PER_BLOCK; j++){
                 int dest_idx = imm + j;
     
@@ -400,7 +400,7 @@ int add_instruction(int op, int rxa[3], int r[3]){
             break;
         case VSLIDEUP_VX:{
             int vl = LMUL * (VLEN/SEW);
-            if(slideup_forbid(rx[0], rx[1], LMUL)) {printf("FORBIDDEN\n"); return NOP;}
+            if(slideup_forbid(rx[0], rx[1], LMUL)) {if (PRINTS >= 1) printf("FORBIDDEN\n"); return NOP;}
             uint elements_per_reg = VLEN / SEW;
             uint offset = t0_VALUE;
 
@@ -601,7 +601,7 @@ int add_instruction(int op, int rxa[3], int r[3]){
             if(PRINTS >= 2) printf("\n");
             break;
         case VWMACC_VV:
-            if(widening_forbid(rx)) {printf("FORBIDDEN\n"); return NOP;}
+            if(widening_forbid(rx)) {if (PRINTS >= 1) printf("FORBIDDEN\n"); return NOP;}
     
             intDSEW res[VLEN / SEW * 8];
             
@@ -1513,12 +1513,12 @@ int add_instruction_no_mirror(int op, int rxa[3], int r[3]){
             break;
         case VSLIDEUP_VI:
             //require_imm_positive();
-            if(slideup_forbid(rx[0], rx[1], LMUL)) { printf("FORBIDDEN\n"); return NOP; }
+            if(slideup_forbid(rx[0], rx[1], LMUL)) { if (PRINTS >= 1) printf("FORBIDDEN\n"); return NOP; }
             instr = VSLIDEUP_VI_INSTR;
             instr_type = VI;
             break;
         case VSLIDEUP_VX:
-            if(slideup_forbid(rx[0], rx[1], LMUL)) {printf("FORBIDDEN\n"); return NOP;}
+            if(slideup_forbid(rx[0], rx[1], LMUL)) {if (PRINTS >= 1) printf("FORBIDDEN\n"); return NOP;}
             instr = VSLIDEUP_VX_INSTR;
             instr_type = VX;
             break;
@@ -1592,7 +1592,7 @@ int add_instruction_no_mirror(int op, int rxa[3], int r[3]){
             instr_type = VX;
             break;
         case VWMACC_VV:
-            if(widening_forbid(rx)) {printf("FORBIDDEN\n"); return NOP;}
+            if(widening_forbid(rx)) {if (PRINTS >= 1) printf("FORBIDDEN\n"); return NOP;}
     
             instr = VWMACC_VV_INSTR;
             break;
