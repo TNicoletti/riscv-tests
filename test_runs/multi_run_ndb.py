@@ -14,6 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 running_processes = set()
 process_lock = threading.Lock()
 
+folder_outputs = "ndb_outputs"
 
 def run_test(input_file, output_file, base_riscv, temp_riscv):
     try:
@@ -109,7 +110,7 @@ def stop_running_processes():
 
 def run_distribution(folder, bench):
     input_dir = Path(f"./test_runs/{folder}/inputs")
-    output_dir = Path(f"./benchmarks/{bench}/test_runs/{folder}/ndb_outputs")
+    output_dir = Path(f"./benchmarks/{bench}/test_runs/{folder}/{folder_outputs}")
     base_riscv = Path(f"./benchmarks/{bench}.riscv")
 
     print(f"\n=== {folder} ===")
@@ -169,7 +170,7 @@ def run_distribution(folder, bench):
 
 def remove_previous(bench):
     for folder in ["uniform", "normal", "log_normal", "all_ones", "all_zeros"]:
-        output_dir = Path(f"./benchmarks/{bench}/test_runs/{folder}/outputs")
+        output_dir = Path(f"./benchmarks/{bench}/test_runs/{folder}/{folder_outputs}")
         if output_dir.exists():
             for output_file in output_dir.glob("*.out"):
                 output_file.unlink()
@@ -189,6 +190,15 @@ def main():
         bench = "random_neural_network"  # TODO: REMOVE
 
     remove_previous(bench)
+
+    subprocess.run(
+        [
+            "python3",
+            "./mem_setter.py",
+            f"./benchmarks/{bench}/params.json"
+        ],
+        check=True,
+    )
     
     subprocess.run(
         [

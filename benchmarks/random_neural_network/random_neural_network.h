@@ -10,7 +10,9 @@
 
 #define NUM_RANDOM_OPS 4
 #define QTD_HEURISTICS 8
-#define MAX_TESTS_PER_HEURISTIC 24
+#define MAX_TESTS_PER_HEURISTIC 1024
+
+#define PASSED_DATATYPE int8_t
 
 int N = 8192;
 //int SEED = 0x1123456;
@@ -39,10 +41,14 @@ int ops[NUM_RANDOM_OPS];
 int fix_op(int x);
 void randomize_instructions();
 
+int wrong_op[4] = {-1, -1, -1, -1};
+int h0_qtd_repeats = 32;
+
+int compulsory = 1;
+int minimum_sequence[4] = {-1, -1, -1, -1};
 
 /*===== RANDOM TEST FUNCTIONS =====*/
-int wrong_op[4] = {-1, -1, -1, -1};
-void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qtd_tests[QTD_HEURISTICS]);
+void analyze_results(PASSED_DATATYPE passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qtd_tests[QTD_HEURISTICS]);
 
 /*
     Uses some heuristics to uncover the error

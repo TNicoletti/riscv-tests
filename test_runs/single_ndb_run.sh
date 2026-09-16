@@ -28,6 +28,6 @@ riscv64-unknown-elf-objcopy --update-section \
     ./benchmarks/single_execution.riscv
 
 spike --isa=rv64gcv_zvl128b_zicntr_zba_zbb \
-    --four-instruction-err=0x02840457,0x02840457,0x02840457,0x02840457 ./benchmarks/single_execution.riscv
+    --ndb-chance 0.01 --ndb-fault 2  ./benchmarks/single_execution.riscv
 
 rm ./benchmarks/single_execution.riscv

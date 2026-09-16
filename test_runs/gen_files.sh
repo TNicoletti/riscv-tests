@@ -41,7 +41,7 @@ generate_data() {
 }
 
 # uniform
-for seed in {0..100}
+for seed in {1..100}
 do
     generate_data "$folder/uniform/inputs/$seed.float32.in" -n $n_elements -s $seed -d uniform -t float32 \
      --low -64 --high 64
@@ -62,15 +62,7 @@ do
     generate_data "$folder/uniform/inputs/$seed.int32.in"   -n $n_elements -s $seed -d uniform -t int32   \
      --low -32768 --high 32768
 done
-for seed in {701..1200}
-do
-    generate_data "$folder/uniform/inputs/$seed.float32.in" -n $n_elements -s $seed -d uniform -t float32 \
-     --low -1048576 --high 1048576
-    generate_data "$folder/uniform/inputs/$seed.int32.in"   -n $n_elements -s $seed -d uniform -t int32   \
-     --low -1048576 --high 1048576
-done
-
-for seed in {1201..2000}
+for seed in {701..2000}
 do
     generate_data "$folder/uniform/inputs/$seed.float32.in" -n $n_elements -s $seed -d uniform -t float32 \
      --low -1048576 --high 1048576

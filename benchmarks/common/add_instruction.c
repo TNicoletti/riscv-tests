@@ -1900,6 +1900,11 @@ int add_instruction_no_mirror(int op, int rxa[3], int r[3]){
     }
 }
 
+/*
+    Returns 1 if diverges
+    Returns 2 if converges
+    Other results are the errors thrown by hardware
+*/
 #pragma GCC push_options
 #pragma GCC optimize ("no-tree-vectorize")
 #pragma GCC optimize ("no-slp-vectorize")
@@ -1926,6 +1931,21 @@ int compare_solutions(int prev_error, int32_t r[3], intSEW* vet_res){
     if(PRINTS >= 1) printf("Convergence \n");
     return 2;
 }
+
+int8_t* get_wrong_regs(int32_t* r, intSEW* vet_res, int num_regs){
+    int8_t* resps;
+    resps[0] = -1;
+    int j = 0;
+    for(int i = 0; i < num_regs; i++){
+        if(!manual_convergence(&scalar_res[r[i]][0], &vet_res[r[i] * VLEN / SEW], 1, VLEN / SEW * LMUL)){
+            resps[j] = r[i];
+            j++;
+            resps[j] = -1;
+        }
+    }
+    return resps;
+}
+
 #pragma GCC pop_options
 
 void execute_RIS(intSEW* vet_init, INTXLEN* r, INT_INST address_vector[], intSEW* vet_res, int num_registers){

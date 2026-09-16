@@ -14,7 +14,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 running_processes = set()
 process_lock = threading.Lock()
 
-folder_outputs = "cold_start_outputs"
+folder_outputs = "RAW_outputs"
 
 def run_test(input_file, output_file, base_riscv, temp_riscv):
     try:
@@ -37,8 +37,8 @@ def run_test(input_file, output_file, base_riscv, temp_riscv):
             process = subprocess.Popen(
                 [
                     "spike",
+                    "--RAW-register", "0x02",
                     "--isa=rv64gcv_zvl128b_zicntr_zba_zbb",
-                    "--cold-start=5,0x02840457",
                     str(temp_riscv),
                 ],
                 stdout=f,
@@ -189,16 +189,16 @@ def main():
         bench = "random_neural_network"  # TODO: REMOVE
 
     remove_previous(bench)
-    
-    subprocess.run(
-            [
-                "python3",
-                "./mem_setter.py",
-                f"./benchmarks/{bench}/params.json"
-            ],
-            check=True,
-        )
 
+    subprocess.run(
+        [
+            "python3",
+            "./mem_setter.py",
+            f"./benchmarks/{bench}/params.json"
+        ],
+        check=True,
+    )
+    
     subprocess.run(
         [
             "riscv64-unknown-elf-objcopy",

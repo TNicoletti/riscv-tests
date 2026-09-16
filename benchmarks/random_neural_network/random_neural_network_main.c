@@ -28,8 +28,8 @@ void randomize_instructions(){
 #pragma GCC push_options
 #pragma GCC optimize ("no-tree-vectorize")
 #pragma GCC optimize ("no-slp-vectorize")
-int print_result(int qtd_tests, int passed[MAX_TESTS_PER_HEURISTIC], char label[255][MAX_TESTS_PER_HEURISTIC], 
-    int breakline){
+int print_result(int qtd_tests, PASSED_DATATYPE passed[MAX_TESTS_PER_HEURISTIC], 
+    char label[MAX_TESTS_PER_HEURISTIC][20], int breakline){
     int total_passed = 0;
     for(int j = 0; j < qtd_tests; j++){
         switch(passed[j]){
@@ -48,6 +48,16 @@ int print_result(int qtd_tests, int passed[MAX_TESTS_PER_HEURISTIC], char label[
 }
 #pragma GCC pop_options
 
+int check_cold_start(PASSED_DATATYPE* vet, int N){
+    int previous = 0;
+    for(int i = 0; i < N; i++){
+        if(vet[i] == 0 && previous == 1)
+            return 0;
+        previous = vet[i];
+    }
+    return 1;
+}
+
 void print_complete_instruction(int op, int reg1, int reg2, int reg3){
     char* str = get_OP_name(op);
     printf("%s v%d, v%d, v%d\n", str, reg1, reg2, reg3);
@@ -55,8 +65,7 @@ void print_complete_instruction(int op, int reg1, int reg2, int reg3){
 
 /*===== RANDOM TEST FUNCTIONS =====*/
 #pragma GCC optimize ("no-tree-vectorize")
-void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qtd_tests[QTD_HEURISTICS]){
-    int minimum_sequence[3] = {-1, -1, -1};
+void analyze_results(PASSED_DATATYPE passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qtd_tests[QTD_HEURISTICS]){    
     
     printf("===== ERROR RESULTS ANALISIS =====\n");
     if(PRINTS >= 0){
@@ -68,20 +77,29 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
         printf("\n");
     }
     int total_passed = 0;
-    printf("0: Repeat 5x\n");
-    char labels[255][MAX_TESTS_PER_HEURISTIC] = {"1", "2", "3", "4", "5"}; 
-    total_passed = print_result(qtd_tests[0], passed[0], labels, 5);
-    if(total_passed == 0)
+    printf("%d \n", h0_qtd_repeats);
+    printf("0: Repeat %dx\n", h0_qtd_repeats);
+    const char labels[MAX_TESTS_PER_HEURISTIC][20];
+    
+    for (int j = 0; j < MAX_TESTS_PER_HEURISTIC; j++) {
+        sprintf(labels[j], "%d", j);
+    } 
+    total_passed = print_result(qtd_tests[0], passed[0], labels, h0_qtd_repeats);
+    if(compulsory)
         printf("Error is compulsory\n");
     else{
         printf("Error is not compulsory\n");
+
+        if(check_cold_start(passed[0], h0_qtd_repeats))
         printf("Could be cold start problem\n");
+        else
+            printf("Non deterministic random behavior detected\n");
     }
     
     printf("\n");
 
     printf("1: NOPS between instructions\n");
-    char labels1[255][MAX_TESTS_PER_HEURISTIC] = {"[NOPS]"};
+    char labels1[MAX_TESTS_PER_HEURISTIC][20] = {"[NOPS]"};
     total_passed = print_result(qtd_tests[1], passed[1], labels1, 4);
 
     if(total_passed == qtd_tests[1])
@@ -90,7 +108,7 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     printf("\n");
     
     printf("2: Single instruction execution\n");
-    char labels2[255][MAX_TESTS_PER_HEURISTIC] = {"[1]", "[2]", "[3]", "[4]"};
+    char labels2[MAX_TESTS_PER_HEURISTIC][20] = {"[1]", "[2]", "[3]", "[4]"};
     total_passed = print_result(qtd_tests[2], passed[2], labels2, 4);
 
     if(total_passed == qtd_tests[2])
@@ -128,7 +146,7 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     printf("\n");
     
     printf("3: Delete 1 out of 4 operations\n");
-    static const char labels3[255][MAX_TESTS_PER_HEURISTIC] = {"[- 0]", "[- 1]", "[- 2]", "[- 3]"};
+    static const char labels3[MAX_TESTS_PER_HEURISTIC][20] = {"[- 0]", "[- 1]", "[- 2]", "[- 3]"};
     total_passed = print_result(4, passed[3], labels3, 4);
     if(minimum_sequence[0] == -1 && minimum_sequence[1] == -1 \
     && minimum_sequence[2] == -1){
@@ -142,25 +160,36 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
         }
     }
     printf("3.1: Delete 2 out of 4 operations\n");
-    static const char labels31[255][MAX_TESTS_PER_HEURISTIC] = {"[- 0 1]", "[- 0 2]", "[- 0 3]", "[- 1 2]", "[- 1 3]", "[- 2 3]"};
+    static const char labels31[MAX_TESTS_PER_HEURISTIC][20] = {"[- 0 1]", "[- 0 2]", "[- 0 3]", "[- 1 2]", "[- 1 3]", 
+        "[- 2 3]"};
     total_passed = print_result(6, &passed[3][4], labels31, 6);
     if((minimum_sequence[0] == -1 && minimum_sequence[1] == -1 && minimum_sequence[2] == -1) || \
     minimum_sequence[2] != -1){
         for(int i = 0; i < 6; i++){
             if(!passed[3][4 + i]){
                 minimum_sequence[2] = -1;
-                if (i < 3){
-                    minimum_sequence[0] = 1;
-                    if(i == 0)
-                        minimum_sequence[0] = 2;
-                }
-                else
+                if (i >= 3){
                     minimum_sequence[0] = 0;
+                    if(i == 3)
+                        minimum_sequence[1] = 3;
+                    if(i == 4)
+                        minimum_sequence[1] = 2;
+                    if(i == 3)
+                        minimum_sequence[1] = 1;
+                }
+                else{
+                    if (i == 0){
+                        minimum_sequence[0] = 2;
                 minimum_sequence[1] = 3;
-                if(i == 6)
-                    minimum_sequence[1] = 1;
-                if(i == 2 || i == 3)
+                    }else{
+                        minimum_sequence[0] = 1;
+                        if(i == 1)
+                            minimum_sequence[1] = 3;
+                        else
                     minimum_sequence[1] = 2;
+                    }
+
+                }
                 break;
             }
         }
@@ -169,23 +198,23 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
 
     printf("\n");
     printf("4: Registers change\n");
-    static const char labels4[255][MAX_TESTS_PER_HEURISTIC] = {"[r = 0 8 16]"};
+    static const char labels4[MAX_TESTS_PER_HEURISTIC][20] = {"[r = 0 8 16]"};
     total_passed = print_result(qtd_tests[4], passed[4], labels4, 4);
     if(total_passed)
         printf("Problem is related to registers, as changing them solves the problem\n");
     printf("\n");
 
-    static const char labels5[255][MAX_TESTS_PER_HEURISTIC] = {"[0 1 2 3]", "[0 1 3 2]", "[0 2 1 3]", "[0 2 3 1]", "[0 3 1 2]", 
-        "[0 3 2 1]", "[1 0 2 3]", "[1 0 3 2]", "[1 2 0 3]", "[1 2 3 0]", "[1 3 0 2]", "[1 3 2 0]", "[2 0 1 3]", 
-        "[2 0 3 1]", "[2 1 0 3]", "[2 1 3 0]", "[2 3 0 1]", "[2 3 1 0]", "[3 0 1 2]", "[3 0 2 1]", "[3 1 0 2]", 
-        "[3 1 2 0]", "[3 2 0 1]", "[3 2 1 0]"
+    static const char labels5[MAX_TESTS_PER_HEURISTIC][20] = {"[0 1 2 3]", "[0 1 3 2]", "[0 2 1 3]", "[0 2 3 1]", 
+        "[0 3 1 2]", "[0 3 2 1]", "[1 0 2 3]", "[1 0 3 2]", "[1 2 0 3]", "[1 2 3 0]", "[1 3 0 2]", "[1 3 2 0]", 
+        "[2 0 1 3]", "[2 0 3 1]", "[2 1 0 3]", "[2 1 3 0]", "[2 3 0 1]", "[2 3 1 0]", "[3 0 1 2]", "[3 0 2 1]",
+        "[3 1 0 2]", "[3 1 2 0]", "[3 2 0 1]", "[3 2 1 0]"
     };
     printf("5: Change order of instruction execution\n");
     total_passed = print_result(qtd_tests[5], passed[5], labels5, 4);
     printf("\n");
 
     printf("6: Different signatures\n");
-    static const char labels6[255][MAX_TESTS_PER_HEURISTIC] = {
+    static const char labels6[MAX_TESTS_PER_HEURISTIC][20] = {
         "[0-{0, 0, 0}]", "[0-{0, 0, 1}]", "[0-{0, 1, 0}]", "[0-{0, 1, 1}]", "[0-{0, 1, 2}]",
         "[1-{0, 0, 0}]", "[1-{0, 0, 1}]", "[1-{0, 1, 0}]", "[1-{0, 1, 1}]", "[1-{0, 1, 2}]",
         "[2-{0, 0, 0}]", "[2-{0, 0, 1}]", "[2-{0, 1, 0}]", "[2-{0, 1, 1}]", "[2-{0, 1, 2}]",
@@ -195,8 +224,15 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
     printf("\n");
 
     printf("7: first, first to second, first to third...\n");
-    static const char labels7[255][MAX_TESTS_PER_HEURISTIC] = {"[0..0]", "[0..1]", "[0..2]", "[0..3]"};
+    static const char labels7[MAX_TESTS_PER_HEURISTIC][20] = {"[0..0]", "[0..1]", "[0..2]", "[0..3]"};
     total_passed = print_result(qtd_tests[7], passed[7], labels7, 4);
+    printf("\n");
+    
+    printf("Total all instructions:\n");
+    print_complete_instruction(ops[0], r[rx[0][0]], r[rx[0][1]], r[rx[0][2]]);
+    print_complete_instruction(ops[1], r[rx[1][0]], r[rx[1][1]], r[rx[1][2]]);
+    print_complete_instruction(ops[2], r[rx[2][0]], r[rx[2][1]], r[rx[2][2]]);
+    print_complete_instruction(ops[3], r[rx[3][0]], r[rx[3][1]], r[rx[3][2]]);
     printf("\n");
     
     int a1 = minimum_sequence[0], a2 = minimum_sequence[1], a3 = minimum_sequence[2];
@@ -206,9 +242,9 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
         print_complete_instruction(ops[a2], r[rx[a2][0]], r[rx[a2][1]], r[rx[a2][2]]);
         print_complete_instruction(ops[a3], r[rx[a3][0]], r[rx[a3][1]], r[rx[a3][2]]);
     
-        if(check_for_RAW_2(rx[a1], rx[a2]) || check_for_RAW_2(rx[a1], rx[a3]) || check_for_RAW_2(rx[a2], rx[a3]))
+        if(check_for_RAW_3(rx[a1], rx[a2], rx[a3]))
             printf("Possible Read after Write data hazard detected\n");
-        if(check_for_WAW_2(rx[a1], rx[a2]) || check_for_WAW_2(rx[a1], rx[a3]) || check_for_WAW_2(rx[a2], rx[a3]))
+        if(check_for_WAW_3(rx[a1], rx[a2], rx[a3]))
             printf("Possible Write after Write data hazard detected\n");
     } else if (a2 != -1){
         printf("Minimum error sequence is a 2 instruction sequence:\n");
@@ -230,12 +266,9 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
         print_complete_instruction(ops[2], r[rx[2][0]], r[rx[2][1]], r[rx[2][2]]);
         print_complete_instruction(ops[3], r[rx[3][0]], r[rx[3][1]], r[rx[3][2]]);
 
-        if(check_for_RAW_2(rx[a1], rx[a2]) || check_for_RAW_2(rx[a1], rx[a3]) || check_for_RAW_2(rx[a1], rx[a4]) \
-        //|| check_for_RAW_2(rx[a2], rx[a3]) || check_for_RAW_2(rx[a2], rx[a4]) || check_for_RAW_2(rx[a3], rx[a4])
-    )
+        if(check_for_RAW_4(rx[a1], rx[a2], rx[a3], rx[a4]))
             printf("Possible Read after Write data hazard detected\n");
-        if(check_for_WAW_2(rx[a1], rx[a2]) || check_for_WAW_2(rx[a1], rx[a3]) || check_for_WAW_2(rx[a1], rx[a4])) \
-        //|| check_for_WAW_2(rx[a2], rx[a3]) || check_for_WAW_2(rx[a2], rx[a4]) || check_for_WAW_2(rx[a3], rx[a4])
+        if(check_for_WAW_4(rx[a1], rx[a2], rx[a3], rx[a4]))
             printf("Possible Write after Write data hazard detected\n");
     }
 }
@@ -246,10 +279,11 @@ void analyze_results(int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qt
 void error_discoverer(int index){
     int prev_error = error_count;
 
+    // HEURISTIC 0
     int qtd_tests[QTD_HEURISTICS] = {0, 0, 0, 0, 0, 0, 0};
-    int passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC];
+    PASSED_DATATYPE passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC];
     if(PRINTS >= 1) printf("\n===== Heuristic 0 ===== \n");
-    for(int i = 0; i < 5; i++){
+    for(int i = 0; i < h0_qtd_repeats; i++){
         qtd_tests[0]++;
         load_init_values_scalar(&OUT[index], r, NUM_REGISTERS);
 
@@ -263,6 +297,8 @@ void error_discoverer(int index){
         if(compare_solutions(prev_error, r, &vet_res[0][0]) == 2){
             if(PRINTS >= 1) printf("Convergence\n");
             passed[0][i] = 1;
+            h0_qtd_repeats = 1024;
+            compulsory = 0;
         }else{
             passed[0][i] = 0;
             if(PRINTS >= 1) printf("Divergence\n");
@@ -274,7 +310,9 @@ void error_discoverer(int index){
             print_regs(&vet_res[0][0], NUM_REGISTERS, r);
         }
     }
+    // END HEURISTIC 0
 
+    // HEURISTIC 1
     if(PRINTS >= 1) printf("\n===== Heuristic 1 ===== \n");
     qtd_tests[1] = 1;
     int qtd_nops = 32;
@@ -297,7 +335,8 @@ void error_discoverer(int index){
         if(PRINTS >= 3) print_regs(&vet_res[0][0], NUM_REGISTERS, r);
 
     }
-
+    // END HEURISTIC 1
+    // HEURISTIC 2
     if(PRINTS >= 1) printf("\n===== Heuristic 2 ===== \n\n");
     for(int i = 0; i < 4; i++){
         qtd_tests[2]++;        
@@ -319,6 +358,8 @@ void error_discoverer(int index){
         }
     }
 
+    // END HEURISTIC 2
+    // HEURISTIC 3
 
     // Excluir 1
     if(PRINTS >= 1) printf("\n===== Heuristic 3 ===== \n\n");
@@ -346,6 +387,9 @@ void error_discoverer(int index){
         }
     }
 
+    // END HEURISTIC 3
+    // HEURISTIC 3.1
+
     // Excluir 2
     if(PRINTS >= 1) printf("\n===== Heuristic 3.1 ===== \n\n");
     for(int i = 0; i < 4; i++)
@@ -372,6 +416,9 @@ void error_discoverer(int index){
             }
         }
         
+    // HEURISTIC 3.1
+    // HEURISTIC 4
+        
     // Registradores
     if(PRINTS >= 1) printf("\n===== Heuristic 4 ===== \n\n");
     prev_error = error_count;
@@ -394,6 +441,10 @@ void error_discoverer(int index){
         if(PRINTS >= 3) print_regs(&scalar_res[0][0], NUM_REGISTERS, other_r);;
         if(PRINTS >= 3) print_regs(&vet_res[0][0], 3, other_r);
     } 
+
+    // END HEURISTIC 4
+    // HEURISTIC 5
+
     
     if(PRINTS >= 1) printf("\n===== Heuristic 5 ===== \n\n");
 
@@ -418,6 +469,9 @@ void error_discoverer(int index){
             if(PRINTS >= 1) printf("Divergence\n\n");
         } 
     }
+
+    // END HEURISTIC 5
+    // HEURISTIC 6
 
     if(PRINTS >= 1) printf("\n===== Heuristic 6 ===== \n");
     for(int i = 0; i < NUM_RANDOM_OPS; i++){
@@ -469,6 +523,9 @@ void error_discoverer(int index){
         }
     }
     printf("\n");
+
+    // END HEURISTIC 6
+    // HEURISTIC 7
 
     if(PRINTS >= 1) printf("\n===== Heuristic 7 ===== \n");
     int order[4] = {0, 1, 2, 3};
@@ -523,6 +580,7 @@ void error_discoverer(int index){
             break;
     }
     printf("\n");
+    // END HEURISTIC 7
 
     analyze_results(passed, qtd_tests);
 }
