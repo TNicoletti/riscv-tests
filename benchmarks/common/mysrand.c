@@ -8,7 +8,7 @@ typedef enum random_methods{
 };
 
 int random_method = RM_SEED;
-int* set_input_variable;
+intSEW* set_input_variable;
 
 void msrand(int32_t seed){
     _SRAND_SEED = seed % MAX_INTSEW;

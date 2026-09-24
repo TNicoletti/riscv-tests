@@ -135,7 +135,7 @@ int rx3[3]   = {0, 1, 2};
 for (i = 0; i < _PB_NI; i++) {
     ADDRESS_VECTOR[1] = RET_INSTR;
     for (j = 0; j < _PB_NJ; j+=4){
-        load_init_values_scalar((int32_t*)&C[i][j], regs, 3);
+        load_init_values_scalar((intSEW*)&C[i][j], regs, 3);
         
         C[i][j]   *= beta;
         C[i][j+1] *= beta;
@@ -144,12 +144,12 @@ for (i = 0; i < _PB_NI; i++) {
 
         f_vf = beta;
         ADDRESS_VECTOR[0] = add_instruction(VFMUL_VF, rx1, regs);
-        execute_RIS((int32_t*)&VET_C[i][j], regs, ADDRESS_VECTOR, (int32_t*)&VET_C[i][j], 1);
+        execute_RIS((intSEW*)&VET_C[i][j], regs, ADDRESS_VECTOR, (intSEW*)&VET_C[i][j], 1);
         
-        if(!manual_convergence((int32_t*)&scalar_res[0][0], (int32_t*)&VET_C[i][j], 1, VLEN / SEW))
+        if(!manual_convergence((intSEW*)&scalar_res[0][0], (intSEW*)&VET_C[i][j], 1, VLEN / SEW))
             printf("Divergence\n");
         
-        if(!manual_convergence((int32_t*)&C[i][j], (int32_t*)&VET_C[i][j], 1, VLEN / SEW)){
+        if(!manual_convergence((intSEW*)&C[i][j], (intSEW*)&VET_C[i][j], 1, VLEN / SEW)){
             printf("Divergence\n");
         }
     }
@@ -170,17 +170,17 @@ for (i = 0; i < _PB_NI; i++) {
             ADDRESS_VECTOR[1] = add_instruction(VFMACC_VV, rx3, regs);// C += A' * B 
 
             set_vet_settings();
-            load_init_values_vector((int32_t*)&VA[0],       &regs[1], 1);
-            load_init_values_vector((int32_t*)&VET_B[k][j], &regs[2], 1);
-            execute_RIS((int32_t*)&VET_C[i][j], regs, ADDRESS_VECTOR, (int32_t*)&VET_C[i][j], 1);
-            if(!manual_convergence((int32_t*)&scalar_res[0][0], (int32_t*)&VET_C[i][j], 1, VLEN / SEW * LMUL)){
+            load_init_values_vector((intSEW*)&VA[0],       &regs[1], 1);
+            load_init_values_vector((intSEW*)&VET_B[k][j], &regs[2], 1);
+            execute_RIS((intSEW*)&VET_C[i][j], regs, ADDRESS_VECTOR, (intSEW*)&VET_C[i][j], 1);
+            if(!manual_convergence((intSEW*)&scalar_res[0][0], (intSEW*)&VET_C[i][j], 1, VLEN / SEW * LMUL)){
                 printf("Divergence\n");
                 exit(0);
             }
-            if(!manual_convergence((int32_t*)&C[i][j], (int32_t*)&VET_C[i][j], 1, VLEN / SEW * LMUL)){
+            if(!manual_convergence((intSEW*)&C[i][j], (intSEW*)&VET_C[i][j], 1, VLEN / SEW * LMUL)){
                 printf("Divergence\n");
-                print_matrix((int32_t*)&VET_C[i][j], 4, 1);
-                print_matrix((int32_t*)&C[i][j], 4, 1);
+                print_matrix((intSEW*)&VET_C[i][j], 4, 1);
+                print_matrix((intSEW*)&C[i][j], 4, 1);
                 exit(0);
             }
         }

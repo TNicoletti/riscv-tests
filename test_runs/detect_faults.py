@@ -7,17 +7,17 @@ from pathlib import Path
 
 
 PATTERNS = [
-    (r"Minimum error sequence is a single instruction:", 1),
-    (r"Minimum error sequence is a 2 instruction sequence:", 2),
-    (r"Minimum error sequence is a 3 instruction sequence:", 3),
-    (r"Minimum error sequence is the entire sequence:", 4),
+    (r"Minimized instruction set with 1 instructions:", 1),
+    (r"Minimized instruction set with 2 instructions:", 2),
+    (r"Minimized instruction set with 3 instructions:", 3),
+    (r"Minimized instruction set with 4 instructions:", 4),
 ]
 
 COLD_START_PATTERN = r"Could be cold start problem"
 RAW_PATTERN = r"Possible Read after Write data hazard detected"
 WAW_PATTERN = r"Possible Write after Write data hazard detected"
 
-TAIL_LINES = 100
+TAIL_LINES = 200
 
 
 def read_last_lines(file_path: Path, n: int = TAIL_LINES) -> str:
@@ -51,24 +51,35 @@ def sort_key(p: Path):
     return int(numbers[0]) if numbers else p.name
 
 
-def print_category(label, files, show_list):
-    """Imprime quantidade e, opcionalmente, a lista de arquivos."""
-    print(f"{label:<30}: {len(files):>4}")
+def print_category(label, files, all_file_names, show_list, show_opposite):
+    """Imprime quantidade e, opcionalmente, a lista de arquivos ou o oposto dela."""
+    total_files = len(all_file_names)
+    count = len(files)
+    pct = (count / total_files * 100) if total_files else 0.0
+
+    print(f"{label:<30}: {count:>4} ({pct:>5.1f}%)")
 
     if show_list:
         if files:
             print("  " + " ".join(files))
         else:
             print("  (nenhum)")
+    elif show_opposite:
+        opposite_files = [f for f in all_file_names if f not in files]
+        if opposite_files:
+            print("  " + " ".join(opposite_files))
+        else:
+            print("  (nenhum)")
 
 
 def main():
     if len(sys.argv) < 2:
-        print(f"Uso: python {sys.argv[0]} <caminho_da_pasta> [--list]")
+        print(f"Uso: python {sys.argv[0]} <caminho_da_pasta> [--list | --opositelist]")
         sys.exit(1)
 
     target_dir = Path(sys.argv[1])
     show_list = "--list" in sys.argv[2:]
+    show_opposite = "--opositelist" in sys.argv[2:]
 
     if not target_dir.is_dir():
         print(
@@ -86,6 +97,8 @@ def main():
     first_file = out_files[0]
     mtime = first_file.stat().st_mtime
     first_file_date = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
+
+    all_file_names = [f.name for f in out_files]
 
     # ============================================================
     # Processamento
@@ -131,22 +144,12 @@ def main():
 
     for cat in categories_order:
         files = categorized.get(cat, [])
-        count = len(files)
-        pct = (count / total_files * 100) if total_files else 0.0
-
         label = (
             f"Resposta {cat}"
             if isinstance(cat, int)
             else "Ausência / Não Identificado"
         )
-
-        print(f"{label:<30}: {count:>4} ({pct:>5.1f}%)")
-
-        if show_list:
-            if files:
-                print("  " + " ".join(files))
-            else:
-                print("  (nenhum)")
+        print_category(label, files, all_file_names, show_list, show_opposite)
 
     # ============================================================
     # Cold Start / RAW / WAW
@@ -159,19 +162,25 @@ def main():
     print_category(
         "Possível Cold Start",
         cold_start_files,
-        show_list
+        all_file_names,
+        show_list,
+        show_opposite
     )
 
     print_category(
         "Possível RAW",
         raw_files,
-        show_list
+        all_file_names,
+        show_list,
+        show_opposite
     )
 
     print_category(
         "Possível WAW",
         waw_files,
-        show_list
+        all_file_names,
+        show_list,
+        show_opposite
     )
 
 

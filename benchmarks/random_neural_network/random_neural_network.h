@@ -5,11 +5,12 @@
 #include "parameters.h"
 #include "add_instruction.h"
 #include "issue_finder.h"
+//#include ""
 
 #define MAX_N 1024 * 16 * 2
 
 #define NUM_RANDOM_OPS 4
-#define QTD_HEURISTICS 8
+#define QTD_HEURISTICS 9
 #define MAX_TESTS_PER_HEURISTIC 1024
 
 #define PASSED_DATATYPE int8_t
@@ -43,9 +44,12 @@ void randomize_instructions();
 
 int wrong_op[4] = {-1, -1, -1, -1};
 int h0_qtd_repeats = 32;
+int h8_qtd_repeats = 16;
 
 int compulsory = 1;
 int minimum_sequence[4] = {-1, -1, -1, -1};
+int minimum_sequence_length = 4;
+char WAW = 0, RAW = 0;
 
 /*===== RANDOM TEST FUNCTIONS =====*/
 void analyze_results(PASSED_DATATYPE passed[QTD_HEURISTICS][MAX_TESTS_PER_HEURISTIC], int qtd_tests[QTD_HEURISTICS]);
