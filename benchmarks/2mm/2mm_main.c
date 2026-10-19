@@ -139,8 +139,8 @@ void kernel_2mm(int ni, int nj, int nk, int nl,
       execute_RIS(&VET_D[i][j], regs, ADDRESS_VECTOR, &VET_D[i][j], 1);
     }
   
-  if(!manual_convergence((int32_t*)&VET_tmp[0][0], (int32_t*)&tmp[0][0], ni, nj)) printf("Divergence TEMP\n");
-  if(!manual_convergence((int32_t*)&VET_D[0][0], (int32_t*)&D[0][0], ni, nl)) printf("Divergence D\n");
+  if(!manual_convergence((intSEW*)&VET_tmp[0][0], (intSEW*)&tmp[0][0], ni, nj)) printf("Divergence TEMP\n");
+  if(!manual_convergence((intSEW*)&VET_D[0][0], (intSEW*)&D[0][0], ni, nl)) printf("Divergence D\n");
 
   ADDRESS_VECTOR[1] = RET_INSTR;
   for (i = 0; i < _PB_NI; i++)
@@ -161,7 +161,7 @@ void kernel_2mm(int ni, int nj, int nk, int nl,
     }
 #pragma endscop
 
-if(!manual_convergence((int32_t*)&VET_D[0][0], (int32_t*)&D[0][0], ni, nl)) printf("Divergence\n");
+if(!manual_convergence((intSEW*)&VET_D[0][0], (intSEW*)&D[0][0], ni, nl)) printf("Divergence\n");
 
 
 }

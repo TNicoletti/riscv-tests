@@ -14,6 +14,7 @@ UNIFORM_RUNS = [
     {"count": 1300,"low": -1048576, "high": 1048576},
 ]
 
+input_m_folder = "input32"
 DATA_TYPES = ["float32", "int32"]
 
 def setup_directory():
@@ -26,7 +27,7 @@ def setup_directory():
 def clean_inputs():
     categories = ["normal", "log_normal", "uniform", "all_ones", "all_zeros"]
     for cat in categories:
-        inputs_dir = Path(cat) / "inputs"
+        inputs_dir = Path(cat) / input_m_folder
         if inputs_dir.exists():
             for file in inputs_dir.glob("*"):
                 if file.is_file():
@@ -69,7 +70,7 @@ def main():
 
         for _ in range(count):
             for dtype in DATA_TYPES:
-                outfile = base_folder / "uniform" / "inputs" / f"{current_seed}.{dtype}.in"
+                outfile = base_folder / "uniform" / input_m_folder / f"{current_seed}.{dtype}.in"
                 cmd_args = [
                     "-n", str(n_elements),
                     "-s", str(current_seed),

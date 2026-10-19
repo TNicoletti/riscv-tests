@@ -40,5 +40,5 @@ void randomize_vector(intSEW vet[], int N);
 
 int get_random_reg();
 
-void shuffle_registers(INTXLEN* r, int num_registers, int lmul);
+void shuffle_registers(int* r, int num_registers, int lmul);
 #endif

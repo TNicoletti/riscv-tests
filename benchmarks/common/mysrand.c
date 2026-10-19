@@ -61,7 +61,7 @@ int get_random_reg(){
     return 0;
 }
 
-void shuffle_registers(INTXLEN* r, int num_registers, int lmul) {
+void shuffle_registers(int* r, int num_registers, int lmul) {
     if (lmul < 1) lmul = 1;
     
     int num_available = MAX_VECTOR_REGS / lmul;

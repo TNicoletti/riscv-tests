@@ -7,7 +7,12 @@ def main():
     parser = argparse.ArgumentParser(description="Generate binary files with random distributions.")
     parser.add_argument('-n', '--count', type=int, required=True, help="Number of elements to generate")
     parser.add_argument('-d', '--dist', choices=['uniform', 'normal', 'lognormal', 'zeros', 'ones'], required=True, help="Distribution type")
-    parser.add_argument('-t', '--dtype', choices=['float32', 'float64', 'int32', 'int64'], default='float32', help="Data type (default: float32)")
+    parser.add_argument(
+        '-t', '--dtype',
+        type=str,
+        default='float32',
+        help="Data type, e.g. float16, float32, float64, int8, int16, int32, int64"
+    )
     parser.add_argument('-s', '--seed', type=int, default=None, help="Random seed for reproducibility")
     parser.add_argument('-o', '--output', type=str, help="Output binary file path")
     
@@ -44,6 +49,11 @@ def main():
         data = np.ones(args.count)
 
     # Cast to the requested data type
+    try:
+        dtype = np.dtype(args.dtype)
+    except TypeError:
+        parser.error(f"Unsupported dtype: {args.dtype}")
+    
     try:
         data = data.astype(args.dtype)
     except ValueError as e:

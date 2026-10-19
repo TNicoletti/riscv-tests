@@ -6,7 +6,9 @@
 #include "global_configs.h"
 
 #if SEW == 16
-#define load_value_ft0 load_value_ft0_half
+//#define load_value_ft0 load_value_ft0_half
+#define load_value_ft0 load_value_ft0_single
+
 #endif
 #if SEW == 32
 #define load_value_ft0 load_value_ft0_single

@@ -1,6 +1,6 @@
 #include "add_instruction.h"
 
-intSEW t0_VALUE = 16;
+INTXLEN t0_VALUE = 16;
 floaSEW f_vf = 0.15;
 int imm = 7;
 int compare_registers = -1;  //
@@ -8,7 +8,7 @@ intSEW actual_t1 = 0;
 int error_count = 0;
 int last_hw_error = 0;
 
-INTXLEN SL_A_VECTOR[2];
+INT_INST SL_A_VECTOR[2];
 volatile intSEW scalar_res[32][VLEN / SEW];
 
 /* ===== VECTOR LOADERS =====*/
@@ -31,14 +31,14 @@ void store_to_vet(intSEW* vet, int reg){
     jump_to_vet(&SL_A_VECTOR[0]);
 }
 
-void load_init_values_vector(intSEW* vet, INTXLEN* regs, int num_registers){    
+void load_init_values_vector(intSEW* vet, int* regs, int num_registers){    
     set_vet_settings();
     for(int i = 0; i < num_registers; i++){
         load_to_vet(&vet[i * VLEN / SEW * LMUL], regs[i]);
     }
 }
 
-void store_vet_values(INTXLEN* r, intSEW* vet_res, int num_registers){
+void store_vet_values(int* r, intSEW* vet_res, int num_registers){
     clean_vector_scalar(&vet_res[0], VLEN / SEW * num_registers);
 
     set_vet_settings();
@@ -407,7 +407,7 @@ int add_instruction(int op, int rxa[3], int r[3]){
             // Buffer to handle possible in-place/overlap hazard safely
             intSEW temp_res[LMUL * elements_per_reg];
 
-            for (uint i = 0; i < vl; i++) {
+            for (int i = 0; i < vl; i++) {
                 if (i < offset) {
                     // Keep original elements from destination register group (vd)
                     uint vd_reg = rx[0] + (i / elements_per_reg);
@@ -511,7 +511,7 @@ int add_instruction(int op, int rxa[3], int r[3]){
                 scalar_res[rx[0]][(2 * j)]     = \
                 res & 0xFFFFFFFF;
                 scalar_res[rx[0]][(2 * j)+ 1 ] = \
-                (res >> (intDSEW)32);
+                (res >> SEW);
             }
             if(PRINTS >= 2) printf("\n");
             break;
@@ -523,7 +523,7 @@ int add_instruction(int op, int rxa[3], int r[3]){
                 scalar_res[rx[0]][(2 * j)]     = \
                 res & 0xFFFFFFFF;
                 scalar_res[rx[0]][(2 * j) + 1 ] = \
-                (res >> 32);
+                (res >> SEW);
             }
             if(PRINTS >= 2) printf("\n");
             break;
@@ -535,7 +535,7 @@ int add_instruction(int op, int rxa[3], int r[3]){
                 scalar_res[rx[0]][(2 * j)]     = \
                 res & 0xFFFFFFFF;
                 scalar_res[rx[0]][(2 * j) + 1 ] = \
-                (res >> 32);
+                (res >> SEW);
             }
             if(PRINTS >= 2) printf("\n");
             break;
@@ -547,7 +547,7 @@ int add_instruction(int op, int rxa[3], int r[3]){
                 scalar_res[rx[0]][(2 * j)]     = \
                 res & 0xFFFFFFFF;
                 scalar_res[rx[0]][(2 * j) + 1 ] = \
-                (res >> 32);
+                (res >> SEW);
             }
             if(PRINTS >= 2) printf("\n");
             break;
@@ -560,7 +560,7 @@ int add_instruction(int op, int rxa[3], int r[3]){
                 scalar_res[rx[0]][(2 * j)]     = \
                 res & 0xFFFFFFFF;
                 scalar_res[rx[0]][(2 * j) + 1 ] = \
-                (res >> 32);
+                (res >> SEW);
             }
             if(PRINTS >= 2) printf("\n");
             break;
@@ -572,7 +572,7 @@ int add_instruction(int op, int rxa[3], int r[3]){
                 scalar_res[rx[0]][(2 * j)]     = \
                 res & 0xFFFFFFFF;
                 scalar_res[rx[0]][(2 * j) + 1 ] = \
-                (res >> 32);
+                (res >> SEW);
             }
             if(PRINTS >= 2) printf("\n");
             break;
@@ -1108,7 +1108,7 @@ int add_instruction(int op, int rxa[3], int r[3]){
                 if(PRINTS >= 2) printf("SCALAR_RESULT:[%d][%d] = [%d]%d < [%d]%d;\n", rx[0], j / SEW, rx[1], scalar_res[rx[1]][j], t0_VALUE);
                 uintSEW vs1 = scalar_res[rx[1]][j];
                 scalar_res[rx[0]][j / SEW] &= ~i;
-                scalar_res[rx[0]][j / SEW] |= (vs1 < (INTXLEN)t0_VALUE)?i:0;
+                scalar_res[rx[0]][j / SEW] |= (vs1 < (uintSEW)t0_VALUE)?i:0;
                 i = (i == (1 << SEW - 1))?1:i << 1;
             }
             if(PRINTS >= 2) printf("\n");
@@ -1948,7 +1948,7 @@ int8_t* get_wrong_regs(int32_t* r, intSEW* vet_res, int num_regs){
 
 #pragma GCC pop_options
 
-void execute_RIS(intSEW* vet_init, INTXLEN* r, INT_INST address_vector[], intSEW* vet_res, int num_registers){
+void execute_RIS(intSEW* vet_init, int* r, INT_INST address_vector[], intSEW* vet_res, int num_registers){
     load_init_values_vector(vet_init, r, num_registers);
     set_vet_settings();
     
@@ -1963,7 +1963,7 @@ void execute_RIS(intSEW* vet_init, INTXLEN* r, INT_INST address_vector[], intSEW
     store_vet_values(r, vet_res, num_registers);
 }
 
-void execute_RIS_capture_benchmarks(intSEW* vet, INTXLEN* r, INT_INST address_vector[], intSEW* vet_res, int num_registers,
+void execute_RIS_capture_benchmarks(intSEW* vet, int* r, INT_INST address_vector[], intSEW* vet_res, int num_registers,
 int* delta_cyc, int* delta_inst){
     set_vet_settings();
     load_init_values_vector(vet, r, num_registers);

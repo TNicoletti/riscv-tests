@@ -18,7 +18,7 @@ int SEED = 0;
 int sole_execution = -1;
 int N = MAX_N;
 
-int32_t ADDRESS_VECTOR[255];
+INT_INST ADDRESS_VECTOR[255];
 
 /* ===== EXTERNALS ===== */
 

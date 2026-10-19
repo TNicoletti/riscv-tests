@@ -36,7 +36,7 @@ void print_vector(intSEW* vet, int LENGTH, int breakline);
 
 void print_matrix(intSEW* vet, int N, int M);
 
-void print_regs(intSEW* vet, int N, int r[3]);
+void print_regs(intSEW* vet, int num_regs, int r[3]);
 
 void clean_matrix(intSEW vet[5][4], int N, int M);
 

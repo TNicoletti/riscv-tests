@@ -106,22 +106,22 @@ int main(int argc, char* argv[]) {
     if(max_vl_1 != 0)
         BENCH("Sum 1 group 1", sum1_group1, vector_test, 1024, sc_add);
     else
-        printf("Unsuported group settings, skippng group with 1");
+        printf("Unsuported group settings, skipping group with 1");
     
     if(max_vl_2 != 0)
         BENCH("Sum 2 group 2", sum1_group2, vector_test, 1024, sc_add);
     else
-        printf("Unsuported group settings, skippng group with 2");
+        printf("Unsuported group settings, skipping group with 2");
 
     if(max_vl_4 != 0)
         BENCH("Sum 1 group 4", sum1_group4, vector_test, 1024, sc_add);
     else
-        printf("Unsuported group settings, skippng group with 4");
+        printf("Unsuported group settings, skipping group with 4");
 
     if(max_vl_8 != 0)
         BENCH("Sum 1 group 8", sum1_group8, vector_test, 1024, sc_add);
     else
-        printf("Unsuported group settings, skippng group with 8");
+        printf("Unsuported group settings, skipping group with 8");
 
     exit(0);
 }

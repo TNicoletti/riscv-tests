@@ -119,9 +119,8 @@ int32_t rx[3] = {0, 1, 2};
   for (i = 0; i < _PB_NI; i++) {
     for (k = 0; k < _PB_NK; k++) {
         for (j = 0; j < _PB_NJ; j += 4) {
-            load_init_values_scalar((int32_t*)&VET_E[i][j], &regs[0], 1);
-            //load_init_values_scalar((int32_t*)&A[i][k], &regs[1], 1);
-            load_init_values_scalar((int32_t*)&B[k][j], &regs[1], 1);
+            load_init_values_scalar((intSEW*)&VET_E[i][j], &regs[0], 1);
+            load_init_values_scalar((intSEW*)&B[k][j], &regs[1], 1);
             t0_VALUE = A[i][k];
             
             E[i][j]   += A[i][k] * B[k][j];
@@ -130,9 +129,9 @@ int32_t rx[3] = {0, 1, 2};
             E[i][j+3] += A[i][k] * B[k][j+3];
 
             ADDRESS_VECTOR[0] = add_instruction(VMACC_VX, &rx[0], regs);
-            load_init_values_vector((int32_t*)&B[k][j], &regs[1], 1);
+            load_init_values_vector((intSEW*)&B[k][j], &regs[1], 1);
 
-            execute_RIS((int32_t*)&VET_E[i][j], regs, ADDRESS_VECTOR, (int32_t*)&VET_E[i][j], 1);
+            execute_RIS((intSEW*)&VET_E[i][j], regs, ADDRESS_VECTOR, (intSEW*)&VET_E[i][j], 1);
         }
     }
 }
@@ -141,8 +140,8 @@ int32_t rx[3] = {0, 1, 2};
   for (i = 0; i < _PB_NJ; i++) {
     for (k = 0; k < _PB_NM; k++) {
         for (j = 0; j < _PB_NL; j+=4) {
-            load_init_values_scalar((int32_t*)&VET_F[i][j], &regs[0], 1);
-            load_init_values_scalar((int32_t*)&D[k][j], &regs[1], 1);
+            load_init_values_scalar((intSEW*)&VET_F[i][j], &regs[0], 1);
+            load_init_values_scalar((intSEW*)&D[k][j], &regs[1], 1);
             t0_VALUE = C[i][k];
             
             F[i][j]   += C[i][k] * D[k][j];
@@ -151,8 +150,8 @@ int32_t rx[3] = {0, 1, 2};
             F[i][j+3] += C[i][k] * D[k][j+3];
 
             ADDRESS_VECTOR[0] = add_instruction(VMACC_VX, &rx[0], regs);
-            load_init_values_vector((int32_t*)&D[k][j], &regs[1], 1);
-            execute_RIS((int32_t*)&VET_F[i][j], regs, ADDRESS_VECTOR, (int32_t*)&VET_F[i][j], 1);
+            load_init_values_vector((intSEW*)&D[k][j], &regs[1], 1);
+            execute_RIS((intSEW*)&VET_F[i][j], regs, ADDRESS_VECTOR, (intSEW*)&VET_F[i][j], 1);
         }
     }
   }
@@ -161,8 +160,8 @@ int32_t rx[3] = {0, 1, 2};
   for (i = 0; i < _PB_NI; i++) {
     for (k = 0; k < _PB_NJ; k++) {
         for (j = 0; j < _PB_NL; j += 4) {
-            load_init_values_scalar((int32_t*)&VET_G[i][j], &regs[0], 1);
-            load_init_values_scalar((int32_t*)&F[k][j], &regs[1], 1);
+            load_init_values_scalar((intSEW*)&VET_G[i][j], &regs[0], 1);
+            load_init_values_scalar((intSEW*)&F[k][j], &regs[1], 1);
             t0_VALUE = E[i][k];
 
             G[i][j]   += E[i][k] * F[k][j];
@@ -172,20 +171,17 @@ int32_t rx[3] = {0, 1, 2};
 
             ADDRESS_VECTOR[0] = add_instruction(VMACC_VX, &rx[0], regs);
             
-            load_init_values_vector((int32_t*)&F[k][j], &regs[1], 1);            
-            execute_RIS((int32_t*)&VET_G[i][j], regs, ADDRESS_VECTOR, (int32_t*)&VET_G[i][j], 1);
+            load_init_values_vector((intSEW*)&F[k][j], &regs[1], 1);            
+            execute_RIS((intSEW*)&VET_G[i][j], regs, ADDRESS_VECTOR, (intSEW*)&VET_G[i][j], 1);
         }
     }
   }
 
 #pragma endscop
 
-    //print_matrix((int32_t*)&E[0][0], ni, nl);
-    //printf("\n========= SEPARATION =========\n");
-    //print_matrix((int32_t*)&VET_E[0][0], ni, nl);
-    if(!manual_convergence((int32_t*)&VET_E[0][0], (int32_t*)&E[0][0], ni, nj)) printf("Divergence E\n");
-    if(!manual_convergence((int32_t*)&VET_F[0][0], (int32_t*)&F[0][0], nj, nl)) printf("Divergence F\n");
-    if(!manual_convergence((int32_t*)&VET_G[0][0], (int32_t*)&G[0][0], ni, nl)) printf("Divergence G\n");
+    if(!manual_convergence((intSEW*)&VET_E[0][0], (intSEW*)&E[0][0], ni, nj)) printf("Divergence E\n");
+    if(!manual_convergence((intSEW*)&VET_F[0][0], (intSEW*)&F[0][0], nj, nl)) printf("Divergence F\n");
+    if(!manual_convergence((intSEW*)&VET_G[0][0], (intSEW*)&G[0][0], ni, nl)) printf("Divergence G\n");
 
 }
 
