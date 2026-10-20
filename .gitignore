@@ -22,3 +22,4 @@ mem.*.bin
 /resps/*
 
 *.in
+isa/hypervisor-p-2-stage_translation

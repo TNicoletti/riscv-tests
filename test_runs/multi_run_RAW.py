@@ -107,9 +107,9 @@ def stop_running_processes():
                 pass
 
 
-def run_distribution(folder, bench):
-    input_dir = Path(f"./test_runs/{folder}/inputs")
-    output_dir = Path(f"./benchmarks/{bench}/test_runs/{folder}/{folder_outputs}")
+def run_distribution(folder, bench, input_bits):
+    input_dir = Path(f"./test_runs/{folder}/inputs{input_bits}")
+    output_dir = Path(f"./benchmarks/{bench}/test_runs/{folder}/{folder_outputs}{input_bits}")
     base_riscv = Path(f"./benchmarks/{bench}.riscv")
 
     print(f"\n=== {folder} ===")
@@ -175,14 +175,15 @@ def remove_previous(bench):
                 output_file.unlink()
 
 def main():
-    if len(sys.argv) != 2:
-        print(f"Uso: {sys.argv[0]} BENCH")
+    if len(sys.argv) != 3:
+        print(f"Uso: {sys.argv[0]} BENCH INPUT_BITS")
         sys.exit(1)
 
     if os.path.basename(os.getcwd()) == "test_runs":
         os.chdir("..")
 
     bench = sys.argv[1]
+    input_bits = sys.argv[2]
 
 
     if bench == "random_permutation_test":  # TODO: REMOVE
@@ -217,7 +218,7 @@ def main():
             "all_ones",
             "all_zeros",
         ]:
-            run_distribution(folder, bench)
+            run_distribution(folder, bench, input_bits)
 
     except KeyboardInterrupt:
         print("\nExecução interrompida pelo usuário.")

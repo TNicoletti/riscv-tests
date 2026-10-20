@@ -14,7 +14,7 @@ UNIFORM_RUNS = [
     {"count": 1300,"low": -1048576, "high": 1048576},
 ]
 
-input_m_folder = "input32"
+input_m_folder = "inputs32"
 DATA_TYPES = ["float32", "int32"]
 
 def setup_directory():

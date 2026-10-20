@@ -14,6 +14,9 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 running_processes = set()
 process_lock = threading.Lock()
 
+folder_outputs = "outputs32"
+folder_inputs = "inputs32"
+fault = ""
 
 def run_test(input_file, output_file, base_riscv, temp_riscv):
     try:
@@ -33,14 +36,97 @@ def run_test(input_file, output_file, base_riscv, temp_riscv):
 
         # Executa o Spike
         with open(output_file, "w") as f:
-            process = subprocess.Popen(
-                [
-                    "spike",
-                    "--isa=rv64gcv_zvl128b_zicntr_zba_zbb",
-                    str(temp_riscv),
-                ],
-                stdout=f,
-            )
+            process = ""
+            if fault == "":
+                process = subprocess.Popen(
+                    [
+                        "spike",
+                        "--isa=rv64gcv_zvl128b_zicntr_zba_zbb",
+                        str(temp_riscv),
+                    ],
+                    stdout=f,
+                )
+            elif fault == "cold_start":
+                process = subprocess.Popen(
+                    [
+                        "spike",
+                        "--isa=rv64gcv_zvl128b_zicntr_zba_zbb",
+                        "--cold-start=5,0x02840457",
+                        str(temp_riscv),
+                    ],
+                    stdout=f,
+                )
+            elif fault == "good_start":
+                process = subprocess.Popen(
+                    [
+                        "spike",
+                        "--isa=rv64gcv_zvl128b_zicntr_zba_zbb",
+                        "--good-start=5,0x02840457",
+                        str(temp_riscv),
+                    ],
+                    stdout=f,
+                )
+            elif fault == "invalid":
+                process = subprocess.Popen(
+                    [
+                        "spike",
+                        "--isa=rv64gcv_zvl128b_zicntr_zba_zbb",
+                        "--illegal-instruction", "0x86112057",
+                        str(temp_riscv),
+                    ],
+                    stdout=f,
+                )
+            elif fault == "RAW":
+                process = subprocess.Popen(
+                    [
+                        "spike",
+                        "--RAW-register", "0x02",
+                        "--isa=rv64gcv_zvl128b_zicntr_zba_zbb",
+                        str(temp_riscv),
+                    ],
+                    stdout=f,
+                )
+            elif fault == "ndb":
+                process = subprocess.Popen(
+                    [
+                        "spike",
+                        "--isa=rv64gcv_zvl128b_zicntr_zba_zbb",
+                        "--ndb-chance",  "0.01",
+                        "--ndb-fault", "2",
+                        str(temp_riscv),
+                    ],
+                    stdout=f,
+                )
+            elif fault == "three":
+               process = subprocess.Popen(
+                    [
+                        "spike",
+                        "--isa=rv64gcv_zvl128b_zicntr_zba_zbb",
+                        "--three-instruction-err=0x02840457,0x02840457,0x02840457",
+                        str(temp_riscv),
+                    ],
+                    stdout=f,
+                )
+            elif fault == "four":
+                process = subprocess.Popen(
+                    [
+                        "spike",
+                        "--isa=rv64gcv_zvl128b_zicntr_zba_zbb",
+                        "--four-instruction-err=0x02840457,0x02840457,0x02840457,0x02840457",
+                        str(temp_riscv),
+                    ],
+                    stdout=f,
+                )
+            elif fault == "faulty":
+                process = subprocess.Popen(
+                    [
+                        "spike",
+                        "--isa=rv64gcv_zvl128b_zicntr_zba_zbb",
+                        "--faulty-instruction", "0x0a110057",
+                        str(temp_riscv),
+                    ],
+                    stdout=f,
+                )
 
             # Registra o processo
             with process_lock:
@@ -106,8 +192,8 @@ def stop_running_processes():
 
 
 def run_distribution(folder, bench):
-    input_dir = Path(f"./test_runs/{folder}/inputs")
-    output_dir = Path(f"./benchmarks/{bench}/test_runs/{folder}/outputs")
+    input_dir = Path(f"./test_runs/{folder}/{folder_inputs}")
+    output_dir = Path(f"./benchmarks/{bench}/test_runs/{folder}/{folder_outputs}")
     base_riscv = Path(f"./benchmarks/{bench}.riscv")
 
     print(f"\n=== {folder} ===")
@@ -167,20 +253,29 @@ def run_distribution(folder, bench):
 
 def remove_previous(bench):
     for folder in ["uniform", "normal", "log_normal", "all_ones", "all_zeros"]:
-        output_dir = Path(f"./benchmarks/{bench}/test_runs/{folder}/outputs")
+        output_dir = Path(f"./benchmarks/{bench}/test_runs/{folder}/{folder_outputs}")
         if output_dir.exists():
             for output_file in output_dir.glob("*.out"):
                 output_file.unlink()
 
 def main():
-    if len(sys.argv) != 2:
-        print(f"Uso: {sys.argv[0]} BENCH")
+    global folder_outputs, folder_inputs, fault
+
+    if len(sys.argv) < 2:
+        print(f"Uso: {sys.argv[0]} BENCH INPUT_BITS FAULT[Optional]")
         sys.exit(1)
 
     if os.path.basename(os.getcwd()) == "test_runs":
         os.chdir("..")
 
     bench = sys.argv[1]
+    if len(sys.argv) >= 3:
+        folder_outputs = f"outputs{sys.argv[2]}"
+        folder_inputs = f"inputs{sys.argv[2]}"
+
+    if len(sys.argv) >= 4:
+        fault = sys.argv[3]
+        folder_outputs = f"{fault}_outputs{sys.argv[2]}"
 
 
     if bench == "random_permutation_test":  # TODO: REMOVE
