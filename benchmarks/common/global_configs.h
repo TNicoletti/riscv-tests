@@ -4,7 +4,7 @@
 #define uint unsigned int
 
 #define VLEN 128
-#define SEW  64
+#define SEW  32
 #define XLEN 64
 #define ELEN 64
 #define INT_INST  int32_t

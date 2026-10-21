@@ -70,13 +70,13 @@ vec_bmarks = \
 	\
 	benchmark_LMUL \
 	gemm \
-	3mm \
-	2mm \
 	trisolv \
 	trmm \
 	template \
-	gemm_JIT \
-	gemm_JIT_int \
+	#gemm_JIT \
+	#gemm_JIT_int \
+	#3mm \
+	#2mm \
 	
 
 bmarks = $(base_bmarks) $(vec_bmarks)

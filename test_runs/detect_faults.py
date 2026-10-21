@@ -2,8 +2,10 @@
 from datetime import datetime
 import re
 import sys
+import csv
 from collections import defaultdict
 from pathlib import Path
+from statistics import mean
 
 
 PATTERNS = [
@@ -16,6 +18,9 @@ PATTERNS = [
 COLD_START_PATTERN = r"Could be cold start problem"
 RAW_PATTERN = r"Possible Read after Write data hazard detected"
 WAW_PATTERN = r"Possible Write after Write data hazard detected"
+
+FAILED_TEST_PATTERN = r"==== Failed on test (\d+) ===="
+CHANCE_WRONG_PATTERN = r"Chance of instruction been wrong:\s*(\d+(?:\.\d+)?)%"
 
 TAIL_LINES = 200
 
@@ -45,6 +50,14 @@ def parse_error_sequence(content: str) -> str | int:
     return "Ausente"
 
 
+def parse_chance_wrong(content: str) -> str:
+    """Extrai a porcentagem de chance de erro da instrução minimizada."""
+    match = re.search(CHANCE_WRONG_PATTERN, content)
+    if match:
+        return match.group(1)
+    return ""
+
+
 def sort_key(p: Path):
     """Chave para ordenação natural por número no nome do arquivo."""
     numbers = re.findall(r"\d+", p.name)
@@ -72,14 +85,38 @@ def print_category(label, files, all_file_names, show_list, show_opposite):
             print("  (nenhum)")
 
 
+def export_csv(out_files: list[Path], rows: list[dict], target_dir: Path):
+    """Exporta os dados por arquivo para um CSV."""
+    csv_path = target_dir / "results.csv"
+    fieldnames = [
+        "arquivo",
+        "minimizacao_instrucoes",
+        "cold_start",
+        "raw",
+        "waw",
+        "teste_falhou",
+        "chance_erro_pct",
+    ]
+
+    with csv_path.open("w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+    print(f"\nCSV exportado para: {csv_path}")
+
+
 def main():
     if len(sys.argv) < 2:
-        print(f"Uso: python {sys.argv[0]} <caminho_da_pasta> [--list | --opositelist]")
+        print(f"Uso: python {sys.argv[0]} <caminho_da_pasta> [--list | --opositelist] [--export]")
         sys.exit(1)
 
     target_dir = Path(sys.argv[1])
     show_list = "--list" in sys.argv[2:]
     show_opposite = "--opositelist" in sys.argv[2:]
+    do_export = "--export" in sys.argv[2:]
+
+    failed_test_numbers = []
 
     if not target_dir.is_dir():
         print(
@@ -110,6 +147,8 @@ def main():
     raw_files = []
     waw_files = []
 
+    csv_rows = []
+
     for file_path in out_files:
         # Os resultados relevantes ficam no final do arquivo.
         content = read_last_lines(file_path)
@@ -119,16 +158,40 @@ def main():
         categorized[result].append(file_path.name)
 
         # Cold start
-        if re.search(COLD_START_PATTERN, content):
+        has_cold_start = bool(re.search(COLD_START_PATTERN, content))
+        if has_cold_start:
             cold_start_files.append(file_path.name)
 
         # RAW
-        if re.search(RAW_PATTERN, content):
+        has_raw = bool(re.search(RAW_PATTERN, content))
+        if has_raw:
             raw_files.append(file_path.name)
 
         # WAW
-        if re.search(WAW_PATTERN, content):
+        has_waw = bool(re.search(WAW_PATTERN, content))
+        if has_waw:
             waw_files.append(file_path.name)
+
+        # Failed test
+        match = re.search(FAILED_TEST_PATTERN, content)
+        failed_test = ""
+        if match:
+            failed_test = int(match.group(1))
+            failed_test_numbers.append(failed_test)
+
+        # Chance de erro
+        chance_wrong = parse_chance_wrong(content)
+
+        if do_export:
+            csv_rows.append({
+                "arquivo": file_path.name,
+                "minimizacao_instrucoes": result,
+                "cold_start": "sim" if has_cold_start else "nao",
+                "raw": "sim" if has_raw else "nao",
+                "waw": "sim" if has_waw else "nao",
+                "teste_falhou": failed_test,
+                "chance_erro_pct": chance_wrong,
+            })
 
     total_files = len(out_files)
     categories_order = [1, 2, 3, 4, "Ausente"]
@@ -182,6 +245,27 @@ def main():
         show_list,
         show_opposite
     )
+
+    # ============================================================
+    # Failed test statistics
+    # ============================================================
+
+    print("\n" + "=" * 60)
+    print(" FAILED TEST STATISTICS")
+    print("=" * 60)
+
+    if failed_test_numbers:
+        print(f"Tests identified: {len(failed_test_numbers)}/{total_files}")
+        print(f"Mean failed test number: {mean(failed_test_numbers):.2f}")
+    else:
+        print("No failed test numbers identified.")
+
+    # ============================================================
+    # Export CSV
+    # ============================================================
+
+    if do_export:
+        export_csv(out_files, csv_rows, target_dir)
 
 
 if __name__ == "__main__":

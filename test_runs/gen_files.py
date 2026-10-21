@@ -62,6 +62,9 @@ def main():
     n_elements = 32768
     current_seed = args.start_seed
 
+    total_seeds = sum(run["count"] for run in UNIFORM_RUNS)
+    seed_width = len(str(args.start_seed + total_seeds - 1))
+
     # 1. Monta a fila de tarefas (jobs)
     tasks = []
     for run in UNIFORM_RUNS:
@@ -70,7 +73,8 @@ def main():
 
         for _ in range(count):
             for dtype in DATA_TYPES:
-                outfile = base_folder / "uniform" / input_m_folder / f"{current_seed}.{dtype}.in"
+                formatted_seed = str(current_seed).zfill(seed_width)
+                outfile = base_folder / "uniform" / input_m_folder / f"{formatted_seed}.{dtype}.in"
                 cmd_args = [
                     "-n", str(n_elements),
                     "-s", str(current_seed),
@@ -94,7 +98,8 @@ def main():
         for _ in as_completed(futures):
             completed += 1
             if completed % 100 == 0 or completed == total_tasks:
-                print(f"Progresso: {completed}/{total_tasks} arquivos processados...", end="\r")
+                print(f"Progresso: {completed}/{total_tasks} arquivos processados...", 
+                      end="\r")
 
     print(f"\nPronto! Concluído em paralelo. Seeds de {args.start_seed} até {current_seed - 1}.")
 
