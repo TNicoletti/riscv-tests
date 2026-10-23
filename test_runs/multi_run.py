@@ -145,7 +145,7 @@ def run_test(input_file, output_file, base_riscv, temp_riscv):
                 with process_lock:
                     running_processes.discard(process)
 
-        print(f"[OK] {input_file}")
+        # print(f"[OK] {input_file}")
 
     except subprocess.CalledProcessError as e:
         print(f"[ERRO] {input_file}: comando retornou {e.returncode}")

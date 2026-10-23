@@ -9,6 +9,7 @@
 *.pyc
 *.txt
 *.csv
+*.log
 /autom4te.cache
 /config.log
 /config.status
