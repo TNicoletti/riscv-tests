@@ -8,6 +8,9 @@ Usage:
 Reports:
   - which RVV instructions (from Spike's own riscv_insn_ext_v list) were executed
   - which (instruction, SEW, LMUL) combinations were exercised
+  - which pairs and triples of consecutive RVV instructions were exercised, out of
+    all N^2 / N^3 combinations of the N covered instructions (scalar instructions in
+    between are ignored; use --exclude to drop e.g. vsetvli/vle32_v/vse32_v)
 """
 import argparse
 import collections
@@ -58,13 +61,20 @@ def main():
     ap.add_argument("log")
     ap.add_argument("--spike-src", default=os.path.expanduser("~/Documents/Mestrado/riscv-isa-sim"))
     ap.add_argument("--csv", help="write per-instruction coverage to this CSV")
+    ap.add_argument("--exclude", default="", help="comma-separated instructions left out of pair/triple coverage")
+    ap.add_argument("--pairs-csv", help="write observed instruction pairs (with counts) to this CSV")
+    ap.add_argument("--triples-csv", help="write observed instruction triples (with counts) to this CSV")
     args = ap.parse_args()
+    exclude = {normalize(i.strip()) for i in args.exclude.split(",") if i.strip()}
 
     groups = load_reference(args.spike_src)
     reference = {i: g for g, insns in groups.items() for i in insns}
 
     counts = collections.Counter()
     configs = collections.defaultdict(collections.Counter)  # insn -> {(sew, lmul): n}
+    pairs = collections.Counter()    # (a, b): n
+    triples = collections.Counter()  # (a, b, c): n
+    window = collections.deque(maxlen=3)
     last = None
     with open(args.log, errors="replace") as f:
         for line in f:
@@ -78,6 +88,12 @@ def main():
                 last = name if name in reference else None
                 if last:
                     counts[last] += 1
+                    if last not in exclude:
+                        window.append(last)
+                        if len(window) >= 2:
+                            pairs[tuple(window)[-2:]] += 1
+                        if len(window) == 3:
+                            triples[tuple(window)] += 1
 
     print(f"{'group':28s} {'covered':>8s} {'total':>6s} {'%':>7s}")
     for g, insns in groups.items():
@@ -86,18 +102,39 @@ def main():
     hit = sum(1 for i in reference if counts[i])
     print(f"{'TOTAL':28s} {hit:8d} {len(reference):6d} {100 * hit / len(reference):6.1f}%\n")
 
-    print("Executed instructions (count, SEW/LMUL bins):")
-    for insn, n in counts.most_common():
+    covered = sorted(i for i in counts if i not in exclude)
+    n = len(covered)
+    # per instruction: distinct successors (pairs a->*) and distinct (b, c) suffixes (triples a->*->*)
+    pair_first = collections.Counter(a for a, _ in pairs)
+    triple_first = collections.Counter(a for a, _, _ in triples)
+    print(f"Pair/triple coverage over the {n} covered instructions"
+          + (f" (excluding {', '.join(sorted(exclude))})" if exclude else "") + ":")
+    print(f"  pairs   {len(pairs):10d} / {n ** 2:12d}  {100 * len(pairs) / max(n ** 2, 1):8.4f}%"
+          f"  ({sum(pairs.values())} occurrences)")
+    print(f"  triples {len(triples):10d} / {n ** 3:12d}  {100 * len(triples) / max(n ** 3, 1):8.4f}%"
+          f"  ({sum(triples.values())} occurrences)\n")
+
+    print(f"Executed instructions (count, pairs as first /{n}, triples as first /{n ** 2}, SEW/LMUL bins):")
+    for insn, c in counts.most_common():
         bins = ", ".join(f"e{s}/{l}" for s, l in sorted(configs[insn]))
-        print(f"  {insn:20s} {n:12d}  {bins}")
+        print(f"  {insn:20s} {c:12d} {pair_first[insn]:6d} {triple_first[insn]:8d}  {bins}")
 
     if args.csv:
         with open(args.csv, "w", newline="") as f:
             w = csv.writer(f)
-            w.writerow(["group", "instruction", "count", "sew_lmul_bins"])
+            w.writerow(["group", "instruction", "count", "pairs_as_first", "triples_as_first", "sew_lmul_bins"])
             for insn, g in reference.items():
                 bins = ";".join(f"e{s}/{l}" for s, l in sorted(configs[insn]))
-                w.writerow([g, insn, counts[insn], bins])
+                w.writerow([g, insn, counts[insn], pair_first[insn], triple_first[insn], bins])
+
+    for path, grams, cols in ((args.pairs_csv, pairs, ["first", "second"]),
+                              (args.triples_csv, triples, ["first", "second", "third"])):
+        if path:
+            with open(path, "w", newline="") as f:
+                w = csv.writer(f)
+                w.writerow(cols + ["count"])
+                for gram, c in grams.most_common():
+                    w.writerow(list(gram) + [c])
 
 
 if __name__ == "__main__":
