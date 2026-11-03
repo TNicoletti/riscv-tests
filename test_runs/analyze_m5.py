@@ -5,6 +5,8 @@ a última vira NOP (--three/four-instruction-err).
 
     python3 test_runs/analyze_m5.py [PAPER_DIR] [--list] [--export]
 
+O relatório sai separado em triplas (three*) e quádruplas (four*); o CSV tem as duas.
+
 Critérios:
     detectou   o programa encontrou a divergência
     minimizou  "Minimized instruction set" é exatamente a sequência injetada, na ordem
@@ -23,6 +25,15 @@ CRITERIA = [
 ]
 
 
+GROUPS = [("three", "Sequence triplet"), ("four", "Sequence quadruplet")]
+
+
+def groups(results):
+    """Separa as falhas em triplas (three*) e quádruplas (four*)."""
+    return [(group_title, [r for r in results if r.fault.startswith(prefix)])
+            for prefix, group_title in GROUPS]
+
+
 def sequence(fault):
     # three00_vmv_v_v-vor_vv-vand_vx -> [vmv_v_v, vor_vv, vand_vx]
     return fault.split("_", 1)[1].split("-")
@@ -39,4 +50,4 @@ def labeled(fault, out):
 
 
 if __name__ == "__main__":
-    main_for(EXPERIMENT, TITLE, CRITERIA, minimized, labeled)
+    main_for(EXPERIMENT, TITLE, CRITERIA, minimized, labeled, groups_fn=groups)

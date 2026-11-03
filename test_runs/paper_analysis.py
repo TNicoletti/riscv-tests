@@ -193,20 +193,22 @@ def analyze_experiment(paper_dir, experiment, minimized_fn, labeled_fn, note_fn=
     return results
 
 
+def cost(results):
+    """(média de sequências até detectar, mediana, tempo médio da seed, tempo total)"""
+    seqs = sorted(r.sequences for r in results if r.sequences is not None)
+    secs = [r.seconds for r in results if r.seconds is not None]
+    return (
+        sum(seqs) / len(seqs) if seqs else None,
+        seqs[len(seqs) // 2] if seqs else None,
+        sum(secs) / len(secs) if secs else None,
+        sum(secs) if secs else None,
+    )
+
+
 def cost_summary(results):
-    """{seed: (média de sequências até detectar, mediana, tempo médio da seed, tempo total)}"""
-    summary = {}
-    for seed in sorted({r.seed for r in results}):
-        rs = [r for r in results if r.seed == seed]
-        seqs = sorted(r.sequences for r in rs if r.sequences is not None)
-        secs = [r.seconds for r in rs if r.seconds is not None]
-        summary[seed] = (
-            sum(seqs) / len(seqs) if seqs else None,
-            seqs[len(seqs) // 2] if seqs else None,
-            sum(secs) / len(secs) if secs else None,
-            sum(secs) if secs else None,
-        )
-    return summary
+    """{seed: cost(...) das falhas daquela seed}"""
+    return {seed: cost([r for r in results if r.seed == seed])
+            for seed in sorted({r.seed for r in results})}
 
 
 def fmt(value, spec, suffix=""):
@@ -279,6 +281,15 @@ def print_report(title, results, criteria, show_list=False):
     any_m = sum(any(by_key[(f, s)].minimized for s in seeds if (f, s) in by_key) for f in faults)
     any_l = sum(any(by_key[(f, s)].labeled for s in seeds if (f, s) in by_key) for f in faults)
     print(f"{'alguma':<6} {pct(any_d, t):>16} {pct(any_m, t):>16} {pct(any_l, t):>16}")
+
+    # Custo considerando todas as seeds juntas
+    t = len(results)
+    mean_seq, median_seq, mean_sec, total_sec = cost(results)
+    print(f"{'todas':<6} {pct(sum(r.detected for r in results), t):>16} "
+          f"{pct(sum(r.minimized for r in results), t):>16} {pct(sum(r.labeled for r in results), t):>16} "
+          f"{fmt(mean_seq, '.0f'):>11} {fmt(median_seq, 'd'):>13} "
+          f"{fmt(mean_sec, '.2f', 's'):>12} {fmt(total_sec, '.1f', 's'):>12}")
+    print("  alguma = falhas em que alguma seed conseguiu; todas = seeds de todas as falhas somadas")
     incomplete = sum(r.detected and not r.finished for r in results)
     if incomplete:
         print(f"\n{incomplete} seed(s) detectaram mas o diagnóstico não terminou (timeout); contam como não minimizadas.")
@@ -297,8 +308,13 @@ def export_csv(results, path):
     print(f"\nCSV exportado para: {path}")
 
 
-def main_for(experiment, title, criteria, minimized_fn, labeled_fn, note_fn=default_note):
-    """main() comum dos analyze_m*.py."""
+def main_for(experiment, title, criteria, minimized_fn, labeled_fn, note_fn=default_note,
+             groups_fn=None):
+    """main() comum dos analyze_m*.py.
+
+    groups_fn(results) -> [(título, results)] separa o relatório em grupos (ex.: M5 triplas
+    e quádruplas); sem ele há um relatório só com o título `title`.
+    """
     parser = argparse.ArgumentParser(description=f"Analisa o experimento {experiment} ({title}).")
     parser.add_argument("paper_dir", nargs="?", default=str(DEFAULT_PAPER_DIR),
                         help=f"pasta de resultados do multi_run_paper.py (padrão: {DEFAULT_PAPER_DIR})")
@@ -315,7 +331,11 @@ def main_for(experiment, title, criteria, minimized_fn, labeled_fn, note_fn=defa
         sys.exit(f"Erro: '{paper_dir / experiment}' não encontrado.")
 
     results = analyze_experiment(paper_dir, experiment, minimized_fn, labeled_fn, note_fn)
-    print_report(f"{experiment} {title}", results, criteria, args.list)
+    groups = groups_fn(results) if groups_fn else [(title, results)]
+    for i, (group_title, group_results) in enumerate(groups):
+        if i:
+            print("\n")
+        print_report(f"{experiment} {group_title}", group_results, criteria, args.list)
     if args.export:
         export_csv(results, paper_dir / experiment / "analysis.csv")
     return results

@@ -26,7 +26,7 @@ import analyze_m3
 import analyze_m4
 import analyze_m5
 import analyze_m6
-from paper_analysis import (DEFAULT_PAPER_DIR, analyze_experiment, cost_summary, fmt,
+from paper_analysis import (DEFAULT_PAPER_DIR, analyze_experiment, cost, cost_summary, fmt,
                             parse_output, pct, seed_summary)
 
 MODELS = [analyze_m1, analyze_m2, analyze_m3, analyze_m4, analyze_m5, analyze_m6]
@@ -57,11 +57,14 @@ def main():
     if not paper_dir.is_dir():
         sys.exit(f"Erro: '{paper_dir}' não encontrado.")
 
+    # {(experimento, título): results}; modelos com groups() (M5) viram várias linhas
     all_results = {}
     for model in MODELS:
         results = analyze_experiment(paper_dir, model.EXPERIMENT, model.minimized, model.labeled)
-        if results:
-            all_results[model] = results
+        groups = model.groups(results) if hasattr(model, "groups") else [(model.TITLE, results)]
+        for title, group_results in groups:
+            if group_results:
+                all_results[(model.EXPERIMENT, title)] = group_results
 
     if not all_results:
         sys.exit(f"Nenhum experimento encontrado em '{paper_dir}'.")
@@ -73,16 +76,16 @@ def main():
     print("=" * 96)
     print(" POR MODELO E SEED (falhas detectadas / minimizadas / rotuladas certo)")
     print("=" * 96)
-    print(f"{'modelo':<24} {'seed':<5} {'N':>4} {'detectou':>16} {'minimizou':>16} {'rotulou':>16} "
+    print(f"{'modelo':<27} {'seed':<5} {'N':>4} {'detectou':>16} {'minimizou':>16} {'rotulou':>16} "
           f"{'seq. média':>11} {'tempo médio':>12}")
-    for model, results in all_results.items():
-        name = f"{model.EXPERIMENT} {model.TITLE}"
+    for (experiment, title), results in all_results.items():
+        name = f"{experiment} {title}"
         costs = cost_summary(results)
         for seed, (t, d, m, l) in seed_summary(results).items():
             mean_seq, median_seq, mean_sec, total_sec = costs[seed]
-            print(f"{name:<24} {seed:<5} {t:>4} {pct(d, t):>16} {pct(m, t):>16} {pct(l, t):>16} "
+            print(f"{name:<27} {seed:<5} {t:>4} {pct(d, t):>16} {pct(m, t):>16} {pct(l, t):>16} "
                   f"{fmt(mean_seq, '.0f'):>11} {fmt(mean_sec, '.2f', 's'):>12}")
-            rows.append([model.EXPERIMENT, seed, t, d, m, l,
+            rows.append([experiment, title, seed, t, d, m, l,
                          "" if mean_seq is None else f"{mean_seq:.0f}",
                          "" if median_seq is None else median_seq,
                          "" if mean_sec is None else f"{mean_sec:.2f}",
@@ -96,9 +99,9 @@ def main():
     print("=" * 96)
     print(" POR MODELO (uma falha conta se alguma seed conseguiu)")
     print("=" * 96)
-    print(f"{'modelo':<24} {'N':>4} {'detectou':>16} {'minimizou':>16} {'rotulou':>16}")
+    print(f"{'modelo':<27} {'N':>4} {'detectou':>16} {'minimizou':>16} {'rotulou':>16} {'mean length':>14}")
     totals = [0, 0, 0, 0]
-    for model, results in all_results.items():
+    for (experiment, title), results in all_results.items():
         faults = {}
         for r in results:
             d, m, l = faults.get(r.fault, (False, False, False))
@@ -109,23 +112,29 @@ def main():
         l = sum(v[2] for v in faults.values())
         for i, v in enumerate((t, d, m, l)):
             totals[i] += v
-        print(f"{model.EXPERIMENT + ' ' + model.TITLE:<24} {t:>4} {pct(d, t):>16} {pct(m, t):>16} {pct(l, t):>16}")
-        rows.append([model.EXPERIMENT, "alguma", t, d, m, l, "", "", "", ""])
+        mean_seq = cost(results)[0]
+        print(f"{experiment + ' ' + title:<27} {t:>4} {pct(d, t):>16} {pct(m, t):>16} "
+              f"{pct(l, t):>16} {fmt(mean_seq, '.0f'):>14}")
+        rows.append([experiment, title, "alguma", t, d, m, l,
+                     "" if mean_seq is None else f"{mean_seq:.0f}", "", "", ""])
     t, d, m, l = totals
-    print(f"{'Total':<24} {t:>4} {pct(d, t):>16} {pct(m, t):>16} {pct(l, t):>16}")
-    rows.append(["Total", "alguma", t, d, m, l, "", "", "", ""])
+    mean_seq = cost([r for results in all_results.values() for r in results])[0]
+    print(f"{'Total':<27} {t:>4} {pct(d, t):>16} {pct(m, t):>16} {pct(l, t):>16} {fmt(mean_seq, '.0f'):>14}")
+    rows.append(["Total", "", "alguma", t, d, m, l, "" if mean_seq is None else f"{mean_seq:.0f}", "", "", ""])
 
     # ------------------------------------------------------------------
     print()
     print("=" * 96)
     print(" POR SEED (todos os modelos)")
     print("=" * 96)
-    print(f"{'seed':<6} {'N':>4} {'detectou':>16} {'minimizou':>16} {'rotulou':>16}")
+    print(f"{'seed':<6} {'N':>4} {'detectou':>16} {'minimizou':>16} {'rotulou':>16} {'mean length':>14}")
     for seed in seeds:
         sr = [r for results in all_results.values() for r in results if r.seed == seed]
         t = len(sr)
         print(f"{seed:<6} {t:>4} {pct(sum(r.detected for r in sr), t):>16} "
-              f"{pct(sum(r.minimized for r in sr), t):>16} {pct(sum(r.labeled for r in sr), t):>16}")
+              f"{pct(sum(r.minimized for r in sr), t):>16} {pct(sum(r.labeled for r in sr), t):>16} "
+              f"{fmt(cost(sr)[0], '.0f'):>14}")
+    print("\nmean length = média de sequências executadas até detectar (todas as seeds que detectaram)")
 
     # ------------------------------------------------------------------
     golden = golden_false_positives(paper_dir)
@@ -137,12 +146,12 @@ def main():
     print()
     print("Falhas que nenhuma seed detectou:")
     any_missing = False
-    for model, results in all_results.items():
+    for (experiment, title), results in all_results.items():
         detected = {r.fault for r in results if r.detected}
         missing = sorted({r.fault for r in results} - detected)
         if missing:
             any_missing = True
-            print(f"  {model.EXPERIMENT}: {' '.join(missing)}")
+            print(f"  {experiment} {title}: {' '.join(missing)}")
     if not any_missing:
         print("  (nenhuma)")
 
@@ -154,7 +163,7 @@ def main():
         path = paper_dir / "summary.csv"
         with open(path, "w", newline="") as f:
             w = csv.writer(f)
-            w.writerow(["experiment", "seed", "faults", "detected", "minimized", "labeled",
+            w.writerow(["experiment", "model", "seed", "faults", "detected", "minimized", "labeled",
                         "mean_sequences", "median_sequences", "mean_seed_seconds",
                         "total_seconds"])
             w.writerows(rows)
