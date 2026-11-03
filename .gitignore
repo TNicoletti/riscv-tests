@@ -25,3 +25,4 @@ mem.*.bin
 
 *.in
 isa/hypervisor-p-2-stage_translation
+*.pdf

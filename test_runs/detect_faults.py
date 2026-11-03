@@ -59,9 +59,9 @@ def parse_chance_wrong(content: str) -> str:
 
 
 def sort_key(p: Path):
-    """Chave para ordenação natural por número no nome do arquivo."""
+    """Chave para ordenação natural: subpasta, depois número no nome do arquivo."""
     numbers = re.findall(r"\d+", p.name)
-    return int(numbers[0]) if numbers else p.name
+    return (str(p.parent), int(numbers[0]) if numbers else float("inf"), p.name)
 
 
 def print_category(label, files, all_file_names, show_list, show_opposite):
@@ -125,17 +125,24 @@ def main():
         )
         sys.exit(1)
 
-    out_files = sorted(target_dir.glob("*.out"), key=sort_key)
+    # Busca na pasta alvo e nas subpastas imediatas (profundidade 1).
+    out_files = sorted(
+        list(target_dir.glob("*.out")) + list(target_dir.glob("*/*.out")),
+        key=sort_key,
+    )
 
     if not out_files:
-        print(f"Nenhum arquivo *.out encontrado em '{target_dir}'.")
+        print(f"Nenhum arquivo *.out encontrado em '{target_dir}' ou em suas subpastas.")
         return
 
     first_file = out_files[0]
     mtime = first_file.stat().st_mtime
     first_file_date = datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
 
-    all_file_names = [f.name for f in out_files]
+    def rel_name(f: Path) -> str:
+        return str(f.relative_to(target_dir))
+
+    all_file_names = [rel_name(f) for f in out_files]
 
     # ============================================================
     # Processamento
@@ -155,22 +162,22 @@ def main():
 
         # Minimização
         result = parse_error_sequence(content)
-        categorized[result].append(file_path.name)
+        categorized[result].append(rel_name(file_path))
 
         # Cold start
         has_cold_start = bool(re.search(COLD_START_PATTERN, content))
         if has_cold_start:
-            cold_start_files.append(file_path.name)
+            cold_start_files.append(rel_name(file_path))
 
         # RAW
         has_raw = bool(re.search(RAW_PATTERN, content))
         if has_raw:
-            raw_files.append(file_path.name)
+            raw_files.append(rel_name(file_path))
 
         # WAW
         has_waw = bool(re.search(WAW_PATTERN, content))
         if has_waw:
-            waw_files.append(file_path.name)
+            waw_files.append(rel_name(file_path))
 
         # Failed test
         match = re.search(FAILED_TEST_PATTERN, content)
@@ -184,7 +191,7 @@ def main():
 
         if do_export:
             csv_rows.append({
-                "arquivo": file_path.name,
+                "arquivo": rel_name(file_path),
                 "minimizacao_instrucoes": result,
                 "cold_start": "sim" if has_cold_start else "nao",
                 "raw": "sim" if has_raw else "nao",
@@ -202,7 +209,7 @@ def main():
 
     print("=" * 60)
     print(f" RESUMO GERAL ({total_files} arquivos processados)")
-    print(f" Data do 1º arquivo ({first_file.name}): {first_file_date}")
+    print(f" Data do 1º arquivo ({rel_name(first_file)}): {first_file_date}")
     print("=" * 60)
 
     for cat in categories_order:

@@ -94,6 +94,7 @@
         { "name": "VMSLE_VX",      "value": true },
         { "name": "VMSGT_VI",      "value": true },
         { "name": "VMSGT_VX",      "value": true },
+        
         { "name": "VCOMPRESS_VM",  "value": true },
         { "name": "VCPOP_M",       "value": true },
         { "name": "VFIRST_M",      "value": true },
