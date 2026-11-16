@@ -7,9 +7,7 @@ from pathlib import Path
 
 # --- CONFIGURAÇÃO DECLARATIVA DOS CASOS DE TESTE ---
 UNIFORM_RUNS = [
-    {"count": 76,"low":         -32, "high":         31},
-    {"count": 76,"low":    -1048576, "high":    1048575},
-    {"count": 76,"low": -2147483648, "high": 2147483647},
+    {"count": 1000,"low": -2147483648, "high": 2147483647},
 ]
 
 input_m_folder = "inputs32"

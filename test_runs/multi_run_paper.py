@@ -42,6 +42,11 @@ Cada pasta <seed> pode ser analisada com detect_faults.py.
 
 Uso:
     python3 test_runs/multi_run_paper.py BENCH [BITS] [-e M1,M3] [-n 3] [--dist uniform]
+    python3 test_runs/multi_run_paper.py BENCH -s 003      # todos os experimentos, só a seed 003
+
+Com -s/--only-seed só as seeds escolhidas rodam (a numeração continua a mesma: 003 =
+153..228.int32.in). Só as pastas <falha>/<seed> dessas seeds são apagadas, e o manifest.csv /
+seeds.csv mantêm as linhas das outras seeds de rodadas anteriores.
 """
 
 import argparse
@@ -358,6 +363,8 @@ def main():
                         help="lista separada por vírgula (padrão: todos)")
     parser.add_argument("-n", "--seeds", type=int, default=3,
                         help="número de seeds por falha (padrão: 3)")
+    parser.add_argument("-s", "--only-seed",
+                        help="roda só essas seeds, ex.: 003 ou 1,3 (padrão: as -n seeds)")
     parser.add_argument("--dist", default="uniform",
                         help="distribuição de onde vêm as entradas (padrão: uniform)")
     parser.add_argument("--seed", type=int, default=0,
@@ -390,23 +397,46 @@ def main():
     input_dir = Path(f"./test_runs/{args.dist}/inputs{args.bits}")
     all_inputs = sorted(input_dir.glob(f"*.int{args.bits}.in"))
     files_per_seed = -(-SEQUENCES_PER_SEED // TESTS_PER_FILE)
-    if len(all_inputs) < args.seeds * files_per_seed:
-        sys.exit(f"{input_dir}: {args.seeds} seeds precisam de {args.seeds * files_per_seed} "
+    if args.only_seed:
+        try:
+            indexes = sorted({int(s) for s in args.only_seed.split(",") if s.strip()})
+        except ValueError:
+            sys.exit(f"--only-seed inválido: {args.only_seed}")
+        if not indexes or indexes[0] < 1:
+            sys.exit(f"--only-seed inválido: {args.only_seed}")
+    else:
+        indexes = list(range(1, args.seeds + 1))
+    if len(all_inputs) < indexes[-1] * files_per_seed:
+        sys.exit(f"{input_dir}: a seed {indexes[-1]:03d} precisa de {indexes[-1] * files_per_seed} "
                  f"arquivos int{args.bits}, há {len(all_inputs)}")
     seeds = [
-        (f"{k + 1:03d}", all_inputs[k * files_per_seed:(k + 1) * files_per_seed])
-        for k in range(args.seeds)
+        (f"{k:03d}", all_inputs[(k - 1) * files_per_seed:k * files_per_seed])
+        for k in indexes
     ]
+    seed_names = {name for name, _ in seeds}
 
     faults = build_faults(experiments, args.seed)
     if not args.no_golden:
         faults.insert(0, ("golden", "golden", []))
 
     out_root = out_dir or Path(f"./benchmarks/{bench}/test_runs/paper")
+    # Linhas de manifest.csv / seeds.csv das outras seeds (mantidas com --only-seed)
+    old_rows, old_seed_rows = [], []
     for experiment in {f[0] for f in faults}:
         exp_dir = out_root / experiment
-        if exp_dir.exists():
+        if not exp_dir.exists():
+            continue
+        if not args.only_seed:
             shutil.rmtree(exp_dir)
+            continue
+        for seed_dir in exp_dir.glob("*/*"):
+            if seed_dir.is_dir() and seed_dir.name in seed_names:
+                shutil.rmtree(seed_dir)
+        for name, target in (("manifest.csv", old_rows), ("seeds.csv", old_seed_rows)):
+            path = exp_dir / name
+            if path.exists():
+                with open(path, newline="") as f:
+                    target += [r for r in list(csv.reader(f))[1:] if r and r[3] not in seed_names]
 
     subprocess.run(
         ["python3", "./mem_setter.py", f"./benchmarks/{bench}/params.json"],
@@ -489,7 +519,7 @@ def main():
                 w = csv.writer(f)
                 w.writerow(["experiment", "fault", "spike_args", "seed", "input",
                             "return_code", "seconds", "output"])
-                w.writerows(sorted((r for r in rows if r[0] == experiment),
+                w.writerows(sorted((r for r in old_rows + rows if r[0] == experiment),
                                    key=lambda r: (r[1], r[3], r[4])))
 
             seeds_csv = out_root / experiment / "seeds.csv"
@@ -497,7 +527,7 @@ def main():
                 w = csv.writer(f)
                 w.writerow(["experiment", "fault", "spike_args", "seed", "detected",
                             "files_run", "detected_by", "sequences", "seconds"])
-                w.writerows(sorted((r for r in seed_rows if r[0] == experiment),
+                w.writerows(sorted((r for r in old_seed_rows + seed_rows if r[0] == experiment),
                                    key=lambda r: (r[1], r[3])))
             print(f"Resumo em {manifest} e {seeds_csv}")
 
